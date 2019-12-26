@@ -1,54 +1,34 @@
 package main
 
 import (
+	"flag"
 	_ "image/jpeg"
 	"log"
-
-	"fmt"
+	"os"
+	"runtime/pprof"
 
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/myanagisawa/ebitest/ebitest"
 )
 
-const (
-	screenWidth  = 320
-	screenHeight = 240
-
-	screenScale = 2.0
-)
-
-var (
-	count = 0
-
-	game *ebitest.Game
-)
-
-func update(screen *ebiten.Image) error {
-	count++
-
-	if err := game.Update(); err != nil {
-		return err
-	}
-
-	if ebiten.IsDrawingSkipped() {
-		return nil
-	}
-
-	game.Draw(screen)
-
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("count: %d", count))
-	return nil
-}
+var cpuProfile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 func main() {
-	var err error
-	game, err = ebitest.NewGame()
-	if err != nil {
-		log.Fatal(err)
+	flag.Parse()
+	if *cpuProfile != "" {
+		f, err := os.Create(*cpuProfile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal(err)
+		}
+		defer pprof.StopCPUProfile()
 	}
 
-	if err := ebiten.Run(update, screenWidth, screenHeight, screenScale, "ebitest"); err != nil {
+	game, _ := ebitest.NewGame()
+	update := game.Update
+	if err := ebiten.Run(update, ebitest.ScreenWidth, ebitest.ScreenHeight, 2, "ebitest"); err != nil {
 		log.Fatal(err)
 	}
 }
