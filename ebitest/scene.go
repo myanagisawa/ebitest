@@ -8,17 +8,17 @@ import (
 )
 
 type (
-	// TitleScene ...
-	TitleScene struct {
+	// CommonScene ...
+	CommonScene struct {
 		backgroundImage *ebiten.Image
 		count           int
 		debug           string
 	}
 )
 
-// NewTitleScene ...
-func NewTitleScene() Scene {
-	img, _, err := ebitenutil.NewImageFromFile("bg2.png", ebiten.FilterDefault)
+// NewCommonScene ...
+func NewCommonScene(fpath string) Scene {
+	img, _, err := ebitenutil.NewImageFromFile(fpath, ebiten.FilterDefault)
 	if err != nil {
 		panic(err)
 	}
@@ -30,31 +30,13 @@ func NewTitleScene() Scene {
 }
 
 // Update ...
-func (s *TitleScene) Update(state *GameState) error {
+func (s *CommonScene) Update(state *GameState) error {
 	s.count++
-
-	s.debug = ""
-
-	d, b := state.Input.Dir()
-	if b {
-		s.debug += fmt.Sprintf("dir=%s\n", d.String())
-	}
-
-	c, b := state.Input.Control()
-	if b {
-		s.debug += fmt.Sprintf("control=%s\n", c.String())
-		if c.String() == "A" {
-			state.SceneManager.GoTo(NewCommonScene("bg3.png"))
-		}
-		if c.String() == "Z" {
-			state.SceneManager.GoTo(NewCommonScene("bg4.png"))
-		}
-	}
 	return nil
 }
 
 // Draw ...
-func (s *TitleScene) Draw(r *ebiten.Image) {
+func (s *CommonScene) Draw(r *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	sw, sh := r.Size()
 	bw, bh := s.backgroundImage.Size()

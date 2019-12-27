@@ -28,7 +28,7 @@ func main() {
 
 	game, _ := ebitest.NewGame()
 	update := game.Update
-	if err := ebiten.Run(update, ebitest.ScreenWidth, ebitest.ScreenHeight, 2, "ebitest"); err != nil {
+	if err := ebiten.Run(update, ebitest.ScreenWidth, ebitest.ScreenHeight, 1, "ebitest"); err != nil {
 		log.Fatal(err)
 	}
 }

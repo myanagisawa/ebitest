@@ -6,9 +6,9 @@ import (
 
 const (
 	// ScreenWidth ...
-	ScreenWidth = 256
+	ScreenWidth = 576
 	// ScreenHeight ...
-	ScreenHeight = 240
+	ScreenHeight = 360
 )
 
 type (
@@ -22,10 +22,10 @@ type (
 // NewGame ...
 func NewGame() (*Game, error) {
 	g := &Game{
-		sceneManager: &SceneManager{
-			current: NewTitleScene(),
-		},
+		input:        NewInput(),
+		sceneManager: &SceneManager{},
 	}
+	g.sceneManager.GoTo(NewTitleScene())
 	return g, nil
 }
 

@@ -1,6 +1,11 @@
 package ebitest
 
-import "github.com/hajimehoshi/ebiten"
+import (
+	"fmt"
+
+	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
+)
 
 const (
 	transitionMaxCount = 20
@@ -62,7 +67,21 @@ func (s *SceneManager) Draw(r *ebiten.Image) {
 		s.current.Draw(r)
 		return
 	}
+	s.DrawTransition(r)
+}
 
+// GoTo ...
+func (s *SceneManager) GoTo(scene Scene) {
+	if s.current == nil {
+		s.current = scene
+	} else {
+		s.next = scene
+		s.transitionCount = transitionMaxCount
+	}
+}
+
+// DrawTransition ...
+func (s *SceneManager) DrawTransition(r *ebiten.Image) {
 	transitionFrom.Clear()
 	s.current.Draw(transitionFrom)
 
@@ -75,14 +94,5 @@ func (s *SceneManager) Draw(r *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	op.ColorM.Scale(1, 1, 1, alpha)
 	r.DrawImage(transitionTo, op)
-}
-
-// GoTo ...
-func (s *SceneManager) GoTo(scene Scene) {
-	if s.current == nil {
-		s.current = scene
-	} else {
-		s.next = scene
-		s.transitionCount = transitionMaxCount
-	}
+	ebitenutil.DebugPrint(r, fmt.Sprintf("count=%d", s.transitionCount))
 }

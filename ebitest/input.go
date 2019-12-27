@@ -5,11 +5,13 @@ import (
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
-// Dir represents a direction.
 type (
+	// Dir represents a direction.
 	Dir        int
 	mouseState int
 	touchState int
+	// Control represents a direction.
+	Control int
 )
 
 const (
@@ -34,6 +36,13 @@ const (
 	touchStatePressing
 	touchStateSettled
 	touchStateInvalid
+)
+
+const (
+	// CtrlA ...
+	CtrlA Control = iota
+	// CtrlZ ...
+	CtrlZ
 )
 
 // String returns a string representing the direction.
@@ -62,6 +71,17 @@ func (d Dir) Vector() (x, y int) {
 		return 0, 1
 	case DirLeft:
 		return -1, 0
+	}
+	panic("not reach")
+}
+
+// String returns a string representing the direction.
+func (c Control) String() string {
+	switch c {
+	case CtrlA:
+		return "A"
+	case CtrlZ:
+		return "Z"
 	}
 	panic("not reach")
 }
@@ -203,6 +223,17 @@ func (i *Input) Dir() (Dir, bool) {
 	}
 	if i.touchState == touchStateSettled {
 		return i.touchDir, true
+	}
+	return 0, false
+}
+
+// Control returns false if no control key is pressed.
+func (i *Input) Control() (Control, bool) {
+	if inpututil.IsKeyJustPressed(ebiten.KeyA) {
+		return CtrlA, true
+	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyZ) {
+		return CtrlZ, true
 	}
 	return 0, false
 }
