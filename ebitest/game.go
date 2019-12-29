@@ -1,14 +1,18 @@
 package ebitest
 
 import (
+	"fmt"
+	"sync"
+
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
 const (
 	// ScreenWidth ...
-	ScreenWidth = 576
+	ScreenWidth = 600
 	// ScreenHeight ...
-	ScreenHeight = 360
+	ScreenHeight = 800
 )
 
 type (
@@ -20,12 +24,33 @@ type (
 )
 
 // NewGame ...
-func NewGame() (*Game, error) {
-	g := &Game{
-		input:        NewInput(),
-		sceneManager: &SceneManager{},
+func NewGame(paths []string) (*Game, error) {
+	fmt.Print("loading images")
+	images := make([]ebiten.Image, len(paths))
+
+	wg := &sync.WaitGroup{}
+	for i, path := range paths {
+		wg.Add(1)
+		go func(list []ebiten.Image, idx int, path string) {
+			img, _, err := ebitenutil.NewImageFromFile(path, ebiten.FilterDefault)
+			if err != nil {
+				panic(err)
+			}
+			list[idx] = *img
+			fmt.Print(".")
+			wg.Done()
+		}(images, i, path)
 	}
-	g.sceneManager.GoTo(NewTitleScene())
+	wg.Wait()
+	fmt.Println("complete!")
+
+	g := &Game{
+		input: NewInput(),
+		sceneManager: &SceneManager{
+			images: images,
+		},
+	}
+	g.sceneManager.GoTo(NewCommonScene(&images[0]))
 	return g, nil
 }
 
@@ -40,5 +65,6 @@ func (g *Game) Update(r *ebiten.Image) error {
 	}
 
 	g.sceneManager.Draw(r)
+
 	return nil
 }

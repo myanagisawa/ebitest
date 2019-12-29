@@ -40,16 +40,16 @@ func (s *TitleScene) Update(state *GameState) error {
 		s.debug += fmt.Sprintf("dir=%s\n", d.String())
 	}
 
-	c, b := state.Input.Control()
-	if b {
-		s.debug += fmt.Sprintf("control=%s\n", c.String())
-		if c.String() == "A" {
-			state.SceneManager.GoTo(NewCommonScene("bg3.png"))
-		}
-		if c.String() == "Z" {
-			state.SceneManager.GoTo(NewCommonScene("bg4.png"))
-		}
-	}
+	// c, b := state.Input.Control()
+	// if b {
+	// 	s.debug += fmt.Sprintf("control=%s\n", c.String())
+	// 	if c.String() == "A" {
+	// 		state.SceneManager.GoTo(NewCommonScene("bg3.png"))
+	// 	}
+	// 	if c.String() == "Z" {
+	// 		state.SceneManager.GoTo(NewCommonScene("bg4.png"))
+	// 	}
+	// }
 	return nil
 }
 

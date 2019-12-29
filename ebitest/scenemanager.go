@@ -23,6 +23,7 @@ type (
 		current         Scene
 		next            Scene
 		transitionCount int
+		images          []ebiten.Image
 	}
 
 	// GameState ...

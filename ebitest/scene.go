@@ -2,6 +2,9 @@ package ebitest
 
 import (
 	"fmt"
+	"math/rand"
+	"runtime"
+	"time"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -12,26 +15,52 @@ type (
 	CommonScene struct {
 		backgroundImage *ebiten.Image
 		count           int
+		limit           int
 		debug           string
 	}
 )
 
-// NewCommonScene ...
-func NewCommonScene(fpath string) Scene {
-	img, _, err := ebitenutil.NewImageFromFile(fpath, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
+var (
+	mem runtime.MemStats
+)
 
-	return &TitleScene{
-		backgroundImage: img,
+// NewCommonScene ...
+func NewCommonScene(image *ebiten.Image) Scene {
+	rand.Seed(time.Now().UnixNano()) //Seed
+
+	return &CommonScene{
+		backgroundImage: image,
 		count:           0,
+		limit:           300,
 	}
 }
 
 // Update ...
 func (s *CommonScene) Update(state *GameState) error {
 	s.count++
+
+	runtime.ReadMemStats(&mem)
+	s.debug = fmt.Sprintf("\nalloc=%d, talloc=%d, heap-alloc=%d, heap-sys=%d\n", mem.Alloc, mem.TotalAlloc, mem.HeapAlloc, mem.HeapSys)
+
+	change := false
+	c, b := state.Input.Control()
+	if b {
+		s.debug += fmt.Sprintf("control=%s\n", c.String())
+		if c.String() == "A" || c.String() == "Z" {
+			change = true
+		}
+	}
+
+	if s.count > s.limit {
+		change = true
+	}
+
+	if change {
+		idx := rand.Intn(len(state.SceneManager.images) - 1)
+		s := NewCommonScene(&state.SceneManager.images[idx])
+		state.SceneManager.GoTo(s)
+	}
+
 	return nil
 }
 
@@ -45,10 +74,21 @@ func (s *CommonScene) Draw(r *ebiten.Image) {
 	//	op.GeoM.Translate(float64(sw), float64(sh))
 	x := float64(sw) / float64(bw)
 	y := float64(sh) / float64(bh)
-	op.GeoM.Scale(x, y)
+
+	tx := float64(0)
+	ty := float64(0)
+	if x > y {
+		tx = float64(sw - bw)
+		ty = (float64(sw) - (float64(bw) * y)) / 2
+		op.GeoM.Scale(y, y)
+	} else {
+		ty = (float64(sh) - (float64(bh) * x)) / 2
+		op.GeoM.Scale(x, x)
+	}
+	op.GeoM.Translate(tx, ty)
 
 	r.DrawImage(s.backgroundImage, op)
-	ebitenutil.DebugPrint(r, fmt.Sprintf("x=%0.2f, y=%0.2f", x, y))
+	ebitenutil.DebugPrint(r, fmt.Sprintf("x=%0.2f, y=%0.2f, tx=%0.2f, ty=%0.2f, count=%d", x, y, tx, ty, s.count))
 	if s.debug != "" {
 		ebitenutil.DebugPrint(r, fmt.Sprintf("\n%s", s.debug))
 	}
