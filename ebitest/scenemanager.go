@@ -2,6 +2,9 @@ package ebitest
 
 import (
 	"fmt"
+	"math/rand"
+
+	"log"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -22,8 +25,10 @@ type (
 	SceneManager struct {
 		current         Scene
 		next            Scene
+		objects         []Scene
+		objectImages    []ebiten.Image
 		transitionCount int
-		images          []ebiten.Image
+		paths           []string
 	}
 
 	// GameState ...
@@ -43,13 +48,41 @@ func init() {
 	transitionTo, _ = ebiten.NewImage(ScreenWidth, ScreenHeight, ebiten.FilterDefault)
 }
 
+// PathToImage ...
+func (s *SceneManager) PathToImage(idx int) *ebiten.Image {
+	if idx > len(s.paths) {
+		panic("idx out of range.")
+	}
+	path := s.paths[idx]
+	img, _, err := ebitenutil.NewImageFromFile(path, ebiten.FilterDefault)
+	if err != nil {
+		panic(err)
+	}
+	return img
+}
+
 // Update ...
 func (s *SceneManager) Update(input *Input) error {
+	c, b := input.Control()
+	if b {
+		if c.String() == "A" {
+			idx := rand.Intn(len(s.objectImages) - 1)
+			s.objects = append(s.objects, NewObject(&s.objectImages[idx], ScreenWidth, ScreenHeight))
+			log.Println("type A")
+		}
+	}
+
+	state := &GameState{
+		SceneManager: s,
+		Input:        input,
+	}
+
+	for _, o := range s.objects {
+		o.Update(state)
+	}
+
 	if s.transitionCount == 0 {
-		return s.current.Update(&GameState{
-			SceneManager: s,
-			Input:        input,
-		})
+		return s.current.Update(state)
 	}
 
 	s.transitionCount--
@@ -66,9 +99,12 @@ func (s *SceneManager) Update(input *Input) error {
 func (s *SceneManager) Draw(r *ebiten.Image) {
 	if s.transitionCount == 0 {
 		s.current.Draw(r)
-		return
+	} else {
+		s.DrawTransition(r)
 	}
-	s.DrawTransition(r)
+	for _, o := range s.objects {
+		o.Draw(r)
+	}
 }
 
 // GoTo ...

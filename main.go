@@ -26,6 +26,7 @@ import (
 const (
 	orgImgDir = "images"
 	imgDir    = "resized_images"
+	objDir    = "object_images"
 )
 
 var cpuProfile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -48,14 +49,14 @@ func main() {
 
 	ebiten.SetRunnableInBackground(true)
 
-	game, _ := ebitest.NewGame(getResourceNames())
+	game, _ := ebitest.NewGame(getResourceNames(), getObjectNames())
 	update := game.Update
 	if err := ebiten.Run(update, ebitest.ScreenWidth, ebitest.ScreenHeight, 1, "ebitest"); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func getImages(dir string) []string {
+func getFileNames(dir string) []string {
 	files, _ := ioutil.ReadDir(dir)
 	fnames := make([]string, len(files))
 	for i, f := range files {
@@ -65,7 +66,7 @@ func getImages(dir string) []string {
 }
 
 func getResourceNames() []string {
-	fnames := getImages(imgDir)
+	fnames := getFileNames(imgDir)
 	paths := make([]string, len(fnames))
 	for i, f := range fnames {
 		paths[i] = fmt.Sprintf("%s/%s", imgDir, f)
@@ -73,8 +74,17 @@ func getResourceNames() []string {
 	return paths
 }
 
+func getObjectNames() []string {
+	fnames := getFileNames(objDir)
+	paths := make([]string, len(fnames))
+	for i, f := range fnames {
+		paths[i] = fmt.Sprintf("%s/%s", objDir, f)
+	}
+	return paths
+}
+
 func createNewImages() {
-	images := getImages(orgImgDir)
+	images := getFileNames(orgImgDir)
 	wg := &sync.WaitGroup{}
 	for _, image := range images {
 		if _, err := os.Stat(fmt.Sprintf("%s/%s", imgDir, image)); os.IsNotExist(err) {

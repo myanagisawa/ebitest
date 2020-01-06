@@ -46,7 +46,7 @@ func (s *CommonScene) Update(state *GameState) error {
 	c, b := state.Input.Control()
 	if b {
 		s.debug += fmt.Sprintf("control=%s\n", c.String())
-		if c.String() == "A" || c.String() == "Z" {
+		if c.String() == "Z" {
 			change = true
 		}
 	}
@@ -56,8 +56,8 @@ func (s *CommonScene) Update(state *GameState) error {
 	}
 
 	if change {
-		idx := rand.Intn(len(state.SceneManager.images) - 1)
-		s := NewCommonScene(&state.SceneManager.images[idx])
+		idx := rand.Intn(len(state.SceneManager.paths) - 1)
+		s := NewCommonScene(state.SceneManager.PathToImage(idx))
 		state.SceneManager.GoTo(s)
 	}
 

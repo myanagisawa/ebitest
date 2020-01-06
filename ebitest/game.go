@@ -24,12 +24,12 @@ type (
 )
 
 // NewGame ...
-func NewGame(paths []string) (*Game, error) {
+func NewGame(paths, objPaths []string) (*Game, error) {
 	fmt.Print("loading images")
-	images := make([]ebiten.Image, len(paths))
+	images := make([]ebiten.Image, len(objPaths))
 
 	wg := &sync.WaitGroup{}
-	for i, path := range paths {
+	for i, path := range objPaths {
 		wg.Add(1)
 		go func(list []ebiten.Image, idx int, path string) {
 			img, _, err := ebitenutil.NewImageFromFile(path, ebiten.FilterDefault)
@@ -47,10 +47,11 @@ func NewGame(paths []string) (*Game, error) {
 	g := &Game{
 		input: NewInput(),
 		sceneManager: &SceneManager{
-			images: images,
+			paths:        paths,
+			objectImages: images,
 		},
 	}
-	g.sceneManager.GoTo(NewCommonScene(&images[0]))
+	g.sceneManager.GoTo(NewCommonScene(g.sceneManager.PathToImage(0)))
 	return g, nil
 }
 
