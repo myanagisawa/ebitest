@@ -66,8 +66,11 @@ func (s *SceneManager) Update(input *Input) error {
 	c, b := input.Control()
 	if b {
 		if c.String() == "A" {
-			idx := rand.Intn(len(s.objectImages) - 1)
-			s.objects = append(s.objects, NewObject(&s.objectImages[idx], ScreenWidth, ScreenHeight))
+			s.objects = make([]Scene, 20)
+			for i := 0; i < len(s.objects); i++ {
+				idx := rand.Intn(len(s.objectImages) - 1)
+				s.objects[i] = NewObject(&s.objectImages[idx], ScreenWidth, ScreenHeight)
+			}
 			log.Println("type A")
 		}
 	}
