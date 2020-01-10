@@ -31,7 +31,7 @@ func NewCommonScene(image *ebiten.Image) Scene {
 	return &CommonScene{
 		backgroundImage: image,
 		count:           0,
-		limit:           300,
+		limit:           1000,
 	}
 }
 
@@ -39,8 +39,8 @@ func NewCommonScene(image *ebiten.Image) Scene {
 func (s *CommonScene) Update(state *GameState) error {
 	s.count++
 
-	runtime.ReadMemStats(&mem)
-	s.debug = fmt.Sprintf("\nalloc=%d, talloc=%d, heap-alloc=%d, heap-sys=%d\n", mem.Alloc, mem.TotalAlloc, mem.HeapAlloc, mem.HeapSys)
+	// runtime.ReadMemStats(&mem)
+	// s.debug = fmt.Sprintf("\nalloc=%d, talloc=%d, heap-alloc=%d, heap-sys=%d\n", mem.Alloc, mem.TotalAlloc, mem.HeapAlloc, mem.HeapSys)
 
 	change := false
 	c, b := state.Input.Control()
@@ -88,7 +88,7 @@ func (s *CommonScene) Draw(r *ebiten.Image) {
 	op.GeoM.Translate(tx, ty)
 
 	r.DrawImage(s.backgroundImage, op)
-	ebitenutil.DebugPrint(r, fmt.Sprintf("x=%0.2f, y=%0.2f, tx=%0.2f, ty=%0.2f, count=%d", x, y, tx, ty, s.count))
+	// ebitenutil.DebugPrint(r, fmt.Sprintf("x=%0.2f, y=%0.2f, tx=%0.2f, ty=%0.2f, count=%d", x, y, tx, ty, s.count))
 	if s.debug != "" {
 		ebitenutil.DebugPrint(r, fmt.Sprintf("\n%s", s.debug))
 	}

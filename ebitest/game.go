@@ -10,9 +10,9 @@ import (
 
 const (
 	// ScreenWidth ...
-	ScreenWidth = 600
+	ScreenWidth = 300
 	// ScreenHeight ...
-	ScreenHeight = 800
+	ScreenHeight = 400
 )
 
 type (

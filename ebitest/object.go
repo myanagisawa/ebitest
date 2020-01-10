@@ -20,7 +20,7 @@ type (
 func NewObject(i *ebiten.Image, bw, bh int) Scene {
 	rand.Seed(time.Now().UnixNano()) //Seed
 
-	scale := float64(rand.Intn(4)+1) / 10
+	scale := float64(rand.Intn(4)+1) / 20
 	//log.Printf("scale=%f", scale)
 	op := &ebiten.DrawImageOptions{}
 
