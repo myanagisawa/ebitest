@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"image/color"
 	"image/gif"
 	"image/jpeg"
 	"image/png"
@@ -13,9 +14,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/minodisk/go-fix-orientation/processor"
-
+	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/draw"
+	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
+
+	"github.com/minodisk/go-fix-orientation/processor"
 )
 
 // OrientationImage 画像の向き補正処理
@@ -109,4 +113,76 @@ func EncodeImage(buf io.Writer, i image.Image, ext string) error {
 		return err
 	}
 	return nil
+}
+
+// GetImageByPath 指定したパスからimageを取得します
+func GetImageByPath(path string) (draw.Image, string) {
+	//画像読み込み
+	fileIn, err := os.Open(path)
+	defer fileIn.Close()
+	if err != nil {
+		fmt.Println("error:file\n", err)
+		log.Panic(err.Error())
+	}
+
+	//画像をimage型として読み込む
+	img, format, err := image.Decode(fileIn)
+	if err != nil {
+		fmt.Println("error:decode\n", format, err)
+		log.Panic(err.Error())
+	}
+	out := image.NewRGBA(img.Bounds())
+	draw.Copy(out, image.Point{}, img, img.Bounds(), draw.Src, nil)
+	return out, format
+}
+
+// MaskImage srcをmaskした結果を返します
+func MaskImage(src draw.Image, mask image.Image) draw.Image {
+	rmask := image.NewRGBA(src.Bounds())
+	draw.CatmullRom.Scale(rmask, rmask.Bounds(), mask, mask.Bounds(), draw.Over, nil)
+	// 円形maskの適用
+	out := image.NewRGBA(src.Bounds())
+	draw.DrawMask(out, out.Bounds(), src, image.Point{0, 0}, rmask, image.Point{0, 0}, draw.Over)
+	return out
+}
+
+// DrawFont 指定imageの中心にstr文字列を描画します
+func DrawFont(out draw.Image, str string, fontsize float64) {
+	ft, err := truetype.Parse(fontload("/Library/Fonts/Arial Unicode.ttf"))
+	if err != nil {
+		fmt.Println("font", err)
+		return
+	}
+	opt := truetype.Options{Size: fontsize}
+	face := truetype.NewFace(ft, &opt)
+
+	d := &font.Drawer{
+		Dst:  out,
+		Src:  image.NewUniform(color.White),
+		Face: face,
+	}
+
+	// 文字を表示対象の真ん中に表示する
+	size := out.Bounds().Size()
+	d.Dot.X = (fixed.I(size.X) - d.MeasureString(str)) / 2
+	d.Dot.Y = fixed.I((size.Y / 2) + int(fontsize/2))
+
+	d.DrawString(str)
+}
+
+func fontload(fname string) []byte {
+	file, err := os.Open(fname)
+	defer file.Close()
+	if err != nil {
+		fmt.Println("error:file\n", err)
+		return nil
+	}
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println("error:fileread\n", err)
+		return nil
+	}
+
+	return bytes
 }

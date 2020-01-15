@@ -45,7 +45,7 @@ func NewObject(i *ebiten.Image, bw, bh int) Scene {
 	return &Object{
 		image:    i,
 		op:       op,
-		lifetime: rand.Intn(100) + transitionMaxCount,
+		lifetime: rand.Intn(500) + transitionMaxCount,
 	}
 }
 

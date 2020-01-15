@@ -3,14 +3,20 @@ package ebitest
 import (
 	"fmt"
 	"image"
+	"image/color"
+	"io/ioutil"
 	"os"
 	"sync"
 
 	"log"
 
+	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/draw"
+	"golang.org/x/image/font"
+	"golang.org/x/image/math/fixed"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/myanagisawa/ebitest/utils"
 )
 
 const (
@@ -33,22 +39,19 @@ func NewGame(paths, objPaths []string) (*Game, error) {
 	fmt.Print("loading images")
 	images := make([]ebiten.Image, len(objPaths))
 	// mask画像読み込み
-	mask, _ := getImageByPath("system_images/mask.png")
-
+	mask, _ := getImageByPath("resources/system_images/mask.png")
 	wg := &sync.WaitGroup{}
 	for i, path := range objPaths {
 		wg.Add(1)
 		go func(list []ebiten.Image, idx int, path string, maskimg image.Image) {
 			// 画像読み込み
 			img, _ := getImageByPath(path)
-			// 画像サイズに合わせたマスクの作成
-			rmask := image.NewRGBA(img.Bounds())
-			draw.BiLinear.Scale(rmask, rmask.Bounds(), maskimg, maskimg.Bounds(), draw.Over, nil)
-			// 円形maskの適用
-			// log.Printf("img.bounds: %#v", img.Bounds())
-			// log.Printf("mask.bounds: %#v", rmask.Bounds())
-			out := image.NewRGBA(img.Bounds())
-			draw.DrawMask(out, out.Bounds(), img, image.Point{0, 0}, rmask, image.Point{0, 0}, draw.Over)
+
+			// 画像をマスク
+			out := utils.MaskImage(img.(*image.NRGBA), maskimg)
+
+			// 文字列を表示
+			setfont(out, "てすと", 48.0)
 
 			// 画像からebiten.imageを作成
 			// img, _, err := ebitenutil.NewImageFromFile(path, ebiten.FilterDefault)
@@ -109,4 +112,44 @@ func getImageByPath(path string) (image.Image, string) {
 		log.Panic(err.Error())
 	}
 	return img, format
+}
+
+func fontload(fname string) []byte {
+	file, err := os.Open(fname)
+	defer file.Close()
+	if err != nil {
+		fmt.Println("error:file\n", err)
+		return nil
+	}
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println("error:fileread\n", err)
+		return nil
+	}
+
+	return bytes
+}
+
+func setfont(out draw.Image, str string, fontsize float64) {
+	ft, err := truetype.Parse(fontload("/Library/Fonts/Arial Unicode.ttf"))
+	if err != nil {
+		fmt.Println("font", err)
+		return
+	}
+	opt := truetype.Options{Size: fontsize}
+	face := truetype.NewFace(ft, &opt)
+
+	d := &font.Drawer{
+		Dst:  out,
+		Src:  image.NewUniform(color.White),
+		Face: face,
+	}
+
+	// 文字を表示対象の真ん中に表示する
+	size := out.Bounds().Size()
+	d.Dot.X = (fixed.I(size.X) - d.MeasureString(str)) / 2
+	d.Dot.Y = fixed.I((size.Y / 2) + int(fontsize/2))
+
+	d.DrawString(str)
 }
