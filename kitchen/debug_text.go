@@ -3,8 +3,6 @@ package kitchen
 import (
 	"image/color"
 
-	"fmt"
-
 	"github.com/golang/freetype/truetype"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/text"
@@ -60,7 +58,6 @@ func (s *DebugText) Append(str string) {
 // Update ...
 func (s *DebugText) Update() error {
 	l := s.uiFontColorLooper.Get()
-	fmt.Println(l)
 	s.uiFontColor = color.RGBA{uint8(l), uint8(l), uint8(l), 255}
 
 	return nil

@@ -13,6 +13,7 @@ type (
 		bg           Scene
 		currentScene Scene
 		debugText    *DebugText
+		coin         Coin
 		WindowSize   Size
 	}
 
@@ -38,8 +39,14 @@ func NewGame(w, h int) (*Game, error) {
 	}
 
 	// 初期化時のシーンを登録
-	sink, _ := NewSink(&g.WindowSize)
-	g.currentScene = sink
+	// sink, _ := NewSink(&g.WindowSize)
+	// g.currentScene = sink
+	s := NewSceneImpl()
+	g.currentScene = s
+
+	// Coin
+	c, _ := NewCoin()
+	g.coin = c
 
 	return g, nil
 }
@@ -85,6 +92,9 @@ func (g *Game) Update(r *ebiten.Image) error {
 	if err := g.debugText.Update(); err != nil {
 		return err
 	}
+	if err := g.coin.Update(); err != nil {
+		return err
+	}
 
 	if ebiten.IsDrawingSkipped() {
 		return nil
@@ -93,6 +103,7 @@ func (g *Game) Update(r *ebiten.Image) error {
 	g.bg.Draw(r)
 	g.currentScene.Draw(r)
 	g.debugText.Draw(r)
+	g.coin.Draw(r)
 
 	//ebitenutil.DebugPrint(r, dbg)
 	return nil

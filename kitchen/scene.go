@@ -9,6 +9,10 @@ type (
 		Draw(r *ebiten.Image)
 	}
 
+	// SceneImpl ...
+	SceneImpl struct {
+	}
+
 	// Looper ...
 	Looper struct {
 		num int
@@ -17,6 +21,21 @@ type (
 		max int
 	}
 )
+
+// NewSceneImpl ...
+func NewSceneImpl() *SceneImpl {
+	s := &SceneImpl{}
+	return s
+}
+
+// Update ...
+func (s *SceneImpl) Update() error {
+	return nil
+}
+
+// Draw ...
+func (s *SceneImpl) Draw(r *ebiten.Image) {
+}
 
 // NewLooper ...
 func NewLooper(num, step, min, max int) *Looper {
