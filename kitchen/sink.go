@@ -8,7 +8,8 @@ import (
 type (
 	// Sink ...
 	Sink struct {
-		bgImage *ebiten.Image
+		bgImage     *ebiten.Image
+		brinkLooper *Looper
 	}
 )
 
@@ -32,7 +33,8 @@ func NewSink(size *Size) (*Sink, error) {
 		panic(err)
 	}
 	s := &Sink{
-		bgImage: eimg,
+		bgImage:     eimg,
+		brinkLooper: NewLooper(100, 1, 70, 130),
 	}
 
 	return s, nil
@@ -45,7 +47,8 @@ func (s *Sink) Update() error {
 
 // Draw ...
 func (s *Sink) Draw(r *ebiten.Image) {
+	col := float64(s.brinkLooper.Get())
 	op := &ebiten.DrawImageOptions{}
-	op.ColorM.Scale(100.0/255.0, 100.0/255.0, 100.0/255.0, 1)
+	op.ColorM.Scale(col/255.0, col/255.0, col/255.0, 1)
 	r.DrawImage(s.bgImage, op)
 }

@@ -2,21 +2,17 @@ package kitchen
 
 import (
 	"fmt"
-	"image/color"
-
-	"github.com/golang/freetype/truetype"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/gofont/goregular"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/inpututil"
-	"github.com/hajimehoshi/ebiten/text"
 )
 
 type (
 	// Game ...
 	Game struct {
+		bg           Scene
 		currentScene Scene
+		debugText    *DebugText
 		WindowSize   Size
 	}
 
@@ -27,15 +23,14 @@ type (
 	}
 )
 
-var (
-	uiFont        font.Face
-	uiFontMHeight int
-)
-
 // NewGame ...
 func NewGame(w, h int) (*Game, error) {
 
+	backGround, _ := NewBackGround()
+	debugText, _ := NewDebugText()
 	g := &Game{
+		bg:        backGround,
+		debugText: debugText,
 		WindowSize: Size{
 			Width:  w,
 			Height: h,
@@ -45,19 +40,6 @@ func NewGame(w, h int) (*Game, error) {
 	// 初期化時のシーンを登録
 	sink, _ := NewSink(&g.WindowSize)
 	g.currentScene = sink
-
-	// ebitenフォントのテスト
-	tt, err := truetype.Parse(goregular.TTF)
-	if err != nil {
-		panic(err)
-	}
-	uiFont = truetype.NewFace(tt, &truetype.Options{
-		Size:    48,
-		DPI:     72,
-		Hinting: font.HintingFull,
-	})
-	b, _, _ := uiFont.GlyphBounds('M')
-	uiFontMHeight = (b.Max.Y - b.Min.Y).Ceil()
 
 	return g, nil
 }
@@ -91,19 +73,26 @@ func (g *Game) Update(r *ebiten.Image) error {
 	}
 	ebiten.SetScreenSize(sw, sh)
 
-	r.Fill(color.RGBA{0x90, 0x7e, 0xb4, 0xdd})
-
 	str := fmt.Sprintf("w=%d, h=%d", sw, sh)
-	text.Draw(r, str, uiFont, 50, 50, color.White)
+	g.debugText.Append(str)
 
+	if err := g.bg.Update(); err != nil {
+		return err
+	}
 	if err := g.currentScene.Update(); err != nil {
 		return err
 	}
+	if err := g.debugText.Update(); err != nil {
+		return err
+	}
+
 	if ebiten.IsDrawingSkipped() {
 		return nil
 	}
 
+	g.bg.Draw(r)
 	g.currentScene.Draw(r)
+	g.debugText.Draw(r)
 
 	//ebitenutil.DebugPrint(r, dbg)
 	return nil
