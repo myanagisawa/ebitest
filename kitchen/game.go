@@ -14,6 +14,7 @@ type (
 		currentScene Scene
 		debugText    *DebugText
 		coin         Coin
+		light        Spotlight
 		WindowSize   Size
 	}
 
@@ -48,6 +49,8 @@ func NewGame(w, h int) (*Game, error) {
 	c, _ := NewCoin()
 	g.coin = c
 
+	// l, _ := NewSpotlight(300.0, 300.0, 200.0, 1)
+	// g.light = *l
 	return g, nil
 }
 

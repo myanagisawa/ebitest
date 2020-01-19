@@ -16,7 +16,7 @@ type (
 // NewBackGround ...
 func NewBackGround() (*BackGround, error) {
 	s := &BackGround{
-		color: color.RGBA{0x90, 0x7e, 0xb4, 0xff},
+		color: color.RGBA{37, 37, 37, 255},
 	}
 
 	return s, nil

@@ -51,7 +51,7 @@ func main() {
 	//ebiten.SetWindowDecorated(false)
 
 	game, _ := kitchen.NewGame(1344, 1008)
-	if err := ebiten.Run(game.Update, game.WindowSize.Width, game.WindowSize.Height, 0.25, "kitchen sink"); err != nil {
+	if err := ebiten.Run(game.Update, game.WindowSize.Width, game.WindowSize.Height, 0.5, "kitchen sink"); err != nil {
 		log.Fatal(err)
 	}
 }

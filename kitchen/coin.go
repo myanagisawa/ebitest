@@ -3,11 +3,11 @@ package kitchen
 import (
 	"image"
 	"math"
+	"math/rand"
 
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
 type (
@@ -18,17 +18,22 @@ type (
 
 	// CoinImpl ...
 	CoinImpl struct {
-		image  ebiten.Image
-		x      int
-		y      int
-		width  int
-		height int
+		image ebiten.Image
+		x     int
+		y     int
+		vx    int
+		vy    int
+		angle int
 	}
 
 	// Circle ...
 	Circle struct {
 		X, Y, R float64
 	}
+)
+
+var (
+	maxAngle = 256
 )
 
 // NewCoin ...
@@ -38,39 +43,22 @@ func NewCoin() (Coin, error) {
 	// http://tech.nitoyon.com/ja/blog/2015/12/31/go-image-gen/
 	// 座標が円に入っているか
 	// http://imagawa.hatenadiary.jp/entry/2016/12/31/190000
-	// img := image.NewRGBA(image.Rect(0, 0, 50, 50))
-	// bounds := img.Bounds()
-	// for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-	// 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
-	// 		img.Set(x, y, color.RGBA{212, 215, 143, 255})
-	// 	}
-	// }
-	// // 画像をマスク
-	// out := utils.MaskImage(img, mask)
 
-	var w, h int = 280, 240
-	var hw, hh float64 = float64(w / 2), float64(h / 2)
 	r := 40.0
-	θ := 2 * math.Pi / 3
-	cr := &Circle{hw - r*math.Sin(0), hh - r*math.Cos(0), 60}
-	cg := &Circle{hw - r*math.Sin(θ), hh - r*math.Cos(θ), 60}
-	cb := &Circle{hw - r*math.Sin(-θ), hh - r*math.Cos(-θ), 60}
-
-	m := image.NewRGBA(image.Rect(0, 0, w, h))
-	for x := 0; x < w; x++ {
-		for y := 0; y < h; y++ {
-			r := cr.Brightness(float64(x), float64(y))
-			g := cg.Brightness(float64(x), float64(y))
-			b := cb.Brightness(float64(x), float64(y))
-			a := r
-			if a < g {
-				a = g
+	c := &Circle{r, r, r}
+	m := image.NewRGBA(image.Rect(0, 0, int(r*2), int(r*2)))
+	for x := 0; x < int(r*2); x++ {
+		for y := 0; y < int(r*2); y++ {
+			if y == int(r) {
+				m.Set(x, y, color.RGBA{0, 0, 0, 255})
+			} else {
+				d := c.Distance(float64(x), float64(y))
+				if d > 1 {
+					m.Set(x, y, color.RGBA{0, 0, 0, 0})
+				} else {
+					m.Set(x, y, color.RGBA{212, 215, 143, 255})
+				}
 			}
-			if a < b {
-				a = b
-			}
-			c := color.RGBA{r, g, b, a}
-			m.Set(x, y, c)
 		}
 	}
 
@@ -79,19 +67,56 @@ func NewCoin() (Coin, error) {
 		panic(err)
 	}
 
+	w, h := eimg.Size()
+	x, y := rand.Intn(1344-w), rand.Intn(1008-h)
+	vx, vy := 2*rand.Intn(2)-1, 2*rand.Intn(2)-1
+	a := rand.Intn(maxAngle)
+
 	return &CoinImpl{
 		image: *eimg,
+		x:     x,
+		y:     y,
+		vx:    vx,
+		vy:    vy,
+		angle: a,
 	}, nil
 }
 
 // Update ...
 func (s *CoinImpl) Update() error {
+	w, h := s.image.Size()
+
+	s.x += s.vx
+	s.y += s.vy
+	if s.x < 0 {
+		s.x = -s.x
+		s.vx = -s.vx
+	} else if 1344 <= s.x+w {
+		s.x = 2*(1344-w) - s.x
+		s.vx = -s.vx
+	}
+	if s.y < 0 {
+		s.y = -s.y
+		s.vy = -s.vy
+	} else if 1008 <= s.y+h {
+		s.y = 2*(1008-h) - s.y
+		s.vy = -s.vy
+	}
+	s.angle++
+	s.angle %= maxAngle
+
 	return nil
 }
 
 // Draw ...
 func (s *CoinImpl) Draw(r *ebiten.Image) {
+	w, h := s.image.Size()
 	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Reset()
+	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	op.GeoM.Rotate(2 * math.Pi * float64(s.angle) / float64(maxAngle))
+	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+	op.GeoM.Translate(float64(s.x), float64(s.y))
 	r.DrawImage(&s.image, op)
 }
 
@@ -102,7 +127,7 @@ func (c *Circle) Brightness(x, y float64) uint8 {
 	if d > 1 {
 		return 0
 	}
-	return uint8((1 - math.Pow(d, 5)) * 255)
+	return uint8((1 - d) * 255)
 }
 
 // Inside ...
