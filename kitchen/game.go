@@ -13,7 +13,7 @@ type (
 		bg           Scene
 		currentScene Scene
 		debugText    *DebugText
-		coin         Coin
+		coins        []Coin
 		light        Spotlight
 		WindowSize   Size
 	}
@@ -46,8 +46,8 @@ func NewGame(w, h int) (*Game, error) {
 	g.currentScene = s
 
 	// Coin
-	c, _ := NewCoin()
-	g.coin = c
+	// c, _ := NewCoin()
+	// g.coin = c
 
 	// l, _ := NewSpotlight(300.0, 300.0, 200.0, 1)
 	// g.light = *l
@@ -83,8 +83,16 @@ func (g *Game) Update(r *ebiten.Image) error {
 	}
 	ebiten.SetScreenSize(sw, sh)
 
-	str := fmt.Sprintf("w=%d, h=%d", sw, sh)
-	g.debugText.Append(str)
+	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
+		fmt.Println("Game::C")
+		c, _ := NewCoin()
+		g.coins = append(g.coins, c)
+	}
+	// str := fmt.Sprintf("w=%d, h=%d\n", sw, sh)
+	// g.debugText.Append(str)
+	// angle, speed, vx, vy, x, y := g.coin.Info()
+	// str := fmt.Sprintf("coin: a=%d, s=%d, vx=%d, vy=%d, x=%d, y=%d", angle, speed, vx, vy, x, y)
+	// g.debugText.Append(str)
 
 	if err := g.bg.Update(); err != nil {
 		return err
@@ -95,8 +103,10 @@ func (g *Game) Update(r *ebiten.Image) error {
 	if err := g.debugText.Update(); err != nil {
 		return err
 	}
-	if err := g.coin.Update(); err != nil {
-		return err
+	for _, c := range g.coins {
+		if err := c.Update(); err != nil {
+			return err
+		}
 	}
 
 	if ebiten.IsDrawingSkipped() {
@@ -106,7 +116,9 @@ func (g *Game) Update(r *ebiten.Image) error {
 	g.bg.Draw(r)
 	g.currentScene.Draw(r)
 	g.debugText.Draw(r)
-	g.coin.Draw(r)
+	for _, c := range g.coins {
+		c.Draw(r)
+	}
 
 	//ebitenutil.DebugPrint(r, dbg)
 	return nil
