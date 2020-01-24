@@ -87,7 +87,17 @@ func (g *Game) Update(r *ebiten.Image) error {
 		fmt.Println("Game::C")
 		for i := 0; i < 10; i++ {
 			c, _ := NewDebris(0)
-			g.coins = append(g.coins, c)
+			// 生成オブジェクトの衝突判定
+			col := false
+			for _, coin := range g.coins {
+				if CollisionCoin(c, coin) {
+					col = true
+					break
+				}
+			}
+			if !col {
+				g.coins = append(g.coins, c)
+			}
 		}
 	}
 
@@ -110,7 +120,10 @@ func (g *Game) Update(r *ebiten.Image) error {
 	}
 	// コインの衝突判定
 	for _, c := range g.coins {
-		CollisionCoin(g.myCoin, c)
+		if CollisionCoin(g.myCoin, c) {
+			g.myCoin.Collision(&c)
+			c.Collision(&g.myCoin)
+		}
 	}
 
 	if ebiten.IsDrawingSkipped() {
@@ -130,12 +143,12 @@ func (g *Game) Update(r *ebiten.Image) error {
 }
 
 // CollisionCoin ...
-func CollisionCoin(coin1, coin2 Coin) {
+func CollisionCoin(coin1, coin2 Coin) bool {
 	c1, c2 := coin1.Circle(), coin2.Circle()
 	// (xc1-xc2)^2 + (yc1-yc2)^2 ≦ (r1+r2)^2
 	var dx, dy, dr float64 = float64(c1.x - c2.x), float64(c1.y - c2.y), float64(c1.r + c2.r)
 	if (dx*dx + dy*dy) <= dr*dr {
-		coin1.Collision(&coin2)
-		coin2.Collision(&coin1)
+		return true
 	}
+	return false
 }
