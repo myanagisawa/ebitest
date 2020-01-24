@@ -13,8 +13,8 @@ type (
 		bg           Scene
 		currentScene Scene
 		debugText    *DebugText
+		myCoin       Coin
 		coins        []Coin
-		light        Spotlight
 		WindowSize   Size
 	}
 
@@ -46,8 +46,8 @@ func NewGame(w, h int) (*Game, error) {
 	g.currentScene = s
 
 	// Coin
-	// c, _ := NewCoin()
-	// g.coin = c
+	c, _ := NewMyCoin()
+	g.myCoin = c
 
 	// l, _ := NewSpotlight(300.0, 300.0, 200.0, 1)
 	// g.light = *l
@@ -85,14 +85,11 @@ func (g *Game) Update(r *ebiten.Image) error {
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
 		fmt.Println("Game::C")
-		c, _ := NewCoin()
-		g.coins = append(g.coins, c)
+		for i := 0; i < 10; i++ {
+			c, _ := NewDebris(0)
+			g.coins = append(g.coins, c)
+		}
 	}
-	// str := fmt.Sprintf("w=%d, h=%d\n", sw, sh)
-	// g.debugText.Append(str)
-	// angle, speed, vx, vy, x, y := g.coin.Info()
-	// str := fmt.Sprintf("coin: a=%d, s=%d, vx=%d, vy=%d, x=%d, y=%d", angle, speed, vx, vy, x, y)
-	// g.debugText.Append(str)
 
 	if err := g.bg.Update(); err != nil {
 		return err
@@ -103,10 +100,17 @@ func (g *Game) Update(r *ebiten.Image) error {
 	if err := g.debugText.Update(); err != nil {
 		return err
 	}
+	if err := g.myCoin.Update(); err != nil {
+		return err
+	}
 	for _, c := range g.coins {
 		if err := c.Update(); err != nil {
 			return err
 		}
+	}
+	// コインの衝突判定
+	for _, c := range g.coins {
+		CollisionCoin(g.myCoin, c)
 	}
 
 	if ebiten.IsDrawingSkipped() {
@@ -116,10 +120,22 @@ func (g *Game) Update(r *ebiten.Image) error {
 	g.bg.Draw(r)
 	g.currentScene.Draw(r)
 	g.debugText.Draw(r)
+	g.myCoin.Draw(r)
 	for _, c := range g.coins {
 		c.Draw(r)
 	}
 
 	//ebitenutil.DebugPrint(r, dbg)
 	return nil
+}
+
+// CollisionCoin ...
+func CollisionCoin(coin1, coin2 Coin) {
+	c1, c2 := coin1.Circle(), coin2.Circle()
+	// (xc1-xc2)^2 + (yc1-yc2)^2 ≦ (r1+r2)^2
+	var dx, dy, dr float64 = float64(c1.x - c2.x), float64(c1.y - c2.y), float64(c1.r + c2.r)
+	if (dx*dx + dy*dy) <= dr*dr {
+		coin1.Collision(&coin2)
+		coin2.Collision(&coin1)
+	}
 }
