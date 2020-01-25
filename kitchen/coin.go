@@ -75,12 +75,17 @@ func NewMyCoin() (Coin, error) {
 		panic(err)
 	}
 
-	w, h := eimg.Size()
-	c.x, c.y = rand.Intn(1344-w), rand.Intn(1008-h)
+	c.x, c.y = rand.Intn(1344-c.r), rand.Intn(1008-c.r)
+	if c.x < c.r {
+		c.x = c.r
+	}
+	if c.y < c.r {
+		c.y = c.r
+	}
 
 	// ebitenのrotateとtranslateはy軸0が最上段なので注意
 	a := rand.Intn(maxAngle)
-	s := rand.Intn(10) + 1
+	s := 10
 	// a := 45
 	// s := 7
 	log.Printf("angle: %d, speed: %d", a, s)
@@ -125,8 +130,13 @@ func NewDebris(speed int) (Coin, error) {
 		panic(err)
 	}
 
-	w, h := eimg.Size()
-	c.x, c.y = rand.Intn(1344-w), rand.Intn(1008-h)
+	c.x, c.y = rand.Intn(1344-c.r), rand.Intn(1008-c.r)
+	if c.x < c.r {
+		c.x = c.r
+	}
+	if c.y < c.r {
+		c.y = c.r
+	}
 
 	// ebitenのrotateとtranslateはy軸0が最上段なので注意
 	a := rand.Intn(maxAngle)
@@ -160,12 +170,11 @@ func (s *CoinImpl) Update() error {
 	s.circle.x += s.vx
 	s.circle.y -= s.vy
 
-	w, h := s.image.Size()
-	if s.circle.x < 0 || 1344 <= s.circle.x+w {
+	if s.circle.Left() < 0 || 1344 <= s.circle.Right() {
 		s.angle = 180 - s.angle
 		s.updatePoint()
 	}
-	if s.circle.y < 0 || 1008 <= s.circle.y+h {
+	if s.circle.Top() < 0 || 1008 <= s.circle.Bottom() {
 		s.angle = 360 - s.angle
 		s.updatePoint()
 	}
@@ -180,9 +189,8 @@ func (s *CoinImpl) Draw(r *ebiten.Image) {
 	op.GeoM.Reset()
 	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
 	op.GeoM.Rotate(-2 * math.Pi * float64(s.angle) / float64(maxAngle))
-	// op.GeoM.Rotate(float64(s.angle))
 	op.GeoM.Translate(float64(w)/2, float64(h)/2)
-	op.GeoM.Translate(float64(s.circle.x), float64(s.circle.y))
+	op.GeoM.Translate(float64(s.circle.Left()), float64(s.circle.Top()))
 	if s.collision != nil {
 		op.ColorM.Scale(0.5, 0.5, 0.5, 1.0)
 		s.collision = nil
@@ -209,6 +217,36 @@ func (s *CoinImpl) Collision(c *Coin) {
 func (c *Circle) Distance(x, y int) float64 {
 	var dx, dy int = c.x - x, c.y - y
 	return math.Sqrt(float64(dx*dx+dy*dy)) / float64(c.r)
+}
+
+// Left ...
+func (c *Circle) Left() int {
+	return c.x - c.r
+}
+
+// Top ...
+func (c *Circle) Top() int {
+	return c.y - c.r
+}
+
+// Right ...
+func (c *Circle) Right() int {
+	return c.x + c.r
+}
+
+// Bottom ...
+func (c *Circle) Bottom() int {
+	return c.y + c.r
+}
+
+// Width ...
+func (c *Circle) Width() int {
+	return 2 * c.r
+}
+
+// Height ...
+func (c *Circle) Height() int {
+	return 2 * c.r
 }
 
 func (s *CoinImpl) updatePoint() {
