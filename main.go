@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
+	"math"
 	"os"
 	"runtime/pprof"
 
@@ -12,7 +13,6 @@ import (
 	_ "image/jpeg"
 
 	"github.com/hajimehoshi/ebiten"
-	"github.com/myanagisawa/ebitest/imgconv"
 	"github.com/myanagisawa/ebitest/kitchen"
 )
 
@@ -36,24 +36,37 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 	}
+	list := []float64{0, 0.1, 0.2, 0.5, 1.0, 2.0, 3.0, 5.0}
+	for _, v := range list {
+		log.Printf("tan(%f)=%f", v, math.Tan(v))
+	}
+	for _, v := range list {
+		n := math.Atan(v)
+		d := n * 180 / math.Pi
+		log.Printf("atan(%f)=%f, deg=%f", v, n, d)
+	}
+	y, x := -1.0, 1.0
+	n := math.Atan2(y, x)
+	d := n * 180 / math.Pi
+	log.Printf("atan2(%f, %f)=%f, deg=%f", y, x, n, d)
 
 	// 新着イメージの変換
-	imgconv.CreateNewImages(orgImgDir, imgDir)
+	// imgconv.CreateNewImages(orgImgDir, imgDir)
 
 	ebiten.SetRunnableInBackground(true)
+
+	ebiten.SetWindowDecorated(false)
+
+	game, _ := kitchen.NewGame(1344, 1008)
+	if err := ebiten.Run(game.Update, game.WindowSize.Width, game.WindowSize.Height, 0.25, "kitchen sink"); err != nil {
+		log.Fatal(err)
+	}
 
 	// game, _ := ebitest.NewGame(getResourceNames(), getObjectNames())
 	// update := game.Update
 	// if err := ebiten.Run(update, ebitest.ScreenWidth, ebitest.ScreenHeight, 1, "ebitest"); err != nil {
 	// 	log.Fatal(err)
 	// }
-
-	//ebiten.SetWindowDecorated(false)
-
-	game, _ := kitchen.NewGame(1344, 1008)
-	if err := ebiten.Run(game.Update, game.WindowSize.Width, game.WindowSize.Height, 0.25, "kitchen sink"); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func getFileNames(dir string) []string {

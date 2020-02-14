@@ -49,6 +49,9 @@ func NewGame(w, h int) (*Game, error) {
 	c, _ := NewMyCoin()
 	g.myCoin = c
 
+	c2, _ := NewCoin()
+	g.coins = append(g.coins, c2)
+
 	// l, _ := NewSpotlight(300.0, 300.0, 200.0, 1)
 	// g.light = *l
 	return g, nil
@@ -124,6 +127,7 @@ func (g *Game) Update(r *ebiten.Image) error {
 			g.myCoin.Collision(&c)
 			c.Collision(&g.myCoin)
 		}
+		_ = Dot(g.myCoin, c)
 	}
 
 	if ebiten.IsDrawingSkipped() {
@@ -151,6 +155,14 @@ func CollisionCoin(coin1, coin2 Coin) bool {
 		return true
 	}
 	return false
+}
+
+// Dot ...
+func Dot(coin1, coin2 Coin) float64 {
+	//	x1*x2 + y1*y2
+	p := coin1.Circle().x*coin2.Circle().x + coin1.Circle().y*coin2.Circle().y
+	// log.Printf("Dot=%f", p)
+	return p
 }
 
 /*

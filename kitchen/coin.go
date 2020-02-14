@@ -11,6 +11,7 @@ import (
 	"log"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 )
 
 type (
@@ -24,10 +25,11 @@ type (
 
 	// CoinImpl ...
 	CoinImpl struct {
+		label     string
 		image     ebiten.Image
 		circle    *Circle
-		vx        int
-		vy        int
+		vx        float64
+		vy        float64
 		angle     int
 		speed     int
 		collision Coin
@@ -35,7 +37,8 @@ type (
 
 	// Circle ...
 	Circle struct {
-		x, y, r int
+		x, y float64
+		r    int
 	}
 )
 
@@ -53,7 +56,7 @@ func NewMyCoin() (Coin, error) {
 	// http://imagawa.hatenadiary.jp/entry/2016/12/31/190000
 
 	r := 40
-	c := &Circle{r, r, r}
+	c := &Circle{float64(r), float64(r), r}
 	m := image.NewRGBA(image.Rect(0, 0, r*2, r*2))
 	for x := 0; x < r*2; x++ {
 		for y := 0; y < r*2; y++ {
@@ -75,22 +78,69 @@ func NewMyCoin() (Coin, error) {
 		panic(err)
 	}
 
-	c.x, c.y = rand.Intn(1344-c.r), rand.Intn(1008-c.r)
-	if c.x < c.r {
-		c.x = c.r
+	c.x, c.y = float64(rand.Intn(1344-c.r)), float64(rand.Intn(1008-c.r))
+	if int(c.x) < c.r {
+		c.x = float64(c.r)
 	}
-	if c.y < c.r {
-		c.y = c.r
+	if int(c.y) < c.r {
+		c.y = float64(c.r)
 	}
 
 	// ebitenのrotateとtranslateはy軸0が最上段なので注意
-	a := rand.Intn(maxAngle)
-	s := 10
-	// a := 45
-	// s := 7
+	// a := rand.Intn(maxAngle)
+	// s := 10
+
+	c.x, c.y = 300, 400
+	a := 23
+	s := 2
 	log.Printf("angle: %d, speed: %d", a, s)
 
 	coinImpl := &CoinImpl{
+		label:  "myCoin",
+		image:  *eimg,
+		circle: c,
+		angle:  a,
+		speed:  s,
+	}
+	coinImpl.updatePoint()
+
+	return coinImpl, nil
+}
+
+// NewCoin ...
+func NewCoin() (Coin, error) {
+	rand.Seed(time.Now().UnixNano()) //Seed
+
+	r := 100
+	c := &Circle{float64(r), float64(r), r}
+	m := image.NewRGBA(image.Rect(0, 0, r*2, r*2))
+	for x := 0; x < r*2; x++ {
+		for y := 0; y < r*2; y++ {
+			if x > r && y >= r-1 && y <= r+1 {
+				m.Set(x, y, color.RGBA{0, 0, 0, 255})
+			} else {
+				d := c.Distance(x, y)
+				if d > 1 {
+					m.Set(x, y, color.RGBA{0, 0, 0, 0})
+				} else {
+					m.Set(x, y, color.RGBA{212, 0, 0, 255})
+				}
+			}
+		}
+	}
+
+	eimg, err := ebiten.NewImageFromImage(m, ebiten.FilterDefault)
+	if err != nil {
+		panic(err)
+	}
+
+	c.x, c.y = 600, 200
+	a := 0
+	s := 0
+	log.Printf("angle: %d, speed: %d", a, s)
+
+	coinImpl := &CoinImpl{
+		label:  "coin2",
 		image:  *eimg,
 		circle: c,
 		angle:  a,
@@ -108,7 +158,7 @@ func NewDebris(speed int) (Coin, error) {
 	rd, gr, bl := uint8(rand.Intn(55)+200), uint8(rand.Intn(55)+200), uint8(rand.Intn(55)+200)
 
 	r := rand.Intn(80) + 20
-	c := &Circle{r, r, r}
+	c := &Circle{float64(r), float64(r), r}
 	m := image.NewRGBA(image.Rect(0, 0, r*2, r*2))
 	for x := 0; x < r*2; x++ {
 		for y := 0; y < r*2; y++ {
@@ -130,12 +180,12 @@ func NewDebris(speed int) (Coin, error) {
 		panic(err)
 	}
 
-	c.x, c.y = rand.Intn(1344-c.r), rand.Intn(1008-c.r)
-	if c.x < c.r {
-		c.x = c.r
+	c.x, c.y = float64(rand.Intn(1344-c.r)), float64(rand.Intn(1008-c.r))
+	if int(c.x) < c.r {
+		c.x = float64(c.r)
 	}
-	if c.y < c.r {
-		c.y = c.r
+	if int(c.y) < c.r {
+		c.y = float64(c.r)
 	}
 
 	// ebitenのrotateとtranslateはy軸0が最上段なので注意
@@ -156,14 +206,14 @@ func NewDebris(speed int) (Coin, error) {
 
 // Update ...
 func (s *CoinImpl) Update() error {
-	c := rand.Intn(300)
-	if c == 0 {
-		s.angle += 5
-		log.Printf("change angle: %d", s.angle)
-	} else if c == 19 {
-		s.angle -= 5
-		log.Printf("change angle: %d", s.angle)
-	}
+	// c := rand.Intn(300)
+	// if c == 0 {
+	// 	s.angle += 5
+	// 	log.Printf("change angle: %d", s.angle)
+	// } else if c == 19 {
+	// 	s.angle -= 5
+	// 	log.Printf("change angle: %d", s.angle)
+	// }
 
 	s.updatePoint()
 
@@ -193,14 +243,31 @@ func (s *CoinImpl) Draw(r *ebiten.Image) {
 	op.GeoM.Translate(float64(s.circle.Left()), float64(s.circle.Top()))
 	if s.collision != nil {
 		op.ColorM.Scale(0.5, 0.5, 0.5, 1.0)
-		s.collision = nil
 	}
 	r.DrawImage(&s.image, op)
+
+	if s.collision != nil {
+		// draw line
+		t := s.collision
+
+		x1, x2, y1, y2 := s.circle.x, t.Circle().x, s.circle.y, t.Circle().y
+		sx, lx, sy, ly := math.Min(x1, x2), math.Max(x1, x2), math.Min(y1, y2), math.Max(y1, y2)
+		x, y := lx-sx, ly-sy
+		n := math.Atan2(y, x)
+		d := n * 180 / math.Pi
+		log.Printf("atan2(%f, %f)=%f, deg=%f", y, x, n, d)
+		log.Printf("  sx=%f, lx=%f, sy=%f, ly=%f, ", sx, lx, sy, ly)
+
+		ebitenutil.DrawLine(r, x1, y1, x2, y2, color.RGBA{0, 255, 0, 255})
+		// draw line
+
+		s.collision = nil
+	}
 }
 
 // Info ...
 func (s *CoinImpl) Info() (int, int, int, int, int, int) {
-	return s.angle, s.speed, s.vx, s.vy, s.circle.x, s.circle.y
+	return s.angle, s.speed, int(s.vx), int(s.vy), int(s.circle.x), int(s.circle.y)
 }
 
 // Circle ...
@@ -215,28 +282,28 @@ func (s *CoinImpl) Collision(c *Coin) {
 
 // Distance ...
 func (c *Circle) Distance(x, y int) float64 {
-	var dx, dy int = c.x - x, c.y - y
+	var dx, dy int = int(c.x) - x, int(c.y) - y
 	return math.Sqrt(float64(dx*dx+dy*dy)) / float64(c.r)
 }
 
 // Left ...
 func (c *Circle) Left() int {
-	return c.x - c.r
+	return int(c.x) - c.r
 }
 
 // Top ...
 func (c *Circle) Top() int {
-	return c.y - c.r
+	return int(c.y) - c.r
 }
 
 // Right ...
 func (c *Circle) Right() int {
-	return c.x + c.r
+	return int(c.x) + c.r
 }
 
 // Bottom ...
 func (c *Circle) Bottom() int {
-	return c.y + c.r
+	return int(c.y) + c.r
 }
 
 // Width ...
@@ -251,6 +318,9 @@ func (c *Circle) Height() int {
 
 func (s *CoinImpl) updatePoint() {
 	rad := float64(s.angle) * math.Pi / 180
-	s.vx = int(math.Cos(rad) * float64(s.speed))
-	s.vy = int(math.Sin(rad) * float64(s.speed))
+	s.vx = math.Cos(rad) * float64(s.speed)
+	s.vy = math.Sin(rad) * float64(s.speed)
+	// if s.label == "myCoin" {
+	// 	log.Printf("rad=%f, vx=%f, vy=%f, sin(rad)=%f", rad, s.vx, s.vy, math.Sin(rad))
+	// }
 }
