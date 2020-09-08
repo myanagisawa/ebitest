@@ -25,6 +25,7 @@ const (
 var cpuProfile = flag.String("cpuprofile", "", "write cpu profile to file")
 
 func main() {
+
 	flag.Parse()
 	if *cpuProfile != "" {
 		f, err := os.Create(*cpuProfile)
@@ -48,7 +49,7 @@ func main() {
 	y, x := -1.0, 1.0
 	n := math.Atan2(y, x)
 	d := n * 180 / math.Pi
-	log.Printf("atan2(%f, %f)=%f, deg=%f", y, x, n, d)
+	log.Printf("test:atan2(%f, %f)=%f, deg=%f", y, x, n, d)
 
 	// 新着イメージの変換
 	// imgconv.CreateNewImages(orgImgDir, imgDir)
