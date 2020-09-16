@@ -108,6 +108,10 @@ func (g *Game) Update(r *ebiten.Image) error {
 			return err
 		}
 	}
+
+	// ユニットのレーダー捕捉判定
+	captureUnit(g.myUnit, g.units)
+
 	// ユニットの衝突判定
 	for _, u := range g.units {
 		if CollisionUnit(g.myUnit, u) {
@@ -123,10 +127,10 @@ func (g *Game) Update(r *ebiten.Image) error {
 
 	g.bg.Draw(r)
 	g.currentScene.Draw(r)
-	g.myUnit.Draw(r)
 	for _, u := range g.units {
 		u.Draw(r)
 	}
+	g.myUnit.Draw(r)
 
 	ebitenutil.DebugPrint(r, dbg)
 	return nil
@@ -134,19 +138,41 @@ func (g *Game) Update(r *ebiten.Image) error {
 
 // CollisionUnit unit同士の衝突状態を返す
 func CollisionUnit(unit1, unit2 Unit) bool {
-	u1, u2 := unit1.Circle(), unit2.Circle()
+	x1, y1 := unit1.GetCenter()
+	x2, y2 := unit2.GetCenter()
+	e1, e2 := unit1.GetEntity(), unit2.GetEntity()
 	// (xc1-xc2)^2 + (yc1-yc2)^2 ≦ (r1+r2)^2
-	var dx, dy, dr float64 = float64(u1.x - u2.x), float64(u1.y - u2.y), float64(u1.r + u2.r)
+	var dx, dy, dr float64 = float64(x1 - x2), float64(y1 - y2), float64(e1.R() + e2.R())
 	if (dx*dx + dy*dy) <= dr*dr {
 		return true
 	}
 	return false
 }
 
+// captureUnit unitの索敵範囲に入ったunitsを取得する
+func captureUnit(unit Unit, units []Unit) {
+	x1, y1 := unit.GetCenter()
+	c1 := unit.GetRader()
+	captured := []Unit{}
+	for _, u := range units {
+		x2, y2 := u.GetCenter()
+		e := u.GetEntity()
+
+		var dx, dy, dr float64 = float64(x1 - x2), float64(y1 - y2), float64(c1.R() + e.R())
+		if (dx*dx + dy*dy) <= dr*dr {
+			// レーダー捕捉
+			captured = append(captured, u)
+		}
+	}
+	unit.SetCaptured(captured)
+}
+
 // Dot ...
 func Dot(unit1, unit2 Unit) float64 {
+	x1, y1 := unit1.GetCenter()
+	x2, y2 := unit2.GetCenter()
 	//	x1*x2 + y1*y2
-	p := unit1.Circle().x*unit2.Circle().x + unit1.Circle().y*unit2.Circle().y
+	p := x1*x2 + y1*y2
 	// log.Printf("Dot=%f", p)
 	return p
 }

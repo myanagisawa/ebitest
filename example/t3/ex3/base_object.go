@@ -5,8 +5,8 @@ import "github.com/hajimehoshi/ebiten"
 type (
 	// Circle ...
 	Circle struct {
-		x, y float64
-		r    int
+		r     int
+		image ebiten.Image
 	}
 
 	// Scene ...
@@ -69,4 +69,9 @@ func (l *Looper) Get() int {
 	}
 	l.num += l.vec
 	return ret
+}
+
+// R ...
+func (c *Circle) R() int {
+	return c.r
 }
