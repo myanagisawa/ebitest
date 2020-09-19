@@ -36,6 +36,7 @@ type (
 		speed     int
 		collision Unit
 		captured  []Unit
+		locked    Unit
 		rader     *Circle
 		parent    *Game
 	}
@@ -54,7 +55,7 @@ func NewMyUnit(parent *Game) (Unit, error) {
 	// 座標が円に入っているか
 	// http://imagawa.hatenadiary.jp/entry/2016/12/31/190000
 
-	r := 20
+	r := 10
 	// ユニット画像読み込み
 	eimg := getImage("unit-1", r*2, r*2)
 	e := &Circle{r: r, image: *eimg}
@@ -62,15 +63,15 @@ func NewMyUnit(parent *Game) (Unit, error) {
 	unitImpl := &UnitImpl{
 		label:  "myUnit",
 		entity: e,
-		x:      float64(300),
+		x:      float64(400),
 		y:      float64(400),
 		angle:  32,
-		speed:  4,
+		speed:  3,
 		parent: parent,
 	}
 	// unitImpl.updatePoint()
 
-	r = 100
+	r = 300
 	// 索敵範囲画像読み込み
 	eimg = getImage("search-1", r*2, r*2)
 
@@ -95,11 +96,12 @@ func NewUnit(parent *Game) (Unit, error) {
 		x:      float64(600),
 		y:      float64(200),
 		angle:  270,
-		speed:  0,
+		speed:  1,
 		parent: parent,
 	}
 	// unitImpl.updatePoint()
-
+	rad := float64(unitImpl.angle) * (math.Pi / 180)
+	log.Printf("rad=%f, deg=%d", rad, unitImpl.angle)
 	return unitImpl, nil
 }
 
@@ -107,11 +109,13 @@ func NewUnit(parent *Game) (Unit, error) {
 func NewDebris(speed int, parent *Game) (Unit, error) {
 	rand.Seed(time.Now().UnixNano()) //Seed
 
-	rd, gr, bl := uint8(rand.Intn(55)+200), uint8(rand.Intn(55)+200), uint8(rand.Intn(55)+200)
+	// rd, gr, bl := uint8(rand.Intn(55)+200), uint8(rand.Intn(55)+200), uint8(rand.Intn(55)+200)
 
 	r := rand.Intn(80) + 20
 	// 指定した円の画像を作成
-	eimg := createCircleImage(r, color.RGBA{rd, gr, bl, 255}, color.RGBA{0, 0, 0, 255})
+	// eimg := createCircleImage(r, color.RGBA{rd, gr, bl, 255}, color.RGBA{0, 0, 0, 255})
+	// e := &Circle{r: r, image: *eimg}
+	eimg := getImage("unit-3", r*2, r*2)
 	e := &Circle{r: r, image: *eimg}
 
 	x, y := float64(rand.Intn(parent.WindowSize.Width-e.r)), float64(rand.Intn(parent.WindowSize.Height-e.r))
@@ -158,16 +162,62 @@ func (s *UnitImpl) Update() error {
 
 	if s.collision != nil {
 		// 衝突時の方向更新
-		a := s.angle
-		if s.angle > 180 {
-			a = s.angle - 360
-		}
-		s.angle = 180 + a
+		// a := s.angle
+		// if s.angle > 180 {
+		// 	a = s.angle - 360
+		// }
+		// s.angle = 180 + a
 		// 位置を戻す
-		s.x -= vx * 2
-		s.y += vy * 2
+		s.x -= vx * 10
+		s.y += vy * 10
 
 		s.collision = nil
+	}
+
+	// ロックオン対象を更新
+	s.locked = nil
+	dist := 0.0
+	for _, u := range s.captured {
+		// 自機との距離を算出
+		x1, y1 := s.GetCenter()
+		x2, y2 := u.GetCenter()
+		dx, dy := x2-x1, y2-y1
+		d := math.Sqrt(float64(dx*dx + dy*dy))
+		if s.locked == nil || dist > d {
+			s.locked = u
+			dist = d
+		}
+	}
+	// log.Printf("locled=%d", s.locked.GetEntity().r)
+
+	if s.locked != nil {
+		// ロックオン対象が存在する場合はそちらに方向転換する
+
+		//自機と対象の角度を算出
+		x1, y1 := s.GetCenter()
+		x2, y2 := s.locked.GetCenter()
+		dx, dy := x2-x1, -(y2 - y1) // 画面の上側をY座標＋とするので、Y座標は符号を入れ替える
+		// radianを取得
+		n := math.Atan2(dy, dx)
+		// radian ->degreeに変換
+		d := n * 180 / math.Pi
+		if s.angle != int(d) {
+			// 自機の向きを更新
+			log.Printf("[%s] angle=%d, d=%d, rad=%f", s.label, s.angle, int(d), n)
+			if s.angle > int(d) {
+				if s.angle-5 < int(d) {
+					s.angle = int(d)
+				} else {
+					s.angle -= 5
+				}
+			} else if s.angle < int(d) {
+				if s.angle+5 < int(d) {
+					s.angle = int(d)
+				} else {
+					s.angle += 5
+				}
+			}
+		}
 	}
 
 	return nil
@@ -191,14 +241,20 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 
 			x1, y1 := s.GetCenter()
 			x2, y2 := u.GetCenter()
-			sx, lx, sy, ly := math.Min(x1, x2), math.Max(x1, x2), math.Min(y1, y2), math.Max(y1, y2)
-			x, y := lx-sx, ly-sy
-			n := math.Atan2(y, x)
-			d := n * 180 / math.Pi
-			log.Printf("atan2(%f, %f)=%f, deg=%f", y, x, n, d)
-			log.Printf("  sx=%f, lx=%f, sy=%f, ly=%f, ", sx, lx, sy, ly)
-
 			ebitenutil.DrawLine(r, x1, y1, x2, y2, color.RGBA{0, 255, 0, 255})
+			// debug 2点間の距離を表示
+			// sqrt( (x1-x2)^2 + (y1-y2)^2 )
+			// dx, dy := x1-x2, y1-y2
+			// dist := math.Sqrt(float64(dx*dx + dy*dy))
+			// log.Printf("[%s] x1=%f, y1=%f, x2=%f, y2=%f: distance=%f", s.label, x1, y1, x2, y2, dist)
+			// debug 2点間の角度を表示
+			// sx, lx, sy, ly := math.Min(x1, x2), math.Max(x1, x2), math.Min(y1, y2), math.Max(y1, y2)
+			// x, y := lx-sx, ly-sy
+			// // radianを取得
+			// n := math.Atan2(y, x)
+			// // radian ->degreeに変換
+			// d := n * 180 / math.Pi
+			// log.Printf("[%s] degree=%f", s.label, d)
 		}
 		s.captured = nil
 	}
@@ -207,8 +263,7 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 	if s.rader != nil {
 		drawRader(s, r)
 	}
-	drawUnitCircle(s, r)
-	// drawHikakuCircle(s, r)
+	// drawUnitCircle(s, r)
 }
 
 // defaultDrawOption デフォルト描画オプション
@@ -281,7 +336,7 @@ func (s *UnitImpl) SetCaptured(units []Unit) {
 
 // distance x, yが表す点が半径rの円の範囲内に位置する場合、1以下、範囲外の場合1以上を返します
 func distance(x, y, r int) float64 {
-	var dx, dy int = int(r) - x, int(r) - y
+	var dx, dy int = r - x, r - y
 	return math.Sqrt(float64(dx*dx+dy*dy)) / float64(r)
 }
 
