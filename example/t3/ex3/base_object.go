@@ -1,6 +1,13 @@
 package ex3
 
-import "github.com/hajimehoshi/ebiten"
+import (
+	"image/color"
+
+	"github.com/golang/freetype/truetype"
+	"github.com/hajimehoshi/ebiten"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/gofont/goregular"
+)
 
 type (
 	// Circle ...
@@ -20,6 +27,12 @@ type (
 	SceneImpl struct {
 	}
 
+	// Point ...
+	Point struct {
+		X int
+		Y int
+	}
+
 	// Size ...
 	Size struct {
 		Width  int
@@ -33,7 +46,37 @@ type (
 		min int
 		max int
 	}
+
+	// LabelFace ...
+	LabelFace struct {
+		uiFont        font.Face
+		uiFontColor   color.Color
+		uiFontMHeight int
+	}
 )
+
+// NewLabelFace ...
+func NewLabelFace(size int, c color.Color) *LabelFace {
+	// ebitenフォントのテスト
+	tt, err := truetype.Parse(goregular.TTF)
+	if err != nil {
+		panic(err)
+	}
+	uiFont := truetype.NewFace(tt, &truetype.Options{
+		Size:    float64(size),
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	b, _, _ := uiFont.GlyphBounds('M')
+	uiFontMHeight := (b.Max.Y - b.Min.Y).Ceil()
+
+	s := &LabelFace{
+		uiFont:        uiFont,
+		uiFontColor:   c,
+		uiFontMHeight: uiFontMHeight,
+	}
+	return s
+}
 
 // NewSceneImpl ...
 func NewSceneImpl() *SceneImpl {

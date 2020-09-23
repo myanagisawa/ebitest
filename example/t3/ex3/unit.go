@@ -11,6 +11,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/text"
 	"github.com/myanagisawa/ebitest/utils"
 	"golang.org/x/image/draw"
 )
@@ -19,16 +20,22 @@ type (
 	// Unit ...
 	Unit interface {
 		Scene
+		Belongs() int
+		UpdateHP(damage int)
 		Collision(u *Unit)
 		GetCenter() (float64, float64)
 		GetEntity() *Circle
 		GetRader() *Circle
 		SetCaptured(units []Unit)
+		GetStatus() int
 	}
 
 	// UnitImpl ...
 	UnitImpl struct {
 		label     string
+		hp        int
+		maxHp     int
+		belongs   int
 		entity    *Circle
 		x         float64
 		y         float64
@@ -39,11 +46,22 @@ type (
 		locked    Unit
 		rader     *Circle
 		parent    *Game
+		status    int
+		infoList  []*DamageLabel
+	}
+
+	// DamageLabel ...
+	DamageLabel struct {
+		label  string
+		face   *LabelFace
+		count  int
+		erased int
 	}
 )
 
 var (
-	maxAngle = 360
+	maxAngle            = 360
+	capturedLineCounter = 0
 )
 
 // NewMyUnit ...
@@ -81,27 +99,67 @@ func NewMyUnit(parent *Game) (Unit, error) {
 	return unitImpl, nil
 }
 
+// NewDamageLabel ...
+func NewDamageLabel(d int, e int) *DamageLabel {
+	var c color.Color
+	if d > 0 {
+		c = color.RGBA{255, 0, 0, 255}
+	} else {
+		c = color.White
+	}
+	face := NewLabelFace(10, c)
+
+	return &DamageLabel{
+		label:  fmt.Sprintf("%d", d),
+		face:   face,
+		count:  0,
+		erased: e,
+	}
+}
+
 // NewUnit ...
-func NewUnit(parent *Game) (Unit, error) {
+func NewUnit(parent *Game, team, hp, r int, label string, x, y, angle, speed, rader int) (Unit, error) {
 	rand.Seed(time.Now().UnixNano()) //Seed
 
-	r := 50
+	// r := 50
+	// // ユニット画像読み込み
+	// eimg := getImage("unit-2", r*2, r*2)
+	// e := &Circle{r: r, image: *eimg}
+
+	// unitImpl := &UnitImpl{
+	// 	label:  "coin2",
+	// 	entity: e,
+	// 	x:      float64(600),
+	// 	y:      float64(200),
+	// 	angle:  270,
+	// 	speed:  1,
+	// 	parent: parent,
+	// }
+	// // unitImpl.updatePoint()
+	// rad := float64(unitImpl.angle) * (math.Pi / 180)
+	// log.Printf("rad=%f, deg=%d", rad, unitImpl.angle)
+
 	// ユニット画像読み込み
-	eimg := getImage("unit-2", r*2, r*2)
+	eimg := getImage(fmt.Sprintf("unit-%d", team), r*2, r*2)
 	e := &Circle{r: r, image: *eimg}
 
 	unitImpl := &UnitImpl{
-		label:  "coin2",
+		label:  label,
+		hp:     hp,
+		maxHp:  hp,
 		entity: e,
-		x:      float64(600),
-		y:      float64(200),
-		angle:  270,
-		speed:  1,
+		x:      float64(x),
+		y:      float64(y),
+		angle:  angle,
+		speed:  speed,
 		parent: parent,
 	}
-	// unitImpl.updatePoint()
-	rad := float64(unitImpl.angle) * (math.Pi / 180)
-	log.Printf("rad=%f, deg=%d", rad, unitImpl.angle)
+	// 索敵範囲画像読み込み
+	eimg = getImage("search-1", rader*2, rader*2)
+
+	area := &Circle{r: rader, image: *eimg}
+	unitImpl.rader = area
+
 	return unitImpl, nil
 }
 
@@ -145,6 +203,10 @@ func NewDebris(speed int, parent *Game) (Unit, error) {
 
 // Update ...
 func (s *UnitImpl) Update() error {
+	// 非生存
+	if s.status != 0 {
+		return nil
+	}
 	vx, vy := getMoveAmount(s.angle, s.speed)
 	s.x += vx
 	s.y -= vy
@@ -167,6 +229,7 @@ func (s *UnitImpl) Update() error {
 		// 	a = s.angle - 360
 		// }
 		// s.angle = 180 + a
+		s.collision.UpdateHP(1)
 		// 位置を戻す
 		s.x -= vx * 10
 		s.y += vy * 10
@@ -203,35 +266,45 @@ func (s *UnitImpl) Update() error {
 		d := n * 180 / math.Pi
 		if s.angle != int(d) {
 			// 自機の向きを更新
-			log.Printf("[%s] angle=%d, d=%d, rad=%f", s.label, s.angle, int(d), n)
+			// log.Printf("[%s] angle=%d, d=%d, rad=%f", s.label, s.angle, int(d), n)
 			if s.angle > int(d) {
 				if s.angle-5 < int(d) {
 					s.angle = int(d)
 				} else {
-					s.angle -= 5
+					s.angle -= 7
 				}
 			} else if s.angle < int(d) {
 				if s.angle+5 < int(d) {
 					s.angle = int(d)
 				} else {
-					s.angle += 5
+					s.angle += 7
 				}
 			}
 		}
 	}
 
+	// log.Printf("updated unit: %s", s.label)
 	return nil
 }
 
 // Draw ...
 func (s *UnitImpl) Draw(r *ebiten.Image) {
+	c := color.RGBA{0, 255, 0, 255}
+	if s.belongs == 0 {
+		c = color.RGBA{0, 0, 255, 127}
+	} else if s.belongs == 1 {
+		c = color.RGBA{255, 0, 0, 127}
+	} else if s.belongs == 2 {
+		c = color.RGBA{0, 255, 0, 127}
+	}
 
 	// 描画オプション: 中心基準に移動、中心座標で回転
 	w, h := s.entity.image.Size()
 	x, y := s.GetCenter()
 	op := defaultDrawOption(x, y, w, h, s.angle)
-	if s.collision != nil {
-		op.ColorM.Scale(0.5, 0.5, 0.5, 1.0)
+	if s.status == -1 {
+		// 行動不能
+		op.ColorM.Scale(1.0, 1.0, 1.0, 0.5)
 	}
 	r.DrawImage(&s.entity.image, op)
 
@@ -241,7 +314,10 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 
 			x1, y1 := s.GetCenter()
 			x2, y2 := u.GetCenter()
-			ebitenutil.DrawLine(r, x1, y1, x2, y2, color.RGBA{0, 255, 0, 255})
+
+			if capturedLineCounter >= 0 {
+				ebitenutil.DrawLine(r, x1, y1, x2, y2, c)
+			}
 			// debug 2点間の距離を表示
 			// sqrt( (x1-x2)^2 + (y1-y2)^2 )
 			// dx, dy := x1-x2, y1-y2
@@ -257,12 +333,43 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 			// log.Printf("[%s] degree=%f", s.label, d)
 		}
 		s.captured = nil
+		if capturedLineCounter == 10 {
+			capturedLineCounter = -10
+		} else {
+			capturedLineCounter++
+		}
 	}
 
 	// 索敵範囲を描画
 	if s.rader != nil {
 		drawRader(s, r)
 	}
+
+	rs := int(float64(s.hp) / float64(s.maxHp) * 100)
+	log.Printf("hp: %d / %d, rs=%d", s.hp, s.maxHp, rs)
+	if rs == 100 {
+		ebitenutil.DrawRect(r, x-float64(s.entity.r), y+float64(s.entity.r), float64(s.entity.r)*2, 5, color.RGBA{0, 255, 0, 255})
+	} else {
+		w := float64(s.entity.r) * 2 * (float64(rs) / 100)
+		ebitenutil.DrawRect(r, x-float64(s.entity.r), y+float64(s.entity.r), w, 5, color.RGBA{0, 255, 0, 255})
+		ebitenutil.DrawRect(r, x-float64(s.entity.r)+w, y+float64(s.entity.r), (float64(s.entity.r)*2)-w, 5, color.RGBA{127, 127, 127, 127})
+	}
+	text.Draw(r, fmt.Sprintf("%s : %d", s.label, rs), label.uiFont, int(x)-10, int(y)-20, label.uiFontColor)
+
+	// ダメージ表示を描画
+	for _, info := range s.infoList {
+		info.count++
+		text.Draw(r, info.label, info.face.uiFont, int(x), int(y)-(info.count*2), info.face.uiFontColor)
+	}
+	// infoListを更新
+	var l []*DamageLabel
+	for _, d := range s.infoList {
+		if d.count < d.erased {
+			l = append(l, d)
+		}
+	}
+	s.infoList = l
+
 	// drawUnitCircle(s, r)
 }
 
@@ -288,7 +395,7 @@ func drawRader(s *UnitImpl, r *ebiten.Image) {
 	x, y := s.GetCenter()
 	op := defaultDrawOption(x, y, w, h, s.angle)
 
-	op.ColorM.Scale(1.0, 1.0, 1.0, 0.25)
+	op.ColorM.Scale(1.0, 1.0, 1.0, 0.1)
 	r.DrawImage(&s.rader.image, op)
 }
 
@@ -324,6 +431,28 @@ func (s *UnitImpl) GetRader() *Circle {
 	return s.rader
 }
 
+// Belongs ...
+func (s *UnitImpl) Belongs() int {
+	return s.belongs
+}
+
+// UpdateHP ...
+func (s *UnitImpl) UpdateHP(damage int) {
+	log.Printf("%s: damage: %d", s.label, damage)
+	s.infoList = append(s.infoList, NewDamageLabel(damage, 20))
+	if s.hp <= damage {
+		s.hp = 0
+		s.dead()
+	} else {
+		s.hp -= damage
+	}
+}
+
+// GetStatus ...
+func (s *UnitImpl) GetStatus() int {
+	return s.status
+}
+
 // Collision ...
 func (s *UnitImpl) Collision(c *Unit) {
 	s.collision = *c
@@ -331,7 +460,11 @@ func (s *UnitImpl) Collision(c *Unit) {
 
 // SetCaptured ...
 func (s *UnitImpl) SetCaptured(units []Unit) {
-	s.captured = units
+	if units == nil {
+		s.captured = nil
+		return
+	}
+	s.captured = append(s.captured, units...)
 }
 
 // distance x, yが表す点が半径rの円の範囲内に位置する場合、1以下、範囲外の場合1以上を返します
@@ -368,6 +501,17 @@ func (s *UnitImpl) Width() int {
 // Height ...
 func (s *UnitImpl) Height() int {
 	return 2 * s.entity.r
+}
+
+// dead ...
+func (s *UnitImpl) dead() {
+	eimg := getImage("unit-del", s.entity.r*2, s.entity.r*2)
+	s.entity.image = *eimg
+	s.rader = nil
+	s.captured = nil
+	s.collision = nil
+	s.status = -1
+	log.Printf("%s: 行動不能", s.label)
 }
 
 func getMoveAmount(angle, speed int) (vx, vy float64) {
@@ -422,7 +566,7 @@ func getImage(name string, w, h int) *ebiten.Image {
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("img.Bounds: %#v", img.Bounds())
+	// log.Printf("img.Bounds: %#v", img.Bounds())
 
 	// リサイズ
 	imgDst := image.NewRGBA(image.Rect(0, 0, w, h))

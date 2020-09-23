@@ -2,6 +2,9 @@ package ex3
 
 import (
 	"fmt"
+	"image/color"
+	"log"
+	"math"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -14,9 +17,23 @@ type (
 		bg           Scene
 		currentScene Scene
 		WindowSize   Size
+		teams        []Team
 		myUnit       Unit
 		units        []Unit
 	}
+
+	// Team ...
+	Team struct {
+		No        int
+		Units     []Unit
+		Enemies   []*Team
+		Alliances []*Team
+		Location  Point
+	}
+)
+
+var (
+	label *LabelFace
 )
 
 // NewGame ...
@@ -37,12 +54,58 @@ func NewGame(w, h int) (*Game, error) {
 	s := NewBattleScene(size)
 	g.currentScene = s
 
-	// Unit
-	u, _ := NewMyUnit(g)
-	g.myUnit = u
+	// 自チーム、敵チーム1、敵チーム2を作成
+	teams := make([]Team, 3)
+	teams[0] = Team{No: 0, Location: Point{X: 200, Y: 400}}
+	teams[1] = Team{No: 1, Location: Point{X: 800, Y: 300}}
+	teams[2] = Team{No: 2, Location: Point{X: 600, Y: 600}}
 
-	u2, _ := NewUnit(g)
-	g.units = append(g.units, u2)
+	// 対決状態を設定
+	teams[0].Enemies = []*Team{&teams[1], &teams[2]}
+	teams[1].Enemies = []*Team{&teams[0]}
+	teams[2].Enemies = []*Team{&teams[0]}
+
+	// 同盟状態を設定
+	teams[1].Alliances = []*Team{&teams[2]}
+	teams[2].Alliances = []*Team{&teams[1]}
+
+	// Unitを作成
+	for t, team := range teams {
+		enemy := team.Enemies[0]
+		// unitの向きを敵チームに向ける
+		x1, y1 := team.Location.X, team.Location.Y
+		x2, y2 := enemy.Location.X, enemy.Location.Y
+		dx, dy := x2-x1, -(y2 - y1) // 画面の上側をY座標＋とするので、Y座標は符号を入れ替える
+		// radianを取得
+		n := math.Atan2(float64(dy), float64(dx))
+		// radian ->degreeに変換
+		d := n * 180 / math.Pi
+		a := int(d)
+
+		for i := 0; i < 5; i++ {
+			l := fmt.Sprintf("team_%d_%d", team.No, i)
+			size := 10
+			x, y := team.Location.X+(size*2*i), team.Location.Y+(size*2*i)
+			s := 1
+			u, err := NewUnit(g, team.No, 5, size, l, x, y, a, s, 100)
+			if err != nil {
+				panic(err)
+			}
+			team.Units = append(team.Units, u)
+		}
+		teams[t] = team
+		log.Printf("team: %#v", team)
+	}
+
+	g.teams = teams
+
+	label = NewLabelFace(10, color.White)
+	// // Unit
+	// u, _ := NewMyUnit(g)
+	// g.myUnit = u
+
+	// u2, _ := NewUnit(g)
+	// g.units = append(g.units, u2)
 
 	return g, nil
 }
@@ -54,6 +117,7 @@ func (g *Game) Update(r *ebiten.Image) error {
 	sw, sh := r.Size()
 	dbg := fmt.Sprintf("screen size: %d, %d", sw, sh)
 
+	// 停止、アクティブ実装
 	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
 		fmt.Println("Game::Up")
 		sh += d
@@ -100,26 +164,58 @@ func (g *Game) Update(r *ebiten.Image) error {
 	if err := g.currentScene.Update(); err != nil {
 		return err
 	}
-	if err := g.myUnit.Update(); err != nil {
-		return err
-	}
-	for _, u := range g.units {
-		if err := u.Update(); err != nil {
-			return err
+
+	// if err := g.myUnit.Update(); err != nil {
+	// 	return err
+	// }
+	// for _, u := range g.units {
+	// 	if err := u.Update(); err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	for _, team := range g.teams {
+		for _, u := range team.Units {
+			if u.GetStatus() != 0 {
+				continue
+			}
+			// ユニットのレーダー捕捉判定
+			u.SetCaptured(nil)
+			for _, et := range team.Enemies {
+				// log.Printf("et: %d, %v", et.No, et.Units)
+				captureUnit(u, et.Units)
+			}
+
+			// ユニットの衝突判定
+			for _, et := range team.Enemies {
+				for _, eu := range et.Units {
+					if eu.GetStatus() != 0 {
+						continue
+					}
+					// log.Printf("Collision")
+					if CollisionUnit(u, eu) {
+						u.Collision(&eu)
+					}
+				}
+			}
+
+			if err := u.Update(); err != nil {
+				return err
+			}
 		}
 	}
 
 	// ユニットのレーダー捕捉判定
-	captureUnit(g.myUnit, g.units)
+	// captureUnit(g.myUnit, g.units)
 
 	// ユニットの衝突判定
-	for _, u := range g.units {
-		if CollisionUnit(g.myUnit, u) {
-			g.myUnit.Collision(&u)
-			u.Collision(&g.myUnit)
-		}
-		// _ = Dot(g.myUnit, u)
-	}
+	// for _, u := range g.units {
+	// 	if CollisionUnit(g.myUnit, u) {
+	// 		g.myUnit.Collision(&u)
+	// 		u.Collision(&g.myUnit)
+	// 	}
+	// 	// _ = Dot(g.myUnit, u)
+	// }
 
 	if ebiten.IsDrawingSkipped() {
 		return nil
@@ -127,10 +223,16 @@ func (g *Game) Update(r *ebiten.Image) error {
 
 	g.bg.Draw(r)
 	g.currentScene.Draw(r)
-	for _, u := range g.units {
-		u.Draw(r)
+
+	for _, team := range g.teams {
+		for _, u := range team.Units {
+			u.Draw(r)
+		}
 	}
-	g.myUnit.Draw(r)
+	// for _, u := range g.units {
+	// 	u.Draw(r)
+	// }
+	// g.myUnit.Draw(r)
 
 	ebitenutil.DebugPrint(r, dbg)
 	return nil
@@ -155,6 +257,9 @@ func captureUnit(unit Unit, units []Unit) {
 	c1 := unit.GetRader()
 	captured := []Unit{}
 	for _, u := range units {
+		if u.GetStatus() != 0 {
+			continue
+		}
 		x2, y2 := u.GetCenter()
 		e := u.GetEntity()
 
@@ -162,6 +267,7 @@ func captureUnit(unit Unit, units []Unit) {
 		if (dx*dx + dy*dy) <= dr*dr {
 			// レーダー捕捉
 			captured = append(captured, u)
+			// log.Printf("captured!!")
 		}
 	}
 	unit.SetCaptured(captured)
