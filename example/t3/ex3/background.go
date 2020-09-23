@@ -1,7 +1,10 @@
 package ex3
 
 import (
+	"fmt"
 	"image/color"
+	"math/rand"
+	"time"
 
 	"github.com/hajimehoshi/ebiten"
 )
@@ -10,14 +13,20 @@ type (
 	// BackGround ...
 	BackGround struct {
 		color color.Color
+		image ebiten.Image
 		size  Size
 	}
 )
 
 // NewBackGround ...
 func NewBackGround(s Size) (*BackGround, error) {
+	rand.Seed(time.Now().UnixNano()) //Seed
+
+	n := rand.Intn(3) + 1
+	eimg := getImage(fmt.Sprintf("bg-%d.jpg", n), s.Width, s.Height)
+
 	scene := &BackGround{
-		color: color.RGBA{37, 37, 37, 192},
+		image: *eimg,
 		size:  s,
 	}
 
@@ -31,7 +40,10 @@ func (s *BackGround) Update() error {
 
 // Draw ...
 func (s *BackGround) Draw(r *ebiten.Image) {
-	r.Fill(s.color)
+	op := &ebiten.DrawImageOptions{}
+	op.ColorM.Scale(0.5, 0.5, 0.5, 1.0)
+
+	r.DrawImage(&s.image, op)
 }
 
 // GetSize ...

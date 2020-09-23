@@ -33,8 +33,15 @@ type (
 )
 
 var (
-	label *LabelFace
+	fface10White *LabelFace
+	fface10Red   *LabelFace
 )
+
+func init() {
+	fface10White = NewLabelFace(10, color.White)
+	fface10Red = NewLabelFace(10, color.RGBA{255, 0, 0, 255})
+
+}
 
 // NewGame ...
 func NewGame(w, h int) (*Game, error) {
@@ -99,7 +106,6 @@ func NewGame(w, h int) (*Game, error) {
 
 	g.teams = teams
 
-	label = NewLabelFace(10, color.White)
 	// // Unit
 	// u, _ := NewMyUnit(g)
 	// g.myUnit = u
@@ -115,7 +121,7 @@ func (g *Game) Update(r *ebiten.Image) error {
 	const d = 16
 
 	sw, sh := r.Size()
-	dbg := fmt.Sprintf("screen size: %d, %d", sw, sh)
+	dbg := fmt.Sprintf("screen size: %d, %d\nFPS: %0.2f", sw, sh, ebiten.CurrentFPS())
 
 	// 停止、アクティブ実装
 	if inpututil.IsKeyJustPressed(ebiten.KeyUp) {
@@ -159,9 +165,6 @@ func (g *Game) Update(r *ebiten.Image) error {
 	}
 
 	if err := g.bg.Update(); err != nil {
-		return err
-	}
-	if err := g.currentScene.Update(); err != nil {
 		return err
 	}
 
@@ -217,12 +220,15 @@ func (g *Game) Update(r *ebiten.Image) error {
 	// 	// _ = Dot(g.myUnit, u)
 	// }
 
+	if err := g.currentScene.Update(); err != nil {
+		return err
+	}
+
 	if ebiten.IsDrawingSkipped() {
 		return nil
 	}
 
 	g.bg.Draw(r)
-	g.currentScene.Draw(r)
 
 	for _, team := range g.teams {
 		for _, u := range team.Units {
@@ -233,6 +239,8 @@ func (g *Game) Update(r *ebiten.Image) error {
 	// 	u.Draw(r)
 	// }
 	// g.myUnit.Draw(r)
+
+	g.currentScene.Draw(r)
 
 	ebitenutil.DebugPrint(r, dbg)
 	return nil

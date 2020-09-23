@@ -30,7 +30,7 @@ func main() {
 	// ebiten.SetWindowDecorated(false)
 	ebiten.SetScreenTransparent(true)
 
-	game, _ := ex3.NewGame(1280, 800)
+	game, _ := ex3.NewGame(1200, 900)
 	if err := ebiten.Run(game.Update, game.WindowSize.Width, game.WindowSize.Height, 1.0, "example.t3"); err != nil {
 		log.Fatal(err)
 	}

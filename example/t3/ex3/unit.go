@@ -12,8 +12,6 @@ import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/text"
-	"github.com/myanagisawa/ebitest/utils"
-	"golang.org/x/image/draw"
 )
 
 type (
@@ -75,7 +73,7 @@ func NewMyUnit(parent *Game) (Unit, error) {
 
 	r := 10
 	// ユニット画像読み込み
-	eimg := getImage("unit-1", r*2, r*2)
+	eimg := getImage("unit-1.png", r*2, r*2)
 	e := &Circle{r: r, image: *eimg}
 
 	unitImpl := &UnitImpl{
@@ -91,7 +89,7 @@ func NewMyUnit(parent *Game) (Unit, error) {
 
 	r = 300
 	// 索敵範囲画像読み込み
-	eimg = getImage("search-1", r*2, r*2)
+	eimg = getImage("search-1.png", r*2, r*2)
 
 	area := &Circle{r: r, image: *eimg}
 	unitImpl.rader = area
@@ -101,17 +99,16 @@ func NewMyUnit(parent *Game) (Unit, error) {
 
 // NewDamageLabel ...
 func NewDamageLabel(d int, e int) *DamageLabel {
-	var c color.Color
+	var ff *LabelFace
 	if d > 0 {
-		c = color.RGBA{255, 0, 0, 255}
+		ff = fface10Red
 	} else {
-		c = color.White
+		ff = fface10White
 	}
-	face := NewLabelFace(10, c)
 
 	return &DamageLabel{
 		label:  fmt.Sprintf("%d", d),
-		face:   face,
+		face:   ff,
 		count:  0,
 		erased: e,
 	}
@@ -140,7 +137,7 @@ func NewUnit(parent *Game, team, hp, r int, label string, x, y, angle, speed, ra
 	// log.Printf("rad=%f, deg=%d", rad, unitImpl.angle)
 
 	// ユニット画像読み込み
-	eimg := getImage(fmt.Sprintf("unit-%d", team), r*2, r*2)
+	eimg := getImage(fmt.Sprintf("unit-%d.png", team), r*2, r*2)
 	e := &Circle{r: r, image: *eimg}
 
 	unitImpl := &UnitImpl{
@@ -155,7 +152,7 @@ func NewUnit(parent *Game, team, hp, r int, label string, x, y, angle, speed, ra
 		parent: parent,
 	}
 	// 索敵範囲画像読み込み
-	eimg = getImage("search-1", rader*2, rader*2)
+	eimg = getImage("search-1.png", rader*2, rader*2)
 
 	area := &Circle{r: rader, image: *eimg}
 	unitImpl.rader = area
@@ -173,7 +170,7 @@ func NewDebris(speed int, parent *Game) (Unit, error) {
 	// 指定した円の画像を作成
 	// eimg := createCircleImage(r, color.RGBA{rd, gr, bl, 255}, color.RGBA{0, 0, 0, 255})
 	// e := &Circle{r: r, image: *eimg}
-	eimg := getImage("unit-3", r*2, r*2)
+	eimg := getImage("unit-3.png", r*2, r*2)
 	e := &Circle{r: r, image: *eimg}
 
 	x, y := float64(rand.Intn(parent.WindowSize.Width-e.r)), float64(rand.Intn(parent.WindowSize.Height-e.r))
@@ -346,7 +343,7 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 	}
 
 	rs := int(float64(s.hp) / float64(s.maxHp) * 100)
-	log.Printf("hp: %d / %d, rs=%d", s.hp, s.maxHp, rs)
+	// log.Printf("hp: %d / %d, rs=%d", s.hp, s.maxHp, rs)
 	if rs == 100 {
 		ebitenutil.DrawRect(r, x-float64(s.entity.r), y+float64(s.entity.r), float64(s.entity.r)*2, 5, color.RGBA{0, 255, 0, 255})
 	} else {
@@ -354,7 +351,7 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 		ebitenutil.DrawRect(r, x-float64(s.entity.r), y+float64(s.entity.r), w, 5, color.RGBA{0, 255, 0, 255})
 		ebitenutil.DrawRect(r, x-float64(s.entity.r)+w, y+float64(s.entity.r), (float64(s.entity.r)*2)-w, 5, color.RGBA{127, 127, 127, 127})
 	}
-	text.Draw(r, fmt.Sprintf("%s : %d", s.label, rs), label.uiFont, int(x)-10, int(y)-20, label.uiFontColor)
+	text.Draw(r, fmt.Sprintf("%s : %d", s.label, rs), fface10White.uiFont, int(x)-10, int(y)-20, fface10White.uiFontColor)
 
 	// ダメージ表示を描画
 	for _, info := range s.infoList {
@@ -438,7 +435,7 @@ func (s *UnitImpl) Belongs() int {
 
 // UpdateHP ...
 func (s *UnitImpl) UpdateHP(damage int) {
-	log.Printf("%s: damage: %d", s.label, damage)
+	// log.Printf("%s: damage: %d", s.label, damage)
 	s.infoList = append(s.infoList, NewDamageLabel(damage, 20))
 	if s.hp <= damage {
 		s.hp = 0
@@ -505,7 +502,7 @@ func (s *UnitImpl) Height() int {
 
 // dead ...
 func (s *UnitImpl) dead() {
-	eimg := getImage("unit-del", s.entity.r*2, s.entity.r*2)
+	eimg := getImage("unit-del.png", s.entity.r*2, s.entity.r*2)
 	s.entity.image = *eimg
 	s.rader = nil
 	s.captured = nil
@@ -553,30 +550,6 @@ func createCircleImage(r int, color1, color2 color.RGBA) *ebiten.Image {
 		}
 	}
 	eimg, err := ebiten.NewImageFromImage(m, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
-	return eimg
-}
-
-// getImage 指定した名称の画像を読み込みます(w, h: 縦横サイズ)
-func getImage(name string, w, h int) *ebiten.Image {
-	path := fmt.Sprintf("resources/system_images/%s.png", name)
-	img, err := utils.OrientationImage(path)
-	if err != nil {
-		panic(err)
-	}
-	// log.Printf("img.Bounds: %#v", img.Bounds())
-
-	// リサイズ
-	imgDst := image.NewRGBA(image.Rect(0, 0, w, h))
-	draw.CatmullRom.Scale(imgDst, imgDst.Bounds(), img, img.Bounds(), draw.Over, nil)
-
-	// img, err := utils.ScaleImage(img, w, h)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	eimg, err := ebiten.NewImageFromImage(imgDst, ebiten.FilterDefault)
 	if err != nil {
 		panic(err)
 	}

@@ -1,10 +1,14 @@
 package ex3
 
 import (
+	"fmt"
+	"image"
 	"image/color"
 
 	"github.com/golang/freetype/truetype"
 	"github.com/hajimehoshi/ebiten"
+	"github.com/myanagisawa/ebitest/utils"
+	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/goregular"
 )
@@ -117,4 +121,28 @@ func (l *Looper) Get() int {
 // R ...
 func (c *Circle) R() int {
 	return c.r
+}
+
+// getImage 指定した名称の画像を読み込みます(w, h: 縦横サイズ)
+func getImage(name string, w, h int) *ebiten.Image {
+	path := fmt.Sprintf("resources/system_images/%s", name)
+	img, err := utils.OrientationImage(path)
+	if err != nil {
+		panic(err)
+	}
+	// log.Printf("img.Bounds: %#v", img.Bounds())
+
+	// リサイズ
+	imgDst := image.NewRGBA(image.Rect(0, 0, w, h))
+	draw.CatmullRom.Scale(imgDst, imgDst.Bounds(), img, img.Bounds(), draw.Over, nil)
+
+	// img, err := utils.ScaleImage(img, w, h)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	eimg, err := ebiten.NewImageFromImage(imgDst, ebiten.FilterDefault)
+	if err != nil {
+		panic(err)
+	}
+	return eimg
 }
