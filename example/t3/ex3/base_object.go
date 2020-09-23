@@ -17,7 +17,7 @@ type (
 	// Circle ...
 	Circle struct {
 		r     int
-		image ebiten.Image
+		image *ebiten.Image
 	}
 
 	// Scene ...
@@ -141,6 +141,21 @@ func getImage(name string, w, h int) *ebiten.Image {
 	// 	panic(err)
 	// }
 	eimg, err := ebiten.NewImageFromImage(imgDst, ebiten.FilterDefault)
+	if err != nil {
+		panic(err)
+	}
+	return eimg
+}
+
+// getResource 指定した名称の画像を読み込みます(w, h: 縦横サイズ)
+func getResource(name string) *ebiten.Image {
+	path := fmt.Sprintf("resources/system_images/%s", name)
+	img, err := utils.OrientationImage(path)
+	if err != nil {
+		panic(err)
+	}
+
+	eimg, err := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 	if err != nil {
 		panic(err)
 	}

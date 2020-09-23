@@ -9,6 +9,7 @@ import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/myanagisawa/ebitest/utils"
 )
 
 type (
@@ -35,11 +36,33 @@ type (
 var (
 	fface10White *LabelFace
 	fface10Red   *LabelFace
+	images       map[string]*ebiten.Image
 )
 
 func init() {
 	fface10White = NewLabelFace(10, color.White)
 	fface10Red = NewLabelFace(10, color.RGBA{255, 0, 0, 255})
+
+	images = make(map[string]*ebiten.Image)
+	img, _ := utils.OrientationImage("resources/system_images/unit-0.png")
+	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	images["unit-0"] = eimg
+
+	img, _ = utils.OrientationImage("resources/system_images/unit-1.png")
+	eimg, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	images["unit-1"] = eimg
+
+	img, _ = utils.OrientationImage("resources/system_images/unit-2.png")
+	eimg, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	images["unit-2"] = eimg
+
+	img, _ = utils.OrientationImage("resources/system_images/unit-del.png")
+	eimg, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	images["unit-del"] = eimg
+
+	img, _ = utils.OrientationImage("resources/system_images/search-1.png")
+	eimg, _ = ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	images["search-1"] = eimg
 
 }
 
@@ -148,34 +171,11 @@ func (g *Game) Update(r *ebiten.Image) error {
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
 		fmt.Println("Game::C")
-		for i := 0; i < 10; i++ {
-			u, _ := NewDebris(0, g)
-			// 生成オブジェクトの衝突判定
-			col := false
-			for _, unit := range g.units {
-				if CollisionUnit(u, unit) {
-					col = true
-					break
-				}
-			}
-			if !col {
-				g.units = append(g.units, u)
-			}
-		}
 	}
 
 	if err := g.bg.Update(); err != nil {
 		return err
 	}
-
-	// if err := g.myUnit.Update(); err != nil {
-	// 	return err
-	// }
-	// for _, u := range g.units {
-	// 	if err := u.Update(); err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	for _, team := range g.teams {
 		for _, u := range team.Units {
@@ -208,18 +208,6 @@ func (g *Game) Update(r *ebiten.Image) error {
 		}
 	}
 
-	// ユニットのレーダー捕捉判定
-	// captureUnit(g.myUnit, g.units)
-
-	// ユニットの衝突判定
-	// for _, u := range g.units {
-	// 	if CollisionUnit(g.myUnit, u) {
-	// 		g.myUnit.Collision(&u)
-	// 		u.Collision(&g.myUnit)
-	// 	}
-	// 	// _ = Dot(g.myUnit, u)
-	// }
-
 	if err := g.currentScene.Update(); err != nil {
 		return err
 	}
@@ -235,10 +223,6 @@ func (g *Game) Update(r *ebiten.Image) error {
 			u.Draw(r)
 		}
 	}
-	// for _, u := range g.units {
-	// 	u.Draw(r)
-	// }
-	// g.myUnit.Draw(r)
 
 	g.currentScene.Draw(r)
 

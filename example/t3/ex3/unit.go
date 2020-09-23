@@ -62,41 +62,6 @@ var (
 	capturedLineCounter = 0
 )
 
-// NewMyUnit ...
-func NewMyUnit(parent *Game) (Unit, error) {
-	rand.Seed(time.Now().UnixNano()) //Seed
-	// mask画像読み込み
-	// mask, _ := utils.GetImageByPath("resources/system_images/mask.png")
-	// http://tech.nitoyon.com/ja/blog/2015/12/31/go-image-gen/
-	// 座標が円に入っているか
-	// http://imagawa.hatenadiary.jp/entry/2016/12/31/190000
-
-	r := 10
-	// ユニット画像読み込み
-	eimg := getImage("unit-1.png", r*2, r*2)
-	e := &Circle{r: r, image: *eimg}
-
-	unitImpl := &UnitImpl{
-		label:  "myUnit",
-		entity: e,
-		x:      float64(400),
-		y:      float64(400),
-		angle:  32,
-		speed:  3,
-		parent: parent,
-	}
-	// unitImpl.updatePoint()
-
-	r = 300
-	// 索敵範囲画像読み込み
-	eimg = getImage("search-1.png", r*2, r*2)
-
-	area := &Circle{r: r, image: *eimg}
-	unitImpl.rader = area
-
-	return unitImpl, nil
-}
-
 // NewDamageLabel ...
 func NewDamageLabel(d int, e int) *DamageLabel {
 	var ff *LabelFace
@@ -118,27 +83,10 @@ func NewDamageLabel(d int, e int) *DamageLabel {
 func NewUnit(parent *Game, team, hp, r int, label string, x, y, angle, speed, rader int) (Unit, error) {
 	rand.Seed(time.Now().UnixNano()) //Seed
 
-	// r := 50
-	// // ユニット画像読み込み
-	// eimg := getImage("unit-2", r*2, r*2)
-	// e := &Circle{r: r, image: *eimg}
-
-	// unitImpl := &UnitImpl{
-	// 	label:  "coin2",
-	// 	entity: e,
-	// 	x:      float64(600),
-	// 	y:      float64(200),
-	// 	angle:  270,
-	// 	speed:  1,
-	// 	parent: parent,
-	// }
-	// // unitImpl.updatePoint()
-	// rad := float64(unitImpl.angle) * (math.Pi / 180)
-	// log.Printf("rad=%f, deg=%d", rad, unitImpl.angle)
-
 	// ユニット画像読み込み
-	eimg := getImage(fmt.Sprintf("unit-%d.png", team), r*2, r*2)
-	e := &Circle{r: r, image: *eimg}
+	eimg := images[fmt.Sprintf("unit-%d", team)]
+	// eimg := getImage(fmt.Sprintf("unit-%d.png", team), r*2, r*2)
+	e := &Circle{r: r, image: eimg}
 
 	unitImpl := &UnitImpl{
 		label:  label,
@@ -152,48 +100,11 @@ func NewUnit(parent *Game, team, hp, r int, label string, x, y, angle, speed, ra
 		parent: parent,
 	}
 	// 索敵範囲画像読み込み
-	eimg = getImage("search-1.png", rader*2, rader*2)
+	// eimg = getImage("search-1.png", rader*2, rader*2)
+	eimg = images["search-1"]
 
-	area := &Circle{r: rader, image: *eimg}
+	area := &Circle{r: rader, image: eimg}
 	unitImpl.rader = area
-
-	return unitImpl, nil
-}
-
-// NewDebris ...
-func NewDebris(speed int, parent *Game) (Unit, error) {
-	rand.Seed(time.Now().UnixNano()) //Seed
-
-	// rd, gr, bl := uint8(rand.Intn(55)+200), uint8(rand.Intn(55)+200), uint8(rand.Intn(55)+200)
-
-	r := rand.Intn(80) + 20
-	// 指定した円の画像を作成
-	// eimg := createCircleImage(r, color.RGBA{rd, gr, bl, 255}, color.RGBA{0, 0, 0, 255})
-	// e := &Circle{r: r, image: *eimg}
-	eimg := getImage("unit-3.png", r*2, r*2)
-	e := &Circle{r: r, image: *eimg}
-
-	x, y := float64(rand.Intn(parent.WindowSize.Width-e.r)), float64(rand.Intn(parent.WindowSize.Height-e.r))
-	if int(x) < e.r {
-		x = float64(e.r)
-	}
-	if int(y) < e.r {
-		y = float64(e.r)
-	}
-
-	// ebitenのrotateとtranslateはy軸0が最上段なので注意
-	a := rand.Intn(maxAngle)
-	log.Printf("angle: %d, speed: %d", a, speed)
-
-	unitImpl := &UnitImpl{
-		entity: e,
-		angle:  a,
-		x:      x,
-		y:      y,
-		speed:  speed,
-		parent: parent,
-	}
-	// unitImpl.updatePoint()
 
 	return unitImpl, nil
 }
@@ -298,12 +209,14 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 	// 描画オプション: 中心基準に移動、中心座標で回転
 	w, h := s.entity.image.Size()
 	x, y := s.GetCenter()
-	op := defaultDrawOption(x, y, w, h, s.angle)
+	scale := float64(s.entity.r*2) / 100
+	// log.Printf("%0.2f", scale)
+	op := defaultDrawOption(x, y, float64(w), float64(h), float64(s.angle), scale)
 	if s.status == -1 {
 		// 行動不能
 		op.ColorM.Scale(1.0, 1.0, 1.0, 0.5)
 	}
-	r.DrawImage(&s.entity.image, op)
+	r.DrawImage(s.entity.image, op)
 
 	if s.captured != nil {
 		// draw line
@@ -371,13 +284,15 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 }
 
 // defaultDrawOption デフォルト描画オプション
-func defaultDrawOption(x, y float64, w, h, a int) *ebiten.DrawImageOptions {
+func defaultDrawOption(x, y, w, h, a, s float64) *ebiten.DrawImageOptions {
 	// 描画オプション: 中心基準に移動、中心座標で回転
 	op := &ebiten.DrawImageOptions{}
 	// 描画位置指定
 	op.GeoM.Reset()
 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
 	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	// サイズを変更
+	op.GeoM.Scale(s, s)
 	// 中心を軸に回転
 	op.GeoM.Rotate(-2 * math.Pi * float64(a) / float64(maxAngle))
 	// ユニットの座標に移動
@@ -390,23 +305,24 @@ func drawRader(s *UnitImpl, r *ebiten.Image) {
 	// 描画オプション: 中心基準に移動、中心座標で回転
 	w, h := s.rader.image.Size()
 	x, y := s.GetCenter()
-	op := defaultDrawOption(x, y, w, h, s.angle)
+	scale := float64(s.rader.r*2) / 100
+	op := defaultDrawOption(x, y, float64(w), float64(h), float64(s.angle), scale)
 
 	op.ColorM.Scale(1.0, 1.0, 1.0, 0.1)
-	r.DrawImage(&s.rader.image, op)
+	r.DrawImage(s.rader.image, op)
 }
 
-func drawUnitCircle(s *UnitImpl, r *ebiten.Image) {
-	// 指定した円の画像を作成
-	eimg := createCircleImage(s.entity.r, color.RGBA{4, 124, 208, 128}, color.RGBA{143, 215, 212, 128})
+// func drawUnitCircle(s *UnitImpl, r *ebiten.Image) {
+// 	// 指定した円の画像を作成
+// 	eimg := createCircleImage(s.entity.r, color.RGBA{4, 124, 208, 128}, color.RGBA{143, 215, 212, 128})
 
-	// 描画オプション: 中心基準に移動、中心座標で回転
-	w, h := eimg.Size()
-	x, y := s.GetCenter()
-	op := defaultDrawOption(x, y, w, h, s.angle)
+// 	// 描画オプション: 中心基準に移動、中心座標で回転
+// 	w, h := eimg.Size()
+// 	x, y := s.GetCenter()
+// 	op := defaultDrawOption(x, y, w, h, s.angle)
 
-	r.DrawImage(eimg, op)
-}
+// 	r.DrawImage(eimg, op)
+// }
 
 // GetSize unitのサイズを返します
 func (s *UnitImpl) GetSize() (int, int) {
@@ -502,8 +418,8 @@ func (s *UnitImpl) Height() int {
 
 // dead ...
 func (s *UnitImpl) dead() {
-	eimg := getImage("unit-del.png", s.entity.r*2, s.entity.r*2)
-	s.entity.image = *eimg
+	eimg := images["unit-del"]
+	s.entity.image = eimg
 	s.rader = nil
 	s.captured = nil
 	s.collision = nil
