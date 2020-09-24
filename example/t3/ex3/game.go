@@ -29,12 +29,16 @@ type (
 var (
 	fface10White *LabelFace
 	fface10Red   *LabelFace
+	fface10Green *LabelFace
 	images       map[string]image.Image
+
+	paused = false
 )
 
 func init() {
 	fface10White = NewLabelFace(10, color.White)
 	fface10Red = NewLabelFace(10, color.RGBA{255, 0, 0, 255})
+	fface10Green = NewLabelFace(10, color.RGBA{0, 255, 0, 255})
 
 	images = make(map[string]image.Image)
 	img, _ := utils.OrientationImage("resources/system_images/unit-0.png")
@@ -161,8 +165,15 @@ func (g *Game) Update(r *ebiten.Image) error {
 		fmt.Println("Game::C")
 	}
 
-	if err := g.currentScene.Update(); err != nil {
-		return err
+	if inpututil.IsKeyJustPressed(ebiten.KeyP) {
+		fmt.Println("Game::P")
+		paused = !paused
+	}
+
+	if !paused {
+		if err := g.currentScene.Update(); err != nil {
+			return err
+		}
 	}
 
 	if ebiten.IsDrawingSkipped() {
@@ -171,6 +182,9 @@ func (g *Game) Update(r *ebiten.Image) error {
 
 	g.currentScene.Draw(r)
 
+	if paused {
+		dbg += "\nPause"
+	}
 	ebitenutil.DebugPrint(r, dbg)
 	return nil
 }

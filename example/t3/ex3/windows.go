@@ -6,6 +6,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/text"
 )
 
@@ -50,13 +51,12 @@ func NewInfoScene(units []Unit) *InfoScene {
 // Update ...
 func (s *InfoScene) Update() error {
 
-	//log.Printf("BattleScene.Update")
-
 	return nil
 }
 
 // Draw ...
 func (s *InfoScene) Draw(r *ebiten.Image) {
+	mx, my := ebiten.CursorPosition()
 
 	eimg, _ := ebiten.NewImageFromImage(winImg, ebiten.FilterDefault)
 	for i := 0; i < rownum; i++ {
@@ -98,10 +98,32 @@ func (s *InfoScene) Draw(r *ebiten.Image) {
 		colmargin += 100
 		text.Draw(eimg, fmt.Sprintf("%d / %d", unit.HP, unit.MaxHP), fface.uiFont, int(colmargin), int(y)+adjust, fface.uiFontColor)
 
+		// カーソル行判定
+		unit.SetFocus(false)
+		if my >= int(y+posY) && my <= int(y+posY+rowHeight) {
+			if mx >= int(posX+margin) && mx <= int(posX+rowWidth) {
+				// 現在行の上にマウスカーソルがある場合は、行をハイライト
+				ebitenutil.DrawRect(eimg, margin, y, rowWidth, rowHeight, color.RGBA{255, 255, 255, 32})
+				unit.SetFocus(true)
+			}
+		}
 	}
 
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(posX, posY)
+
+	// log.Printf("mouse: pos: x=%d, y=%d, isFocused=%v", mx, my, ebiten.IsFocused())
+	// log.Printf("winWidth=%0.2f, posX=%0.2f, winHeight=%0.2f, posY=%0.2f, ", winWidth, posX, winHeight, posY)
+	f := false
+	if mx <= int(winWidth+posX) && my <= int(winHeight+posY) {
+		if mx >= int(posX) && my >= int(posY) {
+			// log.Printf("mouse onto window")
+			f = true
+		}
+	}
+	if !f {
+		op.ColorM.Scale(0.5, 0.5, 0.5, 1.0)
+	}
 
 	r.DrawImage(eimg, op)
 

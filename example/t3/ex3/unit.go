@@ -26,6 +26,7 @@ type (
 		GetRader() *Circle
 		SetCaptured(units []Unit)
 		GetStatus() int
+		SetFocus(b bool)
 	}
 
 	// UnitImpl ...
@@ -46,6 +47,7 @@ type (
 		parent    *Scene
 		status    int
 		infoList  []*DamageLabel
+		focused   bool
 	}
 
 	// DamageLabel ...
@@ -158,6 +160,11 @@ func (s *UnitImpl) Update() error {
 			dist = d
 		}
 	}
+	if capturedLineCounter == 10 {
+		capturedLineCounter = -10
+	} else {
+		capturedLineCounter++
+	}
 	// log.Printf("locled=%d", s.locked.GetEntity().r)
 
 	if s.locked != nil {
@@ -241,11 +248,6 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 			// log.Printf("[%s] degree=%f", s.label, d)
 		}
 		s.captured = nil
-		if capturedLineCounter == 10 {
-			capturedLineCounter = -10
-		} else {
-			capturedLineCounter++
-		}
 	}
 
 	// 索敵範囲を描画
@@ -262,7 +264,11 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 		ebitenutil.DrawRect(r, x-float64(s.entity.r), y+float64(s.entity.r), w, 5, color.RGBA{0, 255, 0, 255})
 		ebitenutil.DrawRect(r, x-float64(s.entity.r)+w, y+float64(s.entity.r), (float64(s.entity.r)*2)-w, 5, color.RGBA{127, 127, 127, 127})
 	}
-	text.Draw(r, fmt.Sprintf("%s : %d", s.Label, rs), fface10White.uiFont, int(x)-10, int(y)-20, fface10White.uiFontColor)
+	ff := fface10White
+	if s.focused {
+		ff = fface10Green
+	}
+	text.Draw(r, s.Label, ff.uiFont, int(x)-10, int(y)-20, ff.uiFontColor)
 
 	// ダメージ表示を描画
 	for _, info := range s.infoList {
@@ -359,6 +365,11 @@ func (s *UnitImpl) UpdateHP(damage int) {
 // GetStatus ...
 func (s *UnitImpl) GetStatus() int {
 	return s.status
+}
+
+// SetFocus ...
+func (s *UnitImpl) SetFocus(b bool) {
+	s.focused = b
 }
 
 // Collision ...
