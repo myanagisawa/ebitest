@@ -30,9 +30,9 @@ type (
 
 	// UnitImpl ...
 	UnitImpl struct {
-		label     string
-		hp        int
-		maxHp     int
+		Label     string
+		HP        int
+		MaxHP     int
 		belongs   int
 		entity    *Circle
 		x         float64
@@ -43,7 +43,7 @@ type (
 		captured  []Unit
 		locked    Unit
 		rader     *Circle
-		parent    *Game
+		parent    *Scene
 		status    int
 		infoList  []*DamageLabel
 	}
@@ -80,29 +80,29 @@ func NewDamageLabel(d int, e int) *DamageLabel {
 }
 
 // NewUnit ...
-func NewUnit(parent *Game, team, hp, r int, label string, x, y, angle, speed, rader int) (Unit, error) {
+func NewUnit(parent Scene, team, hp, r int, label string, x, y, angle, speed, rader int) (Unit, error) {
 	rand.Seed(time.Now().UnixNano()) //Seed
 
 	// ユニット画像読み込み
-	eimg := images[fmt.Sprintf("unit-%d", team)]
-	// eimg := getImage(fmt.Sprintf("unit-%d.png", team), r*2, r*2)
+	img := images[fmt.Sprintf("unit-%d", team)]
+	eimg, _ := ebiten.NewImageFromImage(ResizeImage(img, r*2, r*2), ebiten.FilterDefault)
 	e := &Circle{r: r, image: eimg}
 
 	unitImpl := &UnitImpl{
-		label:  label,
-		hp:     hp,
-		maxHp:  hp,
+		Label:  label,
+		HP:     hp,
+		MaxHP:  hp,
 		entity: e,
 		x:      float64(x),
 		y:      float64(y),
 		angle:  angle,
 		speed:  speed,
-		parent: parent,
+		parent: &parent,
 	}
 	// 索敵範囲画像読み込み
 	// eimg = getImage("search-1.png", rader*2, rader*2)
-	eimg = images["search-1"]
-
+	img = images["search-1"]
+	eimg, _ = ebiten.NewImageFromImage(ResizeImage(img, rader*2, rader*2), ebiten.FilterDefault)
 	area := &Circle{r: rader, image: eimg}
 	unitImpl.rader = area
 
@@ -119,12 +119,11 @@ func (s *UnitImpl) Update() error {
 	s.x += vx
 	s.y -= vy
 
-	w := s.parent.WindowSize.Width
+	w, h := (*s.parent).GetSize()
 	if s.Left() < 0 || w <= s.Right() {
 		s.angle = 180 - s.angle
 		// s.updatePoint()
 	}
-	h := s.parent.WindowSize.Height
 	if s.Top() < 0 || h <= s.Bottom() {
 		s.angle = 360 - s.angle
 		// s.updatePoint()
@@ -209,12 +208,11 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 	// 描画オプション: 中心基準に移動、中心座標で回転
 	w, h := s.entity.image.Size()
 	x, y := s.GetCenter()
-	scale := float64(s.entity.r*2) / 100
 	// log.Printf("%0.2f", scale)
-	op := defaultDrawOption(x, y, float64(w), float64(h), float64(s.angle), scale)
+	op := defaultDrawOption(x, y, float64(w), float64(h), float64(s.angle))
 	if s.status == -1 {
 		// 行動不能
-		op.ColorM.Scale(1.0, 1.0, 1.0, 0.5)
+		op.ColorM.Scale(0.5, 0.5, 0.5, 0.5)
 	}
 	r.DrawImage(s.entity.image, op)
 
@@ -255,7 +253,7 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 		drawRader(s, r)
 	}
 
-	rs := int(float64(s.hp) / float64(s.maxHp) * 100)
+	rs := int(float64(s.HP) / float64(s.MaxHP) * 100)
 	// log.Printf("hp: %d / %d, rs=%d", s.hp, s.maxHp, rs)
 	if rs == 100 {
 		ebitenutil.DrawRect(r, x-float64(s.entity.r), y+float64(s.entity.r), float64(s.entity.r)*2, 5, color.RGBA{0, 255, 0, 255})
@@ -264,7 +262,7 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 		ebitenutil.DrawRect(r, x-float64(s.entity.r), y+float64(s.entity.r), w, 5, color.RGBA{0, 255, 0, 255})
 		ebitenutil.DrawRect(r, x-float64(s.entity.r)+w, y+float64(s.entity.r), (float64(s.entity.r)*2)-w, 5, color.RGBA{127, 127, 127, 127})
 	}
-	text.Draw(r, fmt.Sprintf("%s : %d", s.label, rs), fface10White.uiFont, int(x)-10, int(y)-20, fface10White.uiFontColor)
+	text.Draw(r, fmt.Sprintf("%s : %d", s.Label, rs), fface10White.uiFont, int(x)-10, int(y)-20, fface10White.uiFontColor)
 
 	// ダメージ表示を描画
 	for _, info := range s.infoList {
@@ -284,15 +282,13 @@ func (s *UnitImpl) Draw(r *ebiten.Image) {
 }
 
 // defaultDrawOption デフォルト描画オプション
-func defaultDrawOption(x, y, w, h, a, s float64) *ebiten.DrawImageOptions {
+func defaultDrawOption(x, y, w, h, a float64) *ebiten.DrawImageOptions {
 	// 描画オプション: 中心基準に移動、中心座標で回転
 	op := &ebiten.DrawImageOptions{}
 	// 描画位置指定
 	op.GeoM.Reset()
 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
 	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
-	// サイズを変更
-	op.GeoM.Scale(s, s)
 	// 中心を軸に回転
 	op.GeoM.Rotate(-2 * math.Pi * float64(a) / float64(maxAngle))
 	// ユニットの座標に移動
@@ -305,8 +301,7 @@ func drawRader(s *UnitImpl, r *ebiten.Image) {
 	// 描画オプション: 中心基準に移動、中心座標で回転
 	w, h := s.rader.image.Size()
 	x, y := s.GetCenter()
-	scale := float64(s.rader.r*2) / 100
-	op := defaultDrawOption(x, y, float64(w), float64(h), float64(s.angle), scale)
+	op := defaultDrawOption(x, y, float64(w), float64(h), float64(s.angle))
 
 	op.ColorM.Scale(1.0, 1.0, 1.0, 0.1)
 	r.DrawImage(s.rader.image, op)
@@ -353,11 +348,11 @@ func (s *UnitImpl) Belongs() int {
 func (s *UnitImpl) UpdateHP(damage int) {
 	// log.Printf("%s: damage: %d", s.label, damage)
 	s.infoList = append(s.infoList, NewDamageLabel(damage, 20))
-	if s.hp <= damage {
-		s.hp = 0
+	if s.HP <= damage {
+		s.HP = 0
 		s.dead()
 	} else {
-		s.hp -= damage
+		s.HP -= damage
 	}
 }
 
@@ -418,13 +413,11 @@ func (s *UnitImpl) Height() int {
 
 // dead ...
 func (s *UnitImpl) dead() {
-	eimg := images["unit-del"]
-	s.entity.image = eimg
 	s.rader = nil
 	s.captured = nil
 	s.collision = nil
 	s.status = -1
-	log.Printf("%s: 行動不能", s.label)
+	log.Printf("%s: 行動不能", s.Label)
 }
 
 func getMoveAmount(angle, speed int) (vx, vy float64) {

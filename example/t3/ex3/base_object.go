@@ -147,6 +147,14 @@ func getImage(name string, w, h int) *ebiten.Image {
 	return eimg
 }
 
+// ResizeImage ...
+func ResizeImage(img image.Image, w, h int) image.Image {
+	// リサイズ
+	imgDst := image.NewRGBA(image.Rect(0, 0, w, h))
+	draw.CatmullRom.Scale(imgDst, imgDst.Bounds(), img, img.Bounds(), draw.Over, nil)
+	return imgDst
+}
+
 // getResource 指定した名称の画像を読み込みます(w, h: 縦横サイズ)
 func getResource(name string) *ebiten.Image {
 	path := fmt.Sprintf("resources/system_images/%s", name)

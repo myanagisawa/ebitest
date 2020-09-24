@@ -1,78 +1,130 @@
 package ex3
 
 import (
-	"fmt"
-	"image"
-	"image/color"
-
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/text"
 )
 
 type (
 	// BattleScene ...
 	BattleScene struct {
-		size Size
+		bg      Scene
+		size    Size
+		teams   []*Team
+		windows []Scene
 	}
-)
 
-var (
-	posX, posY = 5.0, 35.0
-	winWidth   = 400.0
-	margin     = 3.0
-	rowWidth   = winWidth - (margin * 2)
-	rowHeight  = 30.0
-
-	rownum    = 10
-	winHeight = (rowHeight * float64(rownum)) + (margin * float64(rownum+1))
-
-	winImg *ebiten.Image
-	rowImg *ebiten.Image
-
-	textAdjust int
+	// Team ...
+	Team struct {
+		No        int
+		Units     []Unit
+		Enemies   []*Team
+		Alliances []*Team
+		Location  *Point
+		Parent    Scene
+		IsAllies  bool
+	}
 )
 
 // NewBattleScene ...
 func NewBattleScene(s Size) *BattleScene {
-	winImg = createRectImage(int(winWidth), int(winHeight), color.RGBA{0, 0, 0, 64})
-	rowImg = createRectImage(int(rowWidth), int(rowHeight), color.RGBA{50, 50, 50, 64})
 
-	textAdjust = int(rowHeight / 2)
-	scene := &BattleScene{
+	backGround, _ := NewBackGround(s)
+	bs := &BattleScene{
+		bg:   backGround,
 		size: s,
 	}
-	return scene
+
+	return bs
+}
+
+// AddTeam ...
+func (s *BattleScene) AddTeam(loc *Point, isAllies bool) *Team {
+	t := &Team{No: len(s.teams), Location: loc, Parent: s, IsAllies: isAllies}
+	s.teams = append(s.teams, t)
+	return s.teams[len(s.teams)-1]
+}
+
+// InitWindows ...
+func (s *BattleScene) InitWindows() {
+	var units []Unit
+	for _, team := range s.teams {
+		units = append(units, team.Units...)
+	}
+	is1 := NewInfoScene(units)
+	s.windows = append(s.windows, is1)
+
 }
 
 // Update ...
 func (s *BattleScene) Update() error {
 
-	//log.Printf("BattleScene.Update")
+	if err := s.bg.Update(); err != nil {
+		return err
+	}
+
+	// 各unitのレーダーと衝突判定処理
+	for _, team := range s.teams {
+		for _, u := range team.Units {
+			if u.GetStatus() != 0 {
+				continue
+			}
+			// ユニットのレーダー捕捉判定
+			u.SetCaptured(nil)
+			for _, et := range team.Enemies {
+				// log.Printf("et: %d, %v", et.No, et.Units)
+				captureUnit(u, et.Units)
+			}
+
+			// ユニットの衝突判定
+			for _, et := range team.Enemies {
+				for _, eu := range et.Units {
+					if eu.GetStatus() != 0 {
+						continue
+					}
+					// log.Printf("Collision")
+					if CollisionUnit(u, eu) {
+						u.Collision(&eu)
+					}
+				}
+			}
+		}
+	}
+
+	// 各unitのupdate処理
+	for _, team := range s.teams {
+		for _, u := range team.Units {
+			if u.GetStatus() != 0 {
+				continue
+			}
+			if err := u.Update(); err != nil {
+				return err
+			}
+		}
+	}
+
+	// 各windowのupdate処理
+	for _, w := range s.windows {
+		if err := w.Update(); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
 
 // Draw ...
 func (s *BattleScene) Draw(r *ebiten.Image) {
-	for i := 0; i < rownum; i++ {
-		n := float64(i)
-		y := (margin * (n + 1)) + (rowHeight * n)
+	s.bg.Draw(r)
 
-		text.Draw(winImg, fmt.Sprintf("%d", i), fface10White.uiFont, int(margin), int(y)+textAdjust, fface10White.uiFontColor)
+	for _, team := range s.teams {
+		for _, u := range team.Units {
+			u.Draw(r)
+		}
 	}
 
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(posX, posY)
-
-	r.DrawImage(winImg, op)
-
-	// ebitenutil.DrawRect(r, posX, posY, winWidth, winHeight, color.RGBA{0, 0, 0, 64})
-
-	// for i := 0; i < 10; i++ {
-	// 	n := float64(i)
-	// 	y := posY + (margin * (n + 1)) + (rowHeight * n)
-	// 	ebitenutil.DrawRect(r, posX+margin, y, rowWidth, rowHeight, color.RGBA{50, 50, 50, 64})
-	// }
+	for _, w := range s.windows {
+		w.Draw(r)
+	}
 }
 
 // GetSize ...
@@ -80,19 +132,37 @@ func (s *BattleScene) GetSize() (int, int) {
 	return s.size.Width, s.size.Height
 }
 
-// createCircleImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
-func createRectImage(w, h int, color color.RGBA) *ebiten.Image {
-	m := image.NewRGBA(image.Rect(0, 0, w, h))
-	// 横ループ、半径*2＝直径まで
-	for x := 0; x < w; x++ {
-		// 縦ループ、半径*2＝直径まで
-		for y := 0; y < h; y++ {
-			m.Set(x, y, color)
+// CollisionUnit unit同士の衝突状態を返す
+func CollisionUnit(unit1, unit2 Unit) bool {
+	x1, y1 := unit1.GetCenter()
+	x2, y2 := unit2.GetCenter()
+	e1, e2 := unit1.GetEntity(), unit2.GetEntity()
+	// (xc1-xc2)^2 + (yc1-yc2)^2 ≦ (r1+r2)^2
+	var dx, dy, dr float64 = float64(x1 - x2), float64(y1 - y2), float64(e1.R() + e2.R())
+	if (dx*dx + dy*dy) <= dr*dr {
+		return true
+	}
+	return false
+}
+
+// captureUnit unitの索敵範囲に入ったunitsを取得する
+func captureUnit(unit Unit, units []Unit) {
+	x1, y1 := unit.GetCenter()
+	c1 := unit.GetRader()
+	captured := []Unit{}
+	for _, u := range units {
+		if u.GetStatus() != 0 {
+			continue
+		}
+		x2, y2 := u.GetCenter()
+		e := u.GetEntity()
+
+		var dx, dy, dr float64 = float64(x1 - x2), float64(y1 - y2), float64(c1.R() + e.R())
+		if (dx*dx + dy*dy) <= dr*dr {
+			// レーダー捕捉
+			captured = append(captured, u)
+			// log.Printf("captured!!")
 		}
 	}
-	eimg, err := ebiten.NewImageFromImage(m, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
-	return eimg
+	unit.SetCaptured(captured)
 }
