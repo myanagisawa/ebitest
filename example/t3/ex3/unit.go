@@ -195,7 +195,42 @@ func (s *UnitImpl) Update() error {
 				}
 			}
 		}
+	} else {
+		// ロックオン対象がなければpinに向かう
+		if s.belongs == 0 {
+			if len(pins) > 0 {
+				pin := pins[0]
+				//自機と対象の角度を算出
+				x1, y1 := s.GetCenter()
+				x2, y2 := float64(pin.point.X), float64(pin.point.Y)
+				dx, dy := x2-x1, -(y2 - y1) // 画面の上側をY座標＋とするので、Y座標は符号を入れ替える
+				// radianを取得
+				n := math.Atan2(dy, dx)
+				// radian ->degreeに変換
+				d := n * 180 / math.Pi
+				if s.angle != int(d) {
+					// 自機の向きを更新
+					// log.Printf("[%s] angle=%d, d=%d, rad=%f", s.label, s.angle, int(d), n)
+					if s.angle > int(d) {
+						if s.angle-5 < int(d) {
+							s.angle = int(d)
+						} else {
+							s.angle -= 7
+						}
+					} else if s.angle < int(d) {
+						if s.angle+5 < int(d) {
+							s.angle = int(d)
+						} else {
+							s.angle += 7
+						}
+					}
+				}
+
+			}
+		}
 	}
+
+	//
 
 	// log.Printf("updated unit: %s", s.label)
 	return nil

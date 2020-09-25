@@ -14,6 +14,12 @@ import (
 )
 
 type (
+	// Pin ...
+	Pin struct {
+		point *Point
+		image *ebiten.Image
+	}
+
 	// Circle ...
 	Circle struct {
 		r     int

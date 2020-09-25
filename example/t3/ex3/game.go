@@ -56,6 +56,8 @@ func init() {
 	img, _ = utils.OrientationImage("resources/system_images/search-1.png")
 	images["search-1"] = img
 
+	img, _ = utils.OrientationImage("resources/system_images/pin.png")
+	images["pin"] = img
 }
 
 // NewGame ...

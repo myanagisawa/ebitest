@@ -1,7 +1,10 @@
 package ex3
 
 import (
+	"log"
+
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
 type (
@@ -23,6 +26,10 @@ type (
 		Parent    Scene
 		IsAllies  bool
 	}
+)
+
+var (
+	pins []*Pin
 )
 
 // NewBattleScene ...
@@ -57,6 +64,16 @@ func (s *BattleScene) InitWindows() {
 
 // Update ...
 func (s *BattleScene) Update() error {
+
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+		x, y := ebiten.CursorPosition()
+		log.Printf("Clicked: %d, %d", x, y)
+
+		img := images["pin"]
+		eimg, _ := ebiten.NewImageFromImage(ResizeImage(img, 9, 25), ebiten.FilterDefault)
+		pin := &Pin{&Point{x, y}, eimg}
+		pins = append(pins, pin)
+	}
 
 	if err := s.bg.Update(); err != nil {
 		return err
@@ -122,9 +139,28 @@ func (s *BattleScene) Draw(r *ebiten.Image) {
 		}
 	}
 
+	for _, pin := range pins {
+		pin.Draw(r)
+	}
+
 	for _, w := range s.windows {
 		w.Draw(r)
 	}
+}
+
+// Draw ...
+func (p *Pin) Draw(r *ebiten.Image) {
+	w, h := p.image.Size()
+	// 描画オプション: 中心基準に移動、中心座標で回転
+	op := &ebiten.DrawImageOptions{}
+	// 描画位置指定
+	op.GeoM.Reset()
+	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
+	op.GeoM.Translate(-float64(w), -float64(h))
+	// ユニットの座標に移動
+	op.GeoM.Translate(float64(p.point.X), float64(p.point.Y))
+
+	r.DrawImage(p.image, op)
 }
 
 // GetSize ...
