@@ -186,3 +186,18 @@ func fontload(fname string) []byte {
 
 	return bytes
 }
+
+// SetTextToCenter dstの中心にtextを配置します
+func SetTextToCenter(text string, src draw.Image, face font.Face, c color.Color) *draw.Image {
+	out := image.NewRGBA(src.Bounds())
+	draw.Copy(out, image.Point{}, src, src.Bounds(), draw.Src, nil)
+	d := &font.Drawer{
+		Dst:  out,
+		Src:  image.NewUniform(c),
+		Face: face,
+	}
+	d.Dot.X = (fixed.I(out.Bounds().Max.X) - d.MeasureString(text)) / 2
+	d.Dot.Y = fixed.I((out.Bounds().Max.Y + face.Metrics().Height.Ceil()) / 2)
+	d.DrawString(text)
+	return &d.Dst
+}
