@@ -12,62 +12,54 @@ import (
 // Map ...
 type Map struct {
 	LayerBase
-	controls map[UIController]struct{}
-	strokes  map[*Stroke]struct{}
+	strokes map[*Stroke]struct{}
 }
 
 // NewBattleMap ...
-func NewBattleMap(parent *BattleScene) *Map {
+func NewBattleMap(parent Scene) *Map {
 	eimg, _ := ebiten.NewImageFromImage(images["bgImage"], ebiten.FilterDefault)
 
 	l := &Map{
 		LayerBase: LayerBase{
-			label:   "map",
-			bg:      eimg,
-			x:       0,
-			y:       0,
-			scale:   1.0,
-			parent:  parent,
-			isModal: false,
+			label:    "map",
+			bg:       eimg,
+			x:        0,
+			y:        0,
+			scale:    1.0,
+			parent:   parent,
+			isModal:  false,
+			controls: map[UIController]struct{}{},
 		},
-		controls: map[UIController]struct{}{},
-		strokes:  map[*Stroke]struct{}{},
+		strokes: map[*Stroke]struct{}{},
 	}
 	l.translateX = float64(l.x)
 	l.translateY = float64(l.y)
 
-	c := NewButton("Return to menu", images["btnBase"], fonts["btnFont"], color.Black, 100, 200)
+	c := NewButton("Return to menu", images["btnBase"], fonts["btnFont"], color.Black, 100, 50)
 	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
 		log.Printf("btnRtn clicked")
-		s := source.scene.(*BattleScene)
-		s.manager.TransitionToMainMenu()
+		source.scene.Manager().TransitionToMainMenu()
 	})
 	l.controls[c] = struct{}{}
 
-	c = NewButton("Scale to 1.5", images["btnBaseHover"], fonts["btnFont"], color.White, 100, 300)
+	c = NewButton("Scale to 1.5", images["btnBaseHover"], fonts["btnFont"], color.White, 350, 50)
 	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
 		log.Printf("btnRtn clicked")
-		s := source.scene.(*BattleScene)
-		m := s.layers[0].(*Map)
-		m.ScaleTo(1.5)
+		source.scene.ActiveLayer().ScaleTo(1.5)
 	})
 	l.controls[c] = struct{}{}
 
-	c = NewButton("Scale to 1.0", images["btnBaseHover"], fonts["btnFont"], color.White, 100, 400)
+	c = NewButton("Scale to 1.0", images["btnBaseHover"], fonts["btnFont"], color.White, 600, 50)
 	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
 		log.Printf("btnRtn clicked")
-		s := source.scene.(*BattleScene)
-		m := s.layers[0].(*Map)
-		m.ScaleTo(1.0)
+		source.scene.ActiveLayer().ScaleTo(1.0)
 	})
 	l.controls[c] = struct{}{}
 
-	c = NewButton("Scale to 0.5", images["btnBaseHover"], fonts["btnFont"], color.White, 100, 500)
+	c = NewButton("Scale to 0.5", images["btnBaseHover"], fonts["btnFont"], color.White, 850, 50)
 	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
 		log.Printf("btnRtn clicked")
-		s := source.scene.(*BattleScene)
-		m := s.layers[0].(*Map)
-		m.ScaleTo(0.5)
+		source.scene.ActiveLayer().ScaleTo(0.5)
 	})
 	l.controls[c] = struct{}{}
 
@@ -122,7 +114,7 @@ func (m *Map) BgMoveBy(x, y int) {
 
 // Update ...
 func (m *Map) Update(screen *ebiten.Image) error {
-	if m.parent.activeLayer == m {
+	if m.parent.ActiveLayer() == m {
 		x, y := m.LocalPosition(ebiten.CursorPosition())
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 			stroke := NewStroke(&MouseStrokeSource{})

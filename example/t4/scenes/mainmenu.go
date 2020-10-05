@@ -11,8 +11,7 @@ import (
 type (
 	// MainMenu ...
 	MainMenu struct {
-		manager      *GameManager
-		eventHandler *EventHandler
+		SceneBase
 	}
 )
 
@@ -24,18 +23,22 @@ var (
 func NewMainMenu(m *GameManager) *MainMenu {
 
 	s := &MainMenu{
-		manager: m,
-		eventHandler: &EventHandler{
-			events: map[string]map[*Event]struct{}{},
+		SceneBase: SceneBase{
+			manager: m,
+			eventHandler: &EventHandler{
+				events: map[string]map[*Event]struct{}{},
+			},
 		},
 	}
+
+	l := NewLayerBase(s)
+	s.SetLayer(l)
 
 	c := NewButton("Battle(dev)", images["btnBase"], fonts["btnFont"], color.Black, 100, 200)
 
 	c.AddEventListener(s, "click", func(target UIController, source *EventSource) {
 		log.Printf("btnBattle clicked")
-		s := source.scene.(*MainMenu)
-		s.manager.TransitionToBattleScene()
+		source.scene.Manager().TransitionToBattleScene()
 	})
 
 	btnBattle = c
@@ -43,26 +46,20 @@ func NewMainMenu(m *GameManager) *MainMenu {
 	return s
 }
 
-// SetEvent ...
-func (s *MainMenu) SetEvent(name string, e *Event) {
-	if s.eventHandler.events[name] != nil {
-		s.eventHandler.events[name][e] = struct{}{}
-	} else {
-		m := map[*Event]struct{}{e: {}}
-		s.eventHandler.events[name] = m
-	}
-}
-
 // Update ...
 func (s *MainMenu) Update(screen *ebiten.Image) error {
-	btnBattle.(*UIButtonImpl).hover = btnBattle.In(ebiten.CursorPosition())
+	s.activeLayer = s.LayerAt(ebiten.CursorPosition())
+	if s.activeLayer != nil {
+		// log.Printf("activeLayer: %#v", s.activeLayer.Label())
 
-	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
-		if btnBattle.In(ebiten.CursorPosition()) {
-			log.Printf("btnBattle clicked")
-			s.manager.TransitionToBattleScene()
+		if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
+			// click イベントを発火
+			x, y := s.activeLayer.LocalPosition(ebiten.CursorPosition())
+			s.eventHandler.Firing(s, "click", x, y)
 		}
 	}
+
+	btnBattle.(*UIButtonImpl).hover = btnBattle.In(ebiten.CursorPosition())
 
 	return nil
 }
@@ -73,9 +70,4 @@ func (s *MainMenu) Draw(screen *ebiten.Image) {
 
 	btnBattle.Draw(screen)
 
-}
-
-// Layout ...
-func (s *MainMenu) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return width, height
 }

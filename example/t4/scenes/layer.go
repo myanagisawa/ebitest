@@ -28,8 +28,9 @@ type LayerBase struct {
 	scale      float64
 	translateX float64
 	translateY float64
-	parent     *BattleScene
+	parent     Scene
 	isModal    bool
+	controls   map[UIController]struct{}
 }
 
 // Label ...
@@ -63,7 +64,7 @@ func (l *LayerBase) In(x, y int) bool {
 	if minY < 0 {
 		minY = 0
 	}
-	log.Printf("レイヤ座標: {(%d, %d), (%d, %d)}", minX, minY, maxX, maxY)
+	// log.Printf("レイヤ座標: {(%d, %d), (%d, %d)}", minX, minY, maxX, maxY)
 	return (x >= minX && x <= maxX) && (y > minY && y <= maxY)
 	// return l.bg.At(x-l.x, y-l.y).(color.RGBA).A > 0
 }
@@ -110,6 +111,12 @@ func (l *LayerBase) IsModal() bool {
 
 // Update ...
 func (l *LayerBase) Update(screen *ebiten.Image) error {
+	if l.parent.ActiveLayer() == l {
+		for c := range l.controls {
+
+			_ = c.Update(screen)
+		}
+	}
 
 	return nil
 }
@@ -121,20 +128,26 @@ func (l *LayerBase) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(l.translateX, l.translateY)
 
 	screen.DrawImage(l.bg, op)
+
+	for c := range l.controls {
+		c.Draw(l.bg)
+	}
 }
 
 // NewLayerBase ...
-func NewLayerBase() *LayerBase {
+func NewLayerBase(parent Scene) *LayerBase {
 	img := createRectImage(width, height, color.RGBA{32, 32, 32, 255})
 	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 
 	l := &LayerBase{
-		label:   "layer base",
-		bg:      eimg,
-		x:       0,
-		y:       0,
-		scale:   1.0,
-		isModal: false,
+		label:    "layer base",
+		bg:       eimg,
+		x:        0,
+		y:        0,
+		scale:    1.0,
+		parent:   parent,
+		isModal:  false,
+		controls: map[UIController]struct{}{},
 	}
 
 	l.translateX = float64(l.x)
@@ -148,22 +161,33 @@ type TestWindow struct {
 }
 
 // NewTestWindow ...
-func NewTestWindow() *TestWindow {
-	img := createRectImage(200, 400, color.RGBA{0, 0, 0, 64})
+func NewTestWindow(parent Scene) *TestWindow {
+	img := createRectImage(300, 400, color.RGBA{0, 0, 0, 64})
 	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 
 	l := &TestWindow{
 		LayerBase: LayerBase{
-			label:   "test window",
-			bg:      eimg,
-			x:       50,
-			y:       100,
-			scale:   1.0,
-			isModal: false,
+			label:    "test window",
+			bg:       eimg,
+			x:        50,
+			y:        100,
+			scale:    1.0,
+			parent:   parent,
+			isModal:  false,
+			controls: map[UIController]struct{}{},
 		},
 	}
 	l.translateX = float64(l.x)
 	l.translateY = float64(l.y)
+
+	c := NewButton("Open Sub", images["btnBase"], fonts["btnFont"], color.Black, 50, 50)
+	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
+		log.Printf("Open Sub clicked")
+
+		source.scene.SetLayer(NewTestSubWindow(source.scene))
+	})
+	l.controls[c] = struct{}{}
+
 	return l
 }
 
@@ -175,4 +199,71 @@ func (l *TestWindow) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(l.translateX, l.translateY)
 
 	screen.DrawImage(l.bg, op)
+
+	for c := range l.controls {
+		c.Draw(l.bg)
+	}
+}
+
+// TestSubWindow ...
+type TestSubWindow struct {
+	LayerBase
+	coverimg *ebiten.Image
+}
+
+// NewTestSubWindow ...
+func NewTestSubWindow(parent Scene) *TestSubWindow {
+	img := createRectImage(600, 400, color.RGBA{0, 0, 0, 64})
+	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+
+	l := &TestSubWindow{
+		LayerBase: LayerBase{
+			label:    "test sub window",
+			bg:       eimg,
+			x:        100,
+			y:        200,
+			scale:    1.0,
+			parent:   parent,
+			isModal:  true,
+			controls: map[UIController]struct{}{},
+		},
+	}
+	l.translateX = float64(l.x)
+	l.translateY = float64(l.y)
+
+	subimg := createRectImage(width, height, color.RGBA{32, 32, 32, 32})
+	subeimg, _ := ebiten.NewImageFromImage(subimg, ebiten.FilterDefault)
+
+	l.coverimg = subeimg
+
+	c := NewButton("Close", images["btnBase"], fonts["btnFont"], color.Black, 200, 200)
+	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
+		log.Printf("Open Sub clicked")
+
+		source.scene.DeleteLayer(source.scene.ActiveLayer())
+	})
+	l.controls[c] = struct{}{}
+
+	return l
+}
+
+// Draw ...
+func (l *TestSubWindow) Draw(screen *ebiten.Image) {
+	// log.Printf("TestWindow.Draw")
+
+	// modal背景を描画
+	cop := &ebiten.DrawImageOptions{}
+	cop.GeoM.Translate(0, 0)
+
+	screen.DrawImage(l.coverimg, cop)
+
+	// layer描画
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(l.translateX, l.translateY)
+
+	screen.DrawImage(l.bg, op)
+
+	for c := range l.controls {
+		c.Draw(l.bg)
+	}
 }

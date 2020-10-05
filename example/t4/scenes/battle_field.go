@@ -12,10 +12,7 @@ type (
 
 	// BattleScene ...
 	BattleScene struct {
-		manager      *GameManager
-		eventHandler *EventHandler
-		layers       []Layer
-		activeLayer  Layer
+		SceneBase
 	}
 )
 
@@ -23,46 +20,20 @@ type (
 func NewBattleScene(m *GameManager) Scene {
 
 	s := &BattleScene{
-		manager: m,
+		SceneBase: SceneBase{
+			manager: m,
+		},
 	}
 
 	s.eventHandler = &EventHandler{
 		events: map[string]map[*Event]struct{}{},
 	}
 
-	s.layers = append(s.layers, NewLayerBase())
-	s.layers = append(s.layers, NewBattleMap(s))
-
-	l1 := NewTestWindow()
-	l1.parent = s
-	s.layers = append(s.layers, l1)
+	s.SetLayer(NewLayerBase(s))
+	s.SetLayer(NewBattleMap(s))
+	s.SetLayer(NewTestWindow(s))
 
 	return s
-}
-
-// SetEvent ...
-func (s *BattleScene) SetEvent(name string, e *Event) {
-	if s.eventHandler.events[name] != nil {
-		s.eventHandler.events[name][e] = struct{}{}
-	} else {
-		m := map[*Event]struct{}{e: {}}
-		s.eventHandler.events[name] = m
-	}
-}
-
-// LayerAt ...
-func (s *BattleScene) LayerAt(x, y int) Layer {
-	for i := len(s.layers) - 1; i >= 0; i-- {
-		l := s.layers[i]
-		if l.IsModal() {
-			return l
-		}
-		if l.In(x, y) {
-			return l
-		}
-	}
-
-	return nil
 }
 
 // Update ...

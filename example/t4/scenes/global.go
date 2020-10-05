@@ -5,19 +5,11 @@ import (
 	"image/color"
 
 	"github.com/golang/freetype/truetype"
-	"github.com/hajimehoshi/ebiten"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/goregular"
 )
 
 type (
-
-	// Scene ...
-	Scene interface {
-		ebiten.Game
-		Draw(screen *ebiten.Image)
-		SetEvent(name string, e *Event)
-	}
 
 	// LabelFace ...
 	LabelFace struct {
