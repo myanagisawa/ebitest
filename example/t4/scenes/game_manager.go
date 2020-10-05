@@ -18,8 +18,6 @@ type (
 var (
 	fonts  map[string]font.Face
 	images map[string]draw.Image
-
-	eventHandler *EventHandler
 )
 
 func init() {
@@ -30,11 +28,6 @@ func init() {
 	images["bgImage"], _ = utils.GetImageByPath("resources/system_images/bg-2.jpg")
 	images["btnBase"], _ = utils.GetImageByPath("resources/system_images/button.png")
 	images["btnBaseHover"], _ = utils.GetImageByPath("resources/system_images/button-hover.png")
-
-	eventHandler = &EventHandler{
-		events: map[string]map[*Event]struct{}{},
-	}
-
 }
 
 // NewGameManager ...

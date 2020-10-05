@@ -11,7 +11,8 @@ import (
 type (
 	// MainMenu ...
 	MainMenu struct {
-		manager *GameManager
+		manager      *GameManager
+		eventHandler *EventHandler
 	}
 )
 
@@ -22,27 +23,44 @@ var (
 // NewMainMenu ...
 func NewMainMenu(m *GameManager) *MainMenu {
 
+	s := &MainMenu{
+		manager: m,
+		eventHandler: &EventHandler{
+			events: map[string]map[*Event]struct{}{},
+		},
+	}
+
 	c := NewButton("Battle(dev)", images["btnBase"], fonts["btnFont"], color.Black, 100, 200)
-	c.AddEventListener("click", func(target UIController, source *EventSource) {
+
+	c.AddEventListener(s, "click", func(target UIController, source *EventSource) {
 		log.Printf("btnBattle clicked")
 		s := source.scene.(*MainMenu)
 		s.manager.TransitionToBattleScene()
 	})
+
 	btnBattle = c
 
-	return &MainMenu{
-		manager: m,
+	return s
+}
+
+// SetEvent ...
+func (s *MainMenu) SetEvent(name string, e *Event) {
+	if s.eventHandler.events[name] != nil {
+		s.eventHandler.events[name][e] = struct{}{}
+	} else {
+		m := map[*Event]struct{}{e: {}}
+		s.eventHandler.events[name] = m
 	}
 }
 
 // Update ...
-func (g *MainMenu) Update(screen *ebiten.Image) error {
+func (s *MainMenu) Update(screen *ebiten.Image) error {
 	btnBattle.(*UIButtonImpl).hover = btnBattle.In(ebiten.CursorPosition())
 
 	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 		if btnBattle.In(ebiten.CursorPosition()) {
 			log.Printf("btnBattle clicked")
-			g.manager.TransitionToBattleScene()
+			s.manager.TransitionToBattleScene()
 		}
 	}
 
@@ -50,7 +68,7 @@ func (g *MainMenu) Update(screen *ebiten.Image) error {
 }
 
 // Draw ...
-func (g *MainMenu) Draw(screen *ebiten.Image) {
+func (s *MainMenu) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{200, 200, 200, 255})
 
 	btnBattle.Draw(screen)
@@ -58,6 +76,6 @@ func (g *MainMenu) Draw(screen *ebiten.Image) {
 }
 
 // Layout ...
-func (g *MainMenu) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
+func (s *MainMenu) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return width, height
 }

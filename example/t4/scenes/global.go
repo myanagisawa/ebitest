@@ -16,6 +16,7 @@ type (
 	Scene interface {
 		ebiten.Game
 		Draw(screen *ebiten.Image)
+		SetEvent(name string, e *Event)
 	}
 
 	// LabelFace ...

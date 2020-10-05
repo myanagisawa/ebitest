@@ -14,7 +14,7 @@ type UIController interface {
 	Update(screen *ebiten.Image) error
 	Draw(screen *ebiten.Image)
 	In(x, y int) bool
-	AddEventListener(name string, callback func(UIController, *EventSource))
+	AddEventListener(scene Scene, name string, callback func(UIController, *EventSource))
 }
 
 // UIButton ...
@@ -24,20 +24,16 @@ type UIButton interface {
 
 // UIControllerImpl ...
 type UIControllerImpl struct {
+	scene Scene
 	image *ebiten.Image
 	x     int
 	y     int
 }
 
 // AddEventListener ...
-func (c *UIControllerImpl) AddEventListener(name string, callback func(UIController, *EventSource)) {
+func (c *UIControllerImpl) AddEventListener(scene Scene, name string, callback func(UIController, *EventSource)) {
 	e := &Event{c, callback}
-	if eventHandler.events[name] != nil {
-		eventHandler.events[name][e] = struct{}{}
-	} else {
-		m := map[*Event]struct{}{e: {}}
-		eventHandler.events[name] = m
-	}
+	scene.SetEvent(name, e)
 }
 
 // In returns true if (x, y) is in the sprite, and false otherwise.
@@ -58,7 +54,7 @@ func (c *UIControllerImpl) Draw(screen *ebiten.Image) {
 
 // UIButtonImpl ...
 type UIButtonImpl struct {
-	*UIControllerImpl
+	UIControllerImpl
 	hover bool
 }
 
@@ -67,7 +63,7 @@ func NewButton(label string, baseImg draw.Image, fontFace font.Face, labelColor 
 	img := utils.SetTextToCenter(label, baseImg, fontFace, labelColor)
 	eimg, _ := ebiten.NewImageFromImage(*img, ebiten.FilterDefault)
 	con := &UIControllerImpl{image: eimg, x: x, y: y}
-	return &UIButtonImpl{UIControllerImpl: con}
+	return &UIButtonImpl{UIControllerImpl: *con}
 }
 
 // Draw draws the sprite.
