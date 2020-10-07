@@ -25,10 +25,6 @@ func NewBattleScene(m *GameManager) Scene {
 		},
 	}
 
-	s.eventHandler = &EventHandler{
-		events: map[string]map[*Event]struct{}{},
-	}
-
 	s.SetLayer(NewLayerBase(s))
 	s.SetLayer(NewBattleMap(s))
 	s.SetLayer(NewTestWindow(s))
@@ -44,8 +40,7 @@ func (s *BattleScene) Update(screen *ebiten.Image) error {
 
 		if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 			// click イベントを発火
-			x, y := s.activeLayer.LocalPosition(ebiten.CursorPosition())
-			s.eventHandler.Firing(s, "click", x, y)
+			s.activeLayer.FiringEvent("click")
 		}
 	}
 

@@ -3,10 +3,10 @@ package scenes
 import (
 	"image"
 	"image/color"
+	"io/ioutil"
 
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
-	"golang.org/x/image/font/gofont/goregular"
 )
 
 type (
@@ -20,6 +20,8 @@ type (
 
 var (
 	width, height int
+
+	fontFile = "resources/fonts/GenShinGothic-Light.ttf"
 )
 
 // createCircleImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
@@ -38,7 +40,11 @@ func createRectImage(w, h int, color color.RGBA) image.Image {
 // FontLoad ...
 func FontLoad(size int) font.Face {
 	// ebitenフォントのテスト
-	tt, err := truetype.Parse(goregular.TTF)
+	ftBinary, err := ioutil.ReadFile(fontFile)
+	if err != nil {
+		panic(err)
+	}
+	tt, err := truetype.Parse(ftBinary)
 	if err != nil {
 		panic(err)
 	}

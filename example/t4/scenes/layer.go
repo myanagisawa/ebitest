@@ -11,26 +11,30 @@ import (
 type Layer interface {
 	Label() string
 	In(x, y int) bool
-	ControlAt(x, y int) interface{}
+	AddUIControl(c UIControl)
+	UIControlAt(x, y int) UIControl
 	ScaleTo(scale float64)
 	LocalPosition(x, y int) (int, int)
 	IsModal() bool
+	AddEventListener(c UIControl, name string, callback func(UIControl, *EventSource))
+	FiringEvent(name string)
 	Update(screen *ebiten.Image) error
 	Draw(screen *ebiten.Image)
 }
 
 // LayerBase ...
 type LayerBase struct {
-	label      string
-	bg         *ebiten.Image
-	x          int
-	y          int
-	scale      float64
-	translateX float64
-	translateY float64
-	parent     Scene
-	isModal    bool
-	controls   map[UIController]struct{}
+	label        string
+	bg           *ebiten.Image
+	x            int
+	y            int
+	scale        float64
+	translateX   float64
+	translateY   float64
+	parent       Scene
+	isModal      bool
+	controls     []UIControl
+	eventHandler *EventHandler
 }
 
 // Label ...
@@ -69,9 +73,21 @@ func (l *LayerBase) In(x, y int) bool {
 	// return l.bg.At(x-l.x, y-l.y).(color.RGBA).A > 0
 }
 
-// ControlAt (x, y)座標に存在する部品を返します
-func (l *LayerBase) ControlAt(x, y int) interface{} {
-	return l.bg
+// AddUIControl レイヤに部品を追加します
+func (l *LayerBase) AddUIControl(c UIControl) {
+	c.SetLayer(l)
+	l.controls = append(l.controls, c)
+}
+
+// UIControlAt (x, y)座標に存在する部品を返します
+func (l *LayerBase) UIControlAt(x, y int) UIControl {
+	for i := len(l.controls) - 1; i >= 0; i-- {
+		c := l.controls[i]
+		if c.In(x, y) {
+			return c
+		}
+	}
+	return nil
 }
 
 // ScaleTo ...
@@ -109,10 +125,23 @@ func (l *LayerBase) IsModal() bool {
 	return l.isModal
 }
 
+// AddEventListener ...
+func (l *LayerBase) AddEventListener(c UIControl, name string, callback func(UIControl, *EventSource)) {
+	ev := &Event{c, callback}
+	l.eventHandler.Set(name, ev)
+}
+
+// FiringEvent ...
+func (l *LayerBase) FiringEvent(name string) {
+	x, y := l.LocalPosition(ebiten.CursorPosition())
+	l.eventHandler.Firing(l.parent, name, x, y)
+}
+
 // Update ...
 func (l *LayerBase) Update(screen *ebiten.Image) error {
+	// log.Printf("LayerBase.Update()")
 	if l.parent.ActiveLayer() == l {
-		for c := range l.controls {
+		for _, c := range l.controls {
 
 			_ = c.Update(screen)
 		}
@@ -129,7 +158,7 @@ func (l *LayerBase) Draw(screen *ebiten.Image) {
 
 	screen.DrawImage(l.bg, op)
 
-	for c := range l.controls {
+	for _, c := range l.controls {
 		c.Draw(l.bg)
 	}
 }
@@ -147,7 +176,10 @@ func NewLayerBase(parent Scene) *LayerBase {
 		scale:    1.0,
 		parent:   parent,
 		isModal:  false,
-		controls: map[UIController]struct{}{},
+		controls: []UIControl{},
+		eventHandler: &EventHandler{
+			events: map[string]map[*Event]struct{}{},
+		},
 	}
 
 	l.translateX = float64(l.x)
@@ -174,19 +206,25 @@ func NewTestWindow(parent Scene) *TestWindow {
 			scale:    1.0,
 			parent:   parent,
 			isModal:  false,
-			controls: map[UIController]struct{}{},
+			controls: []UIControl{},
+			eventHandler: &EventHandler{
+				events: map[string]map[*Event]struct{}{},
+			},
 		},
 	}
 	l.translateX = float64(l.x)
 	l.translateY = float64(l.y)
 
 	c := NewButton("Open Sub", images["btnBase"], fonts["btnFont"], color.Black, 50, 50)
-	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
-		log.Printf("Open Sub clicked")
+
+	l.AddUIControl(c)
+	l.AddEventListener(c, "click", func(target UIControl, source *EventSource) {
+		log.Printf("Open Sub clicked: x=%d, y=%d", source.x, source.y)
+		log.Printf("target: %#v", target)
 
 		source.scene.SetLayer(NewTestSubWindow(source.scene))
 	})
-	l.controls[c] = struct{}{}
+	log.Printf("controls: %#v", l.controls)
 
 	return l
 }
@@ -200,7 +238,7 @@ func (l *TestWindow) Draw(screen *ebiten.Image) {
 
 	screen.DrawImage(l.bg, op)
 
-	for c := range l.controls {
+	for _, c := range l.controls {
 		c.Draw(l.bg)
 	}
 }
@@ -225,7 +263,10 @@ func NewTestSubWindow(parent Scene) *TestSubWindow {
 			scale:    1.0,
 			parent:   parent,
 			isModal:  true,
-			controls: map[UIController]struct{}{},
+			controls: []UIControl{},
+			eventHandler: &EventHandler{
+				events: map[string]map[*Event]struct{}{},
+			},
 		},
 	}
 	l.translateX = float64(l.x)
@@ -236,13 +277,14 @@ func NewTestSubWindow(parent Scene) *TestSubWindow {
 
 	l.coverimg = subeimg
 
-	c := NewButton("Close", images["btnBase"], fonts["btnFont"], color.Black, 200, 200)
-	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
-		log.Printf("Open Sub clicked")
+	c := NewButton("閉じる", images["btnBase"], fonts["btnFont"], color.Black, 200, 200)
+	l.AddUIControl(c)
+	l.AddEventListener(c, "click", func(target UIControl, source *EventSource) {
+		log.Printf("閉じる clicked: x=%d, y=%d", source.x, source.y)
+		log.Printf("target: %#v", target)
 
 		source.scene.DeleteLayer(source.scene.ActiveLayer())
 	})
-	l.controls[c] = struct{}{}
 
 	return l
 }
@@ -263,7 +305,7 @@ func (l *TestSubWindow) Draw(screen *ebiten.Image) {
 
 	screen.DrawImage(l.bg, op)
 
-	for c := range l.controls {
+	for _, c := range l.controls {
 		c.Draw(l.bg)
 	}
 }

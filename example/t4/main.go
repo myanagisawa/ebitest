@@ -16,9 +16,10 @@ func main() {
 
 	ebiten.SetScreenTransparent(true)
 	// ebiten.SetWindowDecorated(false)
-	// ebiten.SetRunnableOnUnfocused(true)
+	// ebiten.SetRunnableOnUnfocused(false)
 	ebiten.SetWindowFloating(true)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowPosition(100, 400)
 
 	game := scenes.NewGameManager(screenWidth, screenHeight)
 

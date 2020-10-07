@@ -9,31 +9,30 @@ import (
 	"golang.org/x/image/font"
 )
 
-// UIController ...
-type UIController interface {
+// UIControl ...
+type UIControl interface {
 	Update(screen *ebiten.Image) error
 	Draw(screen *ebiten.Image)
 	In(x, y int) bool
-	AddEventListener(scene Scene, name string, callback func(UIController, *EventSource))
+	SetLayer(l Layer)
 }
 
 // UIButton ...
 type UIButton interface {
-	UIController
+	UIControl
 }
 
 // UIControllerImpl ...
 type UIControllerImpl struct {
-	scene Scene
+	layer Layer
 	image *ebiten.Image
 	x     int
 	y     int
 }
 
-// AddEventListener ...
-func (c *UIControllerImpl) AddEventListener(scene Scene, name string, callback func(UIController, *EventSource)) {
-	e := &Event{c, callback}
-	scene.SetEvent(name, e)
+// SetLayer ...
+func (c *UIControllerImpl) SetLayer(l Layer) {
+	c.layer = l
 }
 
 // In returns true if (x, y) is in the sprite, and false otherwise.

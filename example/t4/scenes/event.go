@@ -19,10 +19,20 @@ func (e *EventHandler) Firing(s Scene, name string, x, y int) {
 	}
 }
 
+// Set ...
+func (e *EventHandler) Set(name string, ev *Event) {
+	if e.events[name] != nil {
+		e.events[name][ev] = struct{}{}
+	} else {
+		m := map[*Event]struct{}{ev: {}}
+		e.events[name] = m
+	}
+}
+
 // Event ...
 type Event struct {
-	target   UIController
-	callback func(UIController, *EventSource)
+	target   UIControl
+	callback func(UIControl, *EventSource)
 }
 
 // EventSource ...

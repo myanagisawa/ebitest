@@ -28,40 +28,44 @@ func NewBattleMap(parent Scene) *Map {
 			scale:    1.0,
 			parent:   parent,
 			isModal:  false,
-			controls: map[UIController]struct{}{},
+			controls: []UIControl{},
+			eventHandler: &EventHandler{
+				events: map[string]map[*Event]struct{}{},
+			},
 		},
 		strokes: map[*Stroke]struct{}{},
 	}
 	l.translateX = float64(l.x)
 	l.translateY = float64(l.y)
 
-	c := NewButton("Return to menu", images["btnBase"], fonts["btnFont"], color.Black, 100, 50)
-	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
-		log.Printf("btnRtn clicked")
+	c := NewButton("メニューに戻る", images["btnBase"], fonts["btnFont"], color.Black, 100, 50)
+	l.AddUIControl(c)
+	l.AddEventListener(c, "click", func(target UIControl, source *EventSource) {
+		log.Printf("メニューに戻る clicked: x=%d, y=%d", source.x, source.y)
+		log.Printf("target: %#v", target)
 		source.scene.Manager().TransitionToMainMenu()
 	})
-	l.controls[c] = struct{}{}
 
-	c = NewButton("Scale to 1.5", images["btnBaseHover"], fonts["btnFont"], color.White, 350, 50)
-	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
-		log.Printf("btnRtn clicked")
+	c = NewButton("拡大", images["btnBaseHover"], fonts["btnFont"], color.White, 350, 50)
+	l.AddUIControl(c)
+	l.AddEventListener(c, "click", func(target UIControl, source *EventSource) {
+		log.Printf("拡大 clicked: x=%d, y=%d", source.x, source.y)
 		source.scene.ActiveLayer().ScaleTo(1.5)
 	})
-	l.controls[c] = struct{}{}
 
-	c = NewButton("Scale to 1.0", images["btnBaseHover"], fonts["btnFont"], color.White, 600, 50)
-	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
-		log.Printf("btnRtn clicked")
+	c = NewButton("標準", images["btnBaseHover"], fonts["btnFont"], color.White, 600, 50)
+	l.AddUIControl(c)
+	l.AddEventListener(c, "click", func(target UIControl, source *EventSource) {
+		log.Printf("標準 clicked: x=%d, y=%d", source.x, source.y)
 		source.scene.ActiveLayer().ScaleTo(1.0)
 	})
-	l.controls[c] = struct{}{}
 
-	c = NewButton("Scale to 0.5", images["btnBaseHover"], fonts["btnFont"], color.White, 850, 50)
-	c.AddEventListener(parent, "click", func(target UIController, source *EventSource) {
-		log.Printf("btnRtn clicked")
+	c = NewButton("縮小", images["btnBaseHover"], fonts["btnFont"], color.White, 850, 50)
+	l.AddUIControl(c)
+	l.AddEventListener(c, "click", func(target UIControl, source *EventSource) {
+		log.Printf("縮小 clicked: x=%d, y=%d", source.x, source.y)
 		source.scene.ActiveLayer().ScaleTo(0.5)
 	})
-	l.controls[c] = struct{}{}
 
 	return l
 }
@@ -74,10 +78,9 @@ func (m *Map) updateStroke(stroke *Stroke) {
 
 	b := stroke.DraggingObject()
 	if b == nil {
-		return
+		// ドラッグ対象なしの場合はマップ自体のスクロール
+		m.BgMoveBy(stroke.PositionDiff())
 	}
-
-	m.BgMoveBy(stroke.PositionDiff())
 
 	// stroke.SetDraggingObject(nil)
 }
@@ -109,41 +112,43 @@ func (m *Map) BgMoveBy(x, y int) {
 	if (h - int(math.Abs(m.translateY*m.scale))) < height {
 		m.translateY = float64(height-h) / m.scale
 	}
-	// log.Printf("MoveBy: s.x=%0.2f, s.y=%0.2f", s.translateX, s.translateY)
+	log.Printf("MoveBy: s.x=%0.2f, s.y=%0.2f", m.translateX, m.translateY)
 }
 
 // Update ...
 func (m *Map) Update(screen *ebiten.Image) error {
+
+	for stroke := range m.strokes {
+		m.updateStroke(stroke)
+		if stroke.IsReleased() {
+			m.x, m.y = int(m.translateX), int(m.translateY)
+			delete(m.strokes, stroke)
+			log.Printf("drag end")
+		}
+	}
+
 	if m.parent.ActiveLayer() == m {
 		x, y := m.LocalPosition(ebiten.CursorPosition())
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 			stroke := NewStroke(&MouseStrokeSource{})
 			// レイヤ内のドラッグ対象のオブジェクトを取得する仕組みが必要
-			stroke.SetDraggingObject(m.ControlAt(ebiten.CursorPosition()))
+			stroke.SetDraggingObject(m.UIControlAt(ebiten.CursorPosition()))
 			m.strokes[stroke] = struct{}{}
 			log.Printf("drag start")
 		}
 
-		for stroke := range m.strokes {
-			m.updateStroke(stroke)
-			if stroke.IsReleased() {
-				m.x, m.y = int(m.translateX), int(m.translateY)
-				delete(m.strokes, stroke)
-				log.Printf("drag end")
-			}
-		}
-
-		for c := range m.controls {
+		for _, c := range m.controls {
 			switch val := c.(type) {
 			case *UIButtonImpl:
 				val.hover = val.In(x, y)
 			default:
 				log.Printf("Map.Update: controls switch: default: %#v", val)
 			}
-			_ = c.Update(screen)
+			// _ = c.Update(screen)
 		}
 	}
 
+	m.LayerBase.Update(screen)
 	// log.Printf("bg.x=%d, bg.y=%d", s.x, s.y)
 	return nil
 }
@@ -160,7 +165,7 @@ func (m *Map) Draw(screen *ebiten.Image) {
 	screen.DrawImage(m.bg, op)
 	// screen.DrawImage(s.bg.SubImage(image.Rect(300, 200, 1500, 1100)).(*ebiten.Image), op)
 
-	for c := range m.controls {
+	for _, c := range m.controls {
 		c.Draw(m.bg)
 	}
 }

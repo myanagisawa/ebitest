@@ -6,7 +6,6 @@ import "github.com/hajimehoshi/ebiten"
 type Scene interface {
 	ebiten.Game
 	Draw(screen *ebiten.Image)
-	SetEvent(name string, e *Event)
 	SetLayer(l Layer)
 	DeleteLayer(l Layer)
 	Manager() *GameManager
@@ -16,25 +15,14 @@ type Scene interface {
 
 // SceneBase ...
 type SceneBase struct {
-	manager      *GameManager
-	eventHandler *EventHandler
-	layers       []Layer
-	activeLayer  Layer
+	manager     *GameManager
+	layers      []Layer
+	activeLayer Layer
 }
 
 // Draw ...
 func (s *SceneBase) Draw(screen *ebiten.Image) {
 	return
-}
-
-// SetEvent ...
-func (s *SceneBase) SetEvent(name string, e *Event) {
-	if s.eventHandler.events[name] != nil {
-		s.eventHandler.events[name][e] = struct{}{}
-	} else {
-		m := map[*Event]struct{}{e: {}}
-		s.eventHandler.events[name] = m
-	}
 }
 
 // Manager ...

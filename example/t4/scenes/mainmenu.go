@@ -1,10 +1,12 @@
 package scenes
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/inpututil"
 )
 
@@ -15,19 +17,12 @@ type (
 	}
 )
 
-var (
-	btnBattle UIButton
-)
-
 // NewMainMenu ...
 func NewMainMenu(m *GameManager) *MainMenu {
 
 	s := &MainMenu{
 		SceneBase: SceneBase{
 			manager: m,
-			eventHandler: &EventHandler{
-				events: map[string]map[*Event]struct{}{},
-			},
 		},
 	}
 
@@ -35,13 +30,11 @@ func NewMainMenu(m *GameManager) *MainMenu {
 	s.SetLayer(l)
 
 	c := NewButton("Battle(dev)", images["btnBase"], fonts["btnFont"], color.Black, 100, 200)
-
-	c.AddEventListener(s, "click", func(target UIController, source *EventSource) {
+	l.AddUIControl(c)
+	l.AddEventListener(c, "click", func(target UIControl, source *EventSource) {
 		log.Printf("btnBattle clicked")
 		source.scene.Manager().TransitionToBattleScene()
 	})
-
-	btnBattle = c
 
 	return s
 }
@@ -54,12 +47,13 @@ func (s *MainMenu) Update(screen *ebiten.Image) error {
 
 		if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
 			// click イベントを発火
-			x, y := s.activeLayer.LocalPosition(ebiten.CursorPosition())
-			s.eventHandler.Firing(s, "click", x, y)
+			s.activeLayer.FiringEvent("click")
 		}
 	}
 
-	btnBattle.(*UIButtonImpl).hover = btnBattle.In(ebiten.CursorPosition())
+	for _, layer := range s.layers {
+		layer.Update(screen)
+	}
 
 	return nil
 }
@@ -68,6 +62,15 @@ func (s *MainMenu) Update(screen *ebiten.Image) error {
 func (s *MainMenu) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{200, 200, 200, 255})
 
-	btnBattle.Draw(screen)
+	for _, layer := range s.layers {
+		layer.Draw(screen)
+	}
+	active := " - "
+	if s.activeLayer != nil {
+		active = s.activeLayer.Label()
+	}
+
+	dbg := fmt.Sprintf("FPS: %0.2f\nactive: %s", ebiten.CurrentFPS(), active)
+	ebitenutil.DebugPrint(screen, dbg)
 
 }
