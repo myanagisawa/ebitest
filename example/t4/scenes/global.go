@@ -16,6 +16,18 @@ type (
 		uiFont        font.Face
 		uiFontMHeight int
 	}
+
+	// Point ...
+	Point struct {
+		x float64
+		y float64
+	}
+
+	// Size ...
+	Size struct {
+		width  int
+		height int
+	}
 )
 
 var (
@@ -53,4 +65,20 @@ func FontLoad(size int) font.Face {
 		DPI:     72,
 		Hinting: font.HintingFull,
 	})
+}
+
+// Get ...
+func (p *Point) Get() (float64, float64) {
+	return p.x, p.y
+}
+
+// GetInt ...
+func (p *Point) GetInt() (int, int) {
+	return int(p.x), int(p.y)
+}
+
+// SetDelta ...
+func (p *Point) SetDelta(dx, dy float64) {
+	p.x += dx
+	p.y += dy
 }

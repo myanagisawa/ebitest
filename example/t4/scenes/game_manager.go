@@ -1,6 +1,7 @@
 package scenes
 
 import (
+	"image/color"
 	"image/draw"
 
 	"github.com/hajimehoshi/ebiten"
@@ -28,6 +29,13 @@ func init() {
 	images["bgImage"], _ = utils.GetImageByPath("resources/system_images/bg-2.jpg")
 	images["btnBase"], _ = utils.GetImageByPath("resources/system_images/button.png")
 	images["btnBaseHover"], _ = utils.GetImageByPath("resources/system_images/button-hover.png")
+
+	img := createRectImage(10, 10, color.RGBA{0, 0, 0, 255})
+	images["listBase"] = img.(draw.Image)
+
+	img = createRectImage(10, 10, color.RGBA{128, 128, 128, 128})
+	images["listScroller"] = img.(draw.Image)
+
 }
 
 // NewGameManager ...

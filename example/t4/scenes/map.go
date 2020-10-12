@@ -112,7 +112,7 @@ func (m *Map) BgMoveBy(x, y int) {
 	if (h - int(math.Abs(m.translateY*m.scale))) < height {
 		m.translateY = float64(height-h) / m.scale
 	}
-	log.Printf("MoveBy: s.x=%0.2f, s.y=%0.2f", m.translateX, m.translateY)
+	// log.Printf("MoveBy: s.x=%0.2f, s.y=%0.2f", m.translateX, m.translateY)
 }
 
 // Update ...
