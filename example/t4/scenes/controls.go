@@ -112,12 +112,14 @@ type vScrollBar struct {
 	scrollMax      float64
 	scrollbarScale float64
 	strokes        map[*Stroke]struct{}
+	hover          bool
 }
 
 // NewUIScrollView ...
 func NewUIScrollView(x, y, w, h int, bgColor color.Color) UIScrollView {
 	// 背景画像を作成（背景画像=表示領域）
 	bgimg := createRectEbitenImage(w, h, bgColor)
+	bw, _ := bgimg.Size()
 
 	// スクロールパーツ作成
 	scrollbaseimg := createRectEbitenImage(15, h, color.RGBA{255, 255, 255, 255})
@@ -137,7 +139,7 @@ func NewUIScrollView(x, y, w, h int, bgColor color.Color) UIScrollView {
 			"scrollBar":      scrollbarimg,
 			"scrollBarHover": scrollbarhilightimg,
 		},
-		position:       &Point{float64(cw - 15), 0.0},
+		position:       &Point{float64(bw) - 15, 0.0},
 		draggingPos:    &Point{0, 0},
 		scrollMin:      0,
 		scrollMax:      float64(h) - (float64(ch) * wscale),
@@ -204,7 +206,9 @@ func (c *UIScrollViewImpl) Update(screen *ebiten.Image) error {
 	ax := int(lx + vx + float64(w-15))
 	ay := int(ly + vy)
 
-	if c.vScrollBar.imgparts["scrollBase"].At(cx-ax, cy-ay).(color.RGBA).A > 0 {
+	c.vScrollBar.hover = c.vScrollBar.imgparts["scrollBase"].At(cx-ax, cy-ay).(color.RGBA).A > 0
+	if c.vScrollBar.hover {
+		// log.Printf("hover")
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 			stroke := NewStroke(&MouseStrokeSource{})
 			// レイヤ内のドラッグ対象のオブジェクトを取得する仕組みが必要
@@ -223,46 +227,51 @@ func (c *UIScrollViewImpl) Draw(screen *ebiten.Image) {
 
 	screen.DrawImage(c.backgroundImage, op)
 
-	// スクロールバー構成
-	w, h := c.backgroundImage.Size()
-	//スクロールエリア
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(c.vScrollBar.position.Get())
-	c.backgroundImage.DrawImage(c.vScrollBar.imgparts["scrollBase"], op)
+	// // スクロールバー構成
+	// w, h := c.backgroundImage.Size()
+	// //スクロールエリア
+	// op = &ebiten.DrawImageOptions{}
+	// op.GeoM.Translate(c.vScrollBar.position.Get())
+	// c.backgroundImage.DrawImage(c.vScrollBar.imgparts["scrollBase"], op)
+
 	// コンテンツ
 	op = &ebiten.DrawImageOptions{}
 	// log.Printf("wscale: %0.2f", wscale)
 	op.GeoM.Scale(c.contentScale, c.contentScale)
 	op.GeoM.Translate(c.contentOffset.Get())
 	c.backgroundImage.DrawImage(c.contents, op)
+
 	//スクロールバー
-	_, b := c.contentOffset.Get()
 	_, ch := c.contents.Size()
-	y := float64(h-6) * b / (float64(ch) * c.contentScale)
-	if math.Abs(y) < 3 {
-		y = -3
-	}
-	if math.Abs(y+c.vScrollBar.scrollbarScale) > float64(h-3) {
-		y = float64(h) - c.vScrollBar.scrollbarScale - 3
-	}
-	// log.Printf("表示高さ: %0.2f, Offset: %0.2f, コンテンツ高さ: %0.2f = バー移動量: %0.2f", float64(h), b, (float64(ch) * c.contentScale), y)
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(1.0, c.vScrollBar.scrollbarScale/10)
-	op.GeoM.Translate(float64(w-12), -y)
+	_, cy := c.contentOffset.Get()
+	c.vScrollBar.Draw(c.backgroundImage, float64(ch), float64(cy), c.contentScale)
+	// _, b := c.contentOffset.Get()
+	// _, ch := c.contents.Size()
+	// y := float64(h-6) * b / (float64(ch) * c.contentScale)
+	// if math.Abs(y) < 3 {
+	// 	y = -3
+	// }
+	// if math.Abs(y+c.vScrollBar.scrollbarScale) > float64(h-3) {
+	// 	y = float64(h) - c.vScrollBar.scrollbarScale - 3
+	// }
+	// // log.Printf("表示高さ: %0.2f, Offset: %0.2f, コンテンツ高さ: %0.2f = バー移動量: %0.2f", float64(h), b, (float64(ch) * c.contentScale), y)
+	// op = &ebiten.DrawImageOptions{}
+	// op.GeoM.Scale(1.0, c.vScrollBar.scrollbarScale/10)
+	// op.GeoM.Translate(float64(w-12), -y)
 
-	// TODO: 共通化
-	cx, cy := ebiten.CursorPosition()
-	lx, ly := c.layer.GetGlobalPosition()
-	vx, vy := c.position.Get()
-	ax := int(lx + vx + float64(w-15))
-	ay := int(ly + vy)
-	// log.Printf("cx=%d, cy=%d :: vx(%0.0f)+w(%d), vy(%0.0f)", cx, cy, lx+vx, w, ly+vy)
+	// // TODO: 共通化
+	// cx, cy := ebiten.CursorPosition()
+	// lx, ly := c.layer.GetGlobalPosition()
+	// vx, vy := c.position.Get()
+	// ax := int(lx + vx + float64(w-15))
+	// ay := int(ly + vy)
+	// // log.Printf("cx=%d, cy=%d :: vx(%0.0f)+w(%d), vy(%0.0f)", cx, cy, lx+vx, w, ly+vy)
 
-	img := c.vScrollBar.imgparts["scrollBar"]
-	if c.vScrollBar.imgparts["scrollBase"].At(cx-ax, cy-ay).(color.RGBA).A > 0 {
-		img = c.vScrollBar.imgparts["scrollBarHover"]
-	}
-	c.backgroundImage.DrawImage(img, op)
+	// img := c.vScrollBar.imgparts["scrollBar"]
+	// if c.vScrollBar.imgparts["scrollBase"].At(cx-ax, cy-ay).(color.RGBA).A > 0 {
+	// 	img = c.vScrollBar.imgparts["scrollBarHover"]
+	// }
+	// c.backgroundImage.DrawImage(img, op)
 
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("offset: %0.1f, %0.1f", c.contentOffset.x, c.contentOffset.y))
 }
@@ -276,4 +285,39 @@ func (c *vScrollBar) updateStroke(stroke *Stroke) {
 func (c *vScrollBar) ScrollBy(x, y int) {
 	// log.Printf("dragging: x=%d, y=%d", x, y)
 	c.draggingPos.y = float64(y)
+}
+
+func (c *vScrollBar) Draw(r *ebiten.Image, contentHeight, contentOffsetY, contentScale float64) {
+	rw, rh := r.Size()
+
+	base := c.imgparts["scrollBase"]
+
+	//スクロールエリア
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(c.position.Get())
+	r.DrawImage(base, op)
+
+	//スクロールバー
+	op = &ebiten.DrawImageOptions{}
+	translateY := (float64(rh) - 6) * contentOffsetY / (contentHeight * contentScale)
+	// log.Printf("バー長さ: %0.2f, バー移動量: %0.2f", c.scrollbarScale, translateY)
+	if math.Abs(translateY) < 3 {
+		translateY = -3
+	}
+	if math.Abs(translateY+c.scrollbarScale) > (float64(rh) - 3) {
+		translateY = float64(rh) - c.scrollbarScale - 3
+	}
+	// log.Printf("表示高さ: %0.2f, Offset: %0.2f, コンテンツ高さ: %0.2f = バー移動量: %0.2f", float64(rh), contentOffsetY, (contentHeight * contentScale), translateY)
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(1.0, c.scrollbarScale/10)
+	op.GeoM.Translate(float64(rw-12), -translateY)
+	// op.GeoM.Translate(3.0, -translateY)
+
+	bar := c.imgparts["scrollBar"]
+	if c.hover {
+		log.Printf("hover")
+		bar = c.imgparts["scrollBarHover"]
+	}
+	r.DrawImage(bar, op)
+
 }

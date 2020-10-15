@@ -328,7 +328,8 @@ type UnitListWindow struct {
 
 // NewUnitListWindow ...
 func NewUnitListWindow(parent Scene) *UnitListWindow {
-	img := createRectImage(1000, 600, color.RGBA{0, 0, 0, 128})
+	// img := createRectImage(1000, 600, color.RGBA{0, 0, 0, 128})
+	img := createRectImage(1000, 600, color.RGBA{200, 200, 200, 192})
 	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 
 	l := &UnitListWindow{
