@@ -39,7 +39,7 @@ func (c *UIControllerImpl) SetLayer(l interfaces.Layer) {
 // In returns true if (x, y) is in the sprite, and false otherwise.
 func (c *UIControllerImpl) In(x, y int) bool {
 	// パーツ位置（左上座標）
-	tx, ty := c.bg.GlobalTransition()
+	tx, ty := c.bg.GlobalPosition()
 
 	// パーツサイズ(オリジナル)
 	w, h := c.bg.EbitenImage().Size()
@@ -79,6 +79,22 @@ func (c *UIControllerImpl) Update(screen *ebiten.Image) error {
 // Draw draws the sprite.
 func (c *UIControllerImpl) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
+
+	w, h := c.bg.Size()
+	// 描画位置指定
+	op.GeoM.Reset()
+
+	op.GeoM.Scale(c.bg.GlobalScale())
+
+	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
+	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	// 中心を軸に回転
+	op.GeoM.Rotate(c.bg.Theta())
+	// ユニットの座標に移動
+	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+
+	op.GeoM.Translate(c.bg.GlobalPosition())
+
 	screen.DrawImage(c.bg.EbitenImage(), op)
 }
 
@@ -95,7 +111,7 @@ func NewButton(label string, parent interfaces.Layer, baseImg draw.Image, fontFa
 
 	con := &UIControllerImpl{
 		label: label,
-		bg:    models.NewEbiObject(label, eimg, parent.EbiObjects()[0], nil, ebitest.NewPoint(x, y), 0, true, true),
+		bg:    models.NewEbiObject(label, eimg, parent.EbiObjects()[0], nil, ebitest.NewPoint(x, y), 0, true, true, false),
 	}
 	return &UIButtonImpl{UIControllerImpl: *con}
 }
@@ -103,7 +119,20 @@ func NewButton(label string, parent interfaces.Layer, baseImg draw.Image, fontFa
 // Draw draws the sprite.
 func (c *UIButtonImpl) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(c.bg.GlobalTransition())
+	w, h := c.bg.Size()
+	// 描画位置指定
+	op.GeoM.Reset()
+
+	op.GeoM.Scale(c.bg.GlobalScale())
+
+	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
+	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	// 中心を軸に回転
+	op.GeoM.Rotate(c.bg.Theta())
+	// ユニットの座標に移動
+	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+
+	op.GeoM.Translate(c.bg.GlobalPosition())
 	r, g, b, a := 1.0, 1.0, 1.0, 1.0
 	if c.hover {
 		r, g, b, a = 0.5, 0.5, 0.5, 1.0

@@ -1,6 +1,8 @@
 package scene
 
 import (
+	"log"
+
 	"github.com/hajimehoshi/ebiten"
 	"github.com/myanagisawa/ebitest/example/t5/interfaces"
 )
@@ -40,6 +42,17 @@ func (s *Base) LayerAt(x, y int) interfaces.Layer {
 // ActiveLayer ...
 func (s *Base) ActiveLayer() interfaces.Layer {
 	return s.activeLayer
+}
+
+// GetLayerByLabel ...
+func (s *Base) GetLayerByLabel(label string) interfaces.Layer {
+	for _, layer := range s.layers {
+		log.Printf("GetLayerByLabel: %s == %s, %v", layer.Label(), label, layer.Label() == label)
+		if layer.Label() == label {
+			return layer
+		}
+	}
+	return nil
 }
 
 // SetLayer ...

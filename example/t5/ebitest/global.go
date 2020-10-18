@@ -40,6 +40,11 @@ var (
 
 	// fontFile
 	fontFile = "resources/fonts/GenShinGothic-Light.ttf"
+
+	// EdgeSize 画面の端から何ピクセルを端とするか
+	EdgeSize = 30
+	// EdgeSizeOuter Window外の何ピクセルまでを端判定に含めるか
+	EdgeSizeOuter = 100
 )
 
 func init() {
@@ -50,6 +55,7 @@ func init() {
 	Images["bgImage"], _ = utils.GetImageByPath("resources/system_images/bg-2.jpg")
 	Images["btnBase"], _ = utils.GetImageByPath("resources/system_images/button.png")
 	Images["btnBaseHover"], _ = utils.GetImageByPath("resources/system_images/button-hover.png")
+	Images["bgFlower"], _ = utils.GetImageByPath("resources/system_images/bg_flower.jpg")
 
 	img := CreateRectImage(10, 10, color.RGBA{0, 0, 0, 255})
 	Images["listBase"] = img.(draw.Image)
@@ -121,6 +127,12 @@ func (p *Point) GetInt() (int, int) {
 	return int(p.x), int(p.y)
 }
 
+// Set ...
+func (p *Point) Set(x, y float64) {
+	p.x = x
+	p.y = y
+}
+
 // SetDelta ...
 func (p *Point) SetDelta(dx, dy float64) {
 	p.x += dx
@@ -151,4 +163,10 @@ func (s *Scale) Y() float64 {
 // Get ...
 func (s *Scale) Get() (float64, float64) {
 	return s.x, s.y
+}
+
+// Set ...
+func (s *Scale) Set(x, y float64) {
+	s.x = x
+	s.y = y
 }

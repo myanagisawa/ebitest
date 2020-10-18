@@ -1,6 +1,7 @@
 package models
 
 import (
+	"image/color"
 	"math"
 
 	"github.com/hajimehoshi/ebiten"
@@ -22,10 +23,12 @@ type EbiObject struct {
 	angle        int
 	inheritScale bool
 	inheritAngle bool
+	moving       *ebitest.Point
+	draggable    bool
 }
 
 // NewEbiObject ...
-func NewEbiObject(tag string, image *ebiten.Image, parent *EbiObject, scale *ebitest.Scale, position *ebitest.Point, angle int, inheritScale bool, inheritAngle bool) *EbiObject {
+func NewEbiObject(tag string, image *ebiten.Image, parent *EbiObject, scale *ebitest.Scale, position *ebitest.Point, angle int, inheritScale, inheritAngle, draggable bool) *EbiObject {
 	if scale == nil {
 		scale = ebitest.NewScale(1.0, 1.0)
 	}
@@ -41,6 +44,7 @@ func NewEbiObject(tag string, image *ebiten.Image, parent *EbiObject, scale *ebi
 		angle:        angle,
 		inheritScale: inheritScale,
 		inheritAngle: inheritAngle,
+		draggable:    draggable,
 	}
 	return eo
 }
@@ -52,17 +56,18 @@ func (o *EbiObject) EbitenImage() *ebiten.Image {
 
 // Size ...
 func (o *EbiObject) Size() (int, int) {
-	return o.img.Size()
+	x, y := o.img.Size()
+	return int(float64(x) * o.scale.X()), int(float64(y) * o.scale.Y())
 }
 
-// Transition ...
-func (o *EbiObject) Transition() (float64, float64) {
-	return o.position.Get()
+// Position ...
+func (o *EbiObject) Position() *ebitest.Point {
+	return o.position
 }
 
 // Scale ...
-func (o *EbiObject) Scale() (float64, float64) {
-	return o.scale.Get()
+func (o *EbiObject) Scale() *ebitest.Scale {
+	return o.scale
 }
 
 // Angle ...
@@ -80,14 +85,40 @@ func (o *EbiObject) SetParent(parent *EbiObject) {
 	o.parent = parent
 }
 
-// GlobalTransition ...
-func (o *EbiObject) GlobalTransition() (float64, float64) {
+// SetMoving ...
+func (o *EbiObject) SetMoving(dx, dy float64) {
+	if o.moving == nil {
+		o.moving = ebitest.NewPoint(dx, dy)
+	} else {
+		o.moving.Set(dx, dy)
+	}
+}
+
+// Moving ...
+func (o *EbiObject) Moving() *ebitest.Point {
+	return o.moving
+}
+
+// UpdatePositionByDelta ...
+func (o *EbiObject) UpdatePositionByDelta() {
+
+	o.position.SetDelta(o.moving.Get())
+	o.moving = nil
+}
+
+// GlobalPosition ...
+func (o *EbiObject) GlobalPosition() (float64, float64) {
 	gx, gy := 0.0, 0.0
 	if o.parent != nil {
-		gx, gy = o.parent.GlobalTransition()
+		gx, gy = o.parent.GlobalPosition()
 	}
-	gx += o.position.X()
-	gy += o.position.Y()
+	dx, dy := 0.0, 0.0
+	if o.moving != nil {
+		dx, dy = o.moving.Get()
+	}
+	sx, sy := o.GlobalScale()
+	gx += o.position.X()*sx + dx
+	gy += o.position.Y()*sy + dy
 	return gx, gy
 }
 
@@ -112,34 +143,17 @@ func (o *EbiObject) Theta() float64 {
 	return 2 * math.Pi * float64(o.GlobalAngle()) / 360.0
 }
 
-// // SetT ...
-// func (o *EbiObject) SetT() {
-// 	gx, gy := 0.0, 0.0
-// 	if o.parent != nil {
-// 		gx, gy = o.parent.Transition()
-// 	}
-// 	o.img.t.x = gx + o.position.x
-// 	o.img.t.y = gy + o.position.y
-// 	o.img.isDefault = false
-// }
+// In returns true if (x, y) is in the sprite, and false otherwise.
+func (o *EbiObject) In(x, y int) bool {
+	return o.img.At(x-int(o.position.X()), y-int(o.position.Y())).(color.RGBA).A > 0
+}
 
-// // SetS ...
-// func (o *EbiObject) SetS() {
-// 	if o.parent != nil && o.inheritScale {
-// 		o.img.s.x, o.img.s.y = o.parent.Scale()
-// 	} else {
-// 		o.img.s.x = 1.0
-// 		o.img.s.y = 1.0
-// 	}
-// 	o.img.isDefault = false
-// }
+// SetDraggable ...
+func (o *EbiObject) SetDraggable(b bool) {
+	o.draggable = b
+}
 
-// // SetA ...
-// func (o *EbiObject) SetA() {
-// 	if o.parent != nil && o.inheritAngle {
-// 		o.img.a = o.parent.img.a
-// 	} else {
-// 		o.img.a = 0
-// 	}
-// 	o.img.isDefault = false
-// }
+// IsDraggable ...
+func (o *EbiObject) IsDraggable() bool {
+	return o.draggable
+}
