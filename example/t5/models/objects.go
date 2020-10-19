@@ -117,8 +117,8 @@ func (o *EbiObject) GlobalPosition() (float64, float64) {
 		dx, dy = o.moving.Get()
 	}
 	sx, sy := o.GlobalScale()
-	gx += o.position.X()*sx + dx
-	gy += o.position.Y()*sy + dy
+	gx += (o.position.X() + dx) * sx
+	gy += (o.position.Y() + dy) * sy
 	return gx, gy
 }
 
@@ -145,7 +145,8 @@ func (o *EbiObject) Theta() float64 {
 
 // In returns true if (x, y) is in the sprite, and false otherwise.
 func (o *EbiObject) In(x, y int) bool {
-	return o.img.At(x-int(o.position.X()), y-int(o.position.Y())).(color.RGBA).A > 0
+	px, py := o.GlobalPosition()
+	return o.img.At(x-int(px), y-int(py)).(color.RGBA).A > 0
 }
 
 // SetDraggable ...
