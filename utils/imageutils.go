@@ -201,3 +201,40 @@ func SetTextToCenter(text string, src draw.Image, face font.Face, c color.Color)
 	d.DrawString(text)
 	return &d.Dst
 }
+
+// CreateTextImage textのイメージを作成します
+func CreateTextImage(text string, face font.Face, c color.Color) *draw.Image {
+	// tmp := image.NewRGBA(src.Bounds())
+	// draw.Copy(tmp, image.Point{}, src, src.Bounds(), draw.Src, nil)
+	// td := &font.Drawer{
+	// 	Dst:  tmp,
+	// 	Src:  image.NewUniform(c),
+	// 	Face: face,
+	// }
+
+	d := &font.Drawer{
+		Src:  image.NewUniform(c),
+		Face: face,
+	}
+
+	width := d.MeasureString(text).Ceil()
+	height := face.Metrics().Height.Ceil() + face.Metrics().Descent.Ceil()
+
+	out := image.NewRGBA(image.Rect(0, 0, width, height))
+	// 横ループ、半径*2＝直径まで
+	for x := 0; x < width; x++ {
+		// 縦ループ、半径*2＝直径まで
+		for y := 0; y < height; y++ {
+			out.Set(x, y, color.RGBA{0, 0, 0, 0})
+			// out.Set(x, y, color.RGBA{255, 255, 255, 255})
+		}
+	}
+	log.Printf("width=%d, height=%d", width, height)
+
+	d.Dst = out
+	d.Dot.X = fixed.I(0)
+	d.Dot.Y = fixed.I((out.Bounds().Max.Y + face.Metrics().Height.Ceil()) / 2)
+
+	d.DrawString(text)
+	return &d.Dst
+}

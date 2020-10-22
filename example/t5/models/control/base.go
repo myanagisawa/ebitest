@@ -2,8 +2,10 @@ package control
 
 import (
 	"fmt"
+	"image"
 	"image/color"
 	"image/draw"
+	"log"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/myanagisawa/ebitest/example/t5/ebitest"
@@ -13,31 +15,33 @@ import (
 	"golang.org/x/image/font"
 )
 
-// UIControllerImpl ...
-type UIControllerImpl struct {
-	label string
-	layer interfaces.Layer
-	bg    *models.EbiObject
+// UIControlImpl ...
+type UIControlImpl struct {
+	label          string
+	layer          interfaces.Layer
+	bg             *models.EbiObject
+	hasHoverAction bool
+	hover          bool
 }
 
 // Label ...
-func (c *UIControllerImpl) Label() string {
+func (c *UIControlImpl) Label() string {
 	return fmt.Sprintf("%s.%s", c.layer.Label(), c.label)
 }
 
 // EbiObjects ...
-func (c *UIControllerImpl) EbiObjects() []*models.EbiObject {
+func (c *UIControlImpl) EbiObjects() []*models.EbiObject {
 	return []*models.EbiObject{c.bg}
 }
 
 // SetLayer ...
-func (c *UIControllerImpl) SetLayer(l interfaces.Layer) {
+func (c *UIControlImpl) SetLayer(l interfaces.Layer) {
 	c.layer = l
 	c.bg.SetParent(l.EbiObjects()[0])
 }
 
 // In returns true if (x, y) is in the sprite, and false otherwise.
-func (c *UIControllerImpl) In(x, y int) bool {
+func (c *UIControlImpl) In(x, y int) bool {
 	// パーツ位置（左上座標）
 	tx, ty := c.bg.GlobalPosition()
 
@@ -70,14 +74,25 @@ func (c *UIControllerImpl) In(x, y int) bool {
 	// return l.bg.At(x-l.x, y-l.y).(color.RGBA).A > 0
 }
 
+// HasHoverAction ...
+func (c *UIControlImpl) HasHoverAction() bool {
+	return c.hasHoverAction
+}
+
 // Update ...
-func (c *UIControllerImpl) Update(screen *ebiten.Image) error {
-	// log.Printf("UIControllerImpl: update")
+func (c *UIControlImpl) Update(screen *ebiten.Image) error {
+	// log.Printf("UIControlImpl: update")
+	if c.hasHoverAction {
+		c.hover = c.In(ebiten.CursorPosition())
+		if c.hover {
+			log.Printf("hover: %s", c.label)
+		}
+	}
 	return nil
 }
 
 // Draw draws the sprite.
-func (c *UIControllerImpl) Draw(screen *ebiten.Image) {
+func (c *UIControlImpl) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 
 	w, h := c.bg.Size()
@@ -100,8 +115,7 @@ func (c *UIControllerImpl) Draw(screen *ebiten.Image) {
 
 // UIButtonImpl ...
 type UIButtonImpl struct {
-	UIControllerImpl
-	hover bool
+	UIControlImpl
 }
 
 // NewButton ...
@@ -109,11 +123,12 @@ func NewButton(label string, parent interfaces.Layer, baseImg draw.Image, fontFa
 	img := utils.SetTextToCenter(label, baseImg, fontFace, labelColor)
 	eimg, _ := ebiten.NewImageFromImage(*img, ebiten.FilterDefault)
 
-	con := &UIControllerImpl{
-		label: label,
-		bg:    models.NewEbiObject(label, eimg, parent.EbiObjects()[0], nil, ebitest.NewPoint(x, y), 0, true, true, false),
+	con := &UIControlImpl{
+		label:          label,
+		bg:             models.NewEbiObject(label, eimg, parent.EbiObjects()[0], nil, ebitest.NewPoint(x, y), 0, true, true, false),
+		hasHoverAction: true,
 	}
-	return &UIButtonImpl{UIControllerImpl: *con}
+	return &UIButtonImpl{UIControlImpl: *con}
 }
 
 // Draw draws the sprite.
@@ -139,4 +154,121 @@ func (c *UIButtonImpl) Draw(screen *ebiten.Image) {
 	}
 	op.ColorM.Scale(r, g, b, a)
 	screen.DrawImage(c.bg.EbitenImage(), op)
+}
+
+// UITextImpl ...
+type UITextImpl struct {
+	UIControlImpl
+}
+
+// NewText ...
+func NewText(text string, parent interfaces.Layer, fontFace font.Face, c color.Color, x, y float64) interfaces.UIText {
+	img := utils.CreateTextImage(text, fontFace, c)
+	eimg, _ := ebiten.NewImageFromImage(*img, ebiten.FilterDefault)
+
+	label := fmt.Sprintf("text-%s", utils.RandomLC(8))
+	con := &UIControlImpl{
+		label: label,
+		bg:    models.NewEbiObject(label, eimg, parent.EbiObjects()[0], nil, ebitest.NewPoint(x, y), 0, true, true, false),
+	}
+	return &UITextImpl{UIControlImpl: *con}
+}
+
+// Draw draws the sprite.
+func (c *UITextImpl) Draw(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	w, h := c.bg.Size()
+	// 描画位置指定
+	op.GeoM.Reset()
+
+	op.GeoM.Scale(c.bg.GlobalScale())
+
+	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
+	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	// 中心を軸に回転
+	op.GeoM.Rotate(c.bg.Theta())
+	// ユニットの座標に移動
+	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+
+	op.GeoM.Translate(c.bg.GlobalPosition())
+	screen.DrawImage(c.bg.EbitenImage(), op)
+}
+
+// UIColumnImpl ...
+type UIColumnImpl struct {
+	UIControlImpl
+	text *ebiten.Image
+}
+
+// NewColumn ...
+func NewColumn(text string, parent interfaces.Layer, fontFace font.Face, labelColor color.Color, bgColor color.Color, x, y float64) interfaces.UIColumn {
+	img := ebitest.CreateBorderedRectImage(500, 50, bgColor.(color.RGBA))
+	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+
+	label := fmt.Sprintf("col-%s", utils.RandomLC(8))
+	con := &UIControlImpl{
+		label:          label,
+		bg:             models.NewEbiObject(label, eimg, parent.EbiObjects()[0], nil, ebitest.NewPoint(x, y), 0, true, true, false),
+		hasHoverAction: true,
+	}
+
+	t := utils.CreateTextImage(text, fontFace, labelColor)
+	timg, _ := ebiten.NewImageFromImage(*t, ebiten.FilterDefault)
+
+	return &UIColumnImpl{UIControlImpl: *con, text: timg}
+}
+
+// Draw draws the sprite.
+func (c *UIColumnImpl) Draw(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	w, h := c.bg.Size()
+	// 描画位置指定
+	op.GeoM.Reset()
+
+	op.GeoM.Scale(c.bg.GlobalScale())
+
+	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
+	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	// 中心を軸に回転
+	op.GeoM.Rotate(c.bg.Theta())
+	// ユニットの座標に移動
+	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+
+	op.GeoM.Translate(c.bg.GlobalPosition())
+
+	r, g, b, a := 1.0, 1.0, 1.0, 1.0
+	if c.hover {
+		r, g, b, a = 0.5, 0.5, 0.5, 1.0
+	}
+	op.ColorM.Scale(r, g, b, a)
+
+	screen.DrawImage(c.bg.EbitenImage(), op)
+
+	c.DrawText(screen)
+}
+
+// DrawText draws the sprite.
+func (c *UIColumnImpl) DrawText(screen *ebiten.Image) {
+	op := &ebiten.DrawImageOptions{}
+	w, h := c.text.Size()
+	// 描画位置指定
+	op.GeoM.Reset()
+
+	op.GeoM.Scale(c.bg.GlobalScale())
+
+	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
+	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	// 中心を軸に回転
+	op.GeoM.Rotate(c.bg.Theta())
+	// ユニットの座標に移動
+	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+
+	bw, bh := c.bg.Size()
+	_, by := c.bg.GlobalScale()
+	a := float64(bh-h) * by / 2
+
+	tx, ty := c.bg.GlobalPosition()
+
+	op.GeoM.Translate(tx, ty+a)
+	screen.DrawImage(c.text.SubImage(image.Rect(0, 0, bw, h)).(*ebiten.Image), op)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/myanagisawa/ebitest/example/t5/interfaces"
 	"github.com/myanagisawa/ebitest/example/t5/models"
 	"github.com/myanagisawa/ebitest/example/t5/models/event"
+	"github.com/myanagisawa/ebitest/example/t5/models/input"
 )
 
 // Base ...
@@ -22,7 +23,7 @@ type Base struct {
 	isModal      bool
 	controls     []interfaces.UIControl
 	eventHandler *event.Handler
-	stroke       *Stroke
+	stroke       *input.Stroke
 }
 
 // Label ...
@@ -141,7 +142,7 @@ func (l *Base) UIControlAt(x, y int) interfaces.UIControl {
 	return nil
 }
 
-func (l *Base) updateStroke(stroke *Stroke) {
+func (l *Base) updateStroke(stroke *input.Stroke) {
 	stroke.Update()
 	// if !stroke.IsReleased() {
 	// 	return
@@ -168,7 +169,7 @@ func (l *Base) Update(screen *ebiten.Image) error {
 			x, y := ebiten.CursorPosition()
 			// log.Printf("left button push: x=%d, y=%d", x, y)
 			if l.In(x, y) {
-				stroke := NewStroke(&MouseStrokeSource{})
+				stroke := input.NewStroke(&input.MouseStrokeSource{})
 				// レイヤ内のドラッグ対象のオブジェクトを取得する仕組みが必要
 				o := l.UIControlAt(x, y)
 				if o != nil || l.bg.IsDraggable() {

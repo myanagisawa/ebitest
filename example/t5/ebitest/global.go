@@ -5,8 +5,11 @@ import (
 	"image/color"
 	"image/draw"
 	"io/ioutil"
+	"log"
+	"math"
 
 	"github.com/golang/freetype/truetype"
+	"github.com/hajimehoshi/ebiten"
 	"github.com/myanagisawa/ebitest/utils"
 	"golang.org/x/image/font"
 )
@@ -35,11 +38,16 @@ var (
 
 	// Fonts ...
 	Fonts map[string]font.Face
+	// ScaleFonts ...
+	ScaleFonts map[int]font.Face
 	// Images ...
 	Images map[string]draw.Image
 
+	// SpotLightImage ...
+	SpotLightImage *ebiten.Image
+
 	// fontFile
-	fontFile = "resources/fonts/GenShinGothic-Light.ttf"
+	fontFile = "resources/fonts/GenShinGothic-Regular.ttf"
 
 	// EdgeSize 画面の端から何ピクセルを端とするか
 	EdgeSize = 30
@@ -50,6 +58,11 @@ var (
 func init() {
 	Fonts = make(map[string]font.Face)
 	Fonts["btnFont"] = FontLoad(16)
+
+	ScaleFonts = make(map[int]font.Face)
+	ScaleFonts[16] = FontLoad(16)
+	ScaleFonts[8] = FontLoad(8)
+	ScaleFonts[24] = FontLoad(24)
 
 	Images = make(map[string]draw.Image)
 	Images["bgImage"], _ = utils.GetImageByPath("resources/system_images/bg-2.jpg")
@@ -63,6 +76,20 @@ func init() {
 	img = CreateRectImage(10, 10, color.RGBA{128, 128, 128, 128})
 	Images["listScroller"] = img.(draw.Image)
 
+	const r = 64
+	alphas := image.Point{r * 2, r * 2}
+	a := image.NewAlpha(image.Rectangle{image.ZP, alphas})
+	for j := 0; j < alphas.Y; j++ {
+		for i := 0; i < alphas.X; i++ {
+			// d is the distance between (i, j) and the (circle) center.
+			d := math.Sqrt(float64((i-r)*(i-r) + (j-r)*(j-r)))
+			// Alphas around the center are 0 and values outside of the circle are 0xff.
+			b := uint8(max(0, min(0xff, int(3*d*0xff/r)-2*0xff)))
+			a.SetAlpha(i, j, color.Alpha{b})
+		}
+	}
+	SpotLightImage, _ = ebiten.NewImageFromImage(a, ebiten.FilterDefault)
+
 }
 
 // CreateRectImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
@@ -73,6 +100,24 @@ func CreateRectImage(w, h int, color color.RGBA) image.Image {
 		// 縦ループ、半径*2＝直径まで
 		for y := 0; y < h; y++ {
 			m.Set(x, y, color)
+		}
+	}
+	return m
+}
+
+// CreateBorderedRectImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
+func CreateBorderedRectImage(w, h int, c color.RGBA) image.Image {
+	m := image.NewRGBA(image.Rect(0, 0, w, h))
+	// 横ループ、半径*2＝直径まで
+	for x := 0; x < w; x++ {
+		// 縦ループ、半径*2＝直径まで
+		for y := 0; y < h; y++ {
+			if (x == 0 || x == (w-1)) || (y == 0 || y == (h-1)) {
+				log.Printf("hoge")
+				m.Set(x, y, color.RGBA{0, 0, 0, 255})
+			} else {
+				m.Set(x, y, c)
+			}
 		}
 	}
 	return m
@@ -169,4 +214,18 @@ func (s *Scale) Get() (float64, float64) {
 func (s *Scale) Set(x, y float64) {
 	s.x = x
 	s.y = y
+}
+
+func max(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

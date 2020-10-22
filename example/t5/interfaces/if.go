@@ -47,10 +47,26 @@ type UIControl interface {
 	Draw(screen *ebiten.Image)
 	In(x, y int) bool
 	SetLayer(l Layer)
+	HasHoverAction() bool
 }
 
 // UIButton ...
 type UIButton interface {
+	UIControl
+}
+
+// UIText ...
+type UIText interface {
+	UIControl
+}
+
+// UIColumn ...
+type UIColumn interface {
+	UIControl
+}
+
+// UIScrollView ...
+type UIScrollView interface {
 	UIControl
 }
 

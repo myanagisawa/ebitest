@@ -1,4 +1,4 @@
-package layer
+package input
 
 import (
 	"github.com/hajimehoshi/ebiten"
