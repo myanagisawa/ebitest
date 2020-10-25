@@ -85,17 +85,34 @@ func NewMainMenu(m interfaces.GameManager) *MainMenu {
 
 	c = control.NewColumn("【公式】タイムマシーン3号 漫才 「お見合い」Ayi|`", l, ebitest.ScaleFonts[24], color.Black, color.RGBA{200, 200, 200, 128}, 10, 160)
 	l.AddUIControl(c)
-	// img = ebitest.CreateRectImage(600, 400, color.RGBA{32, 32, 255, 128})
-	// l = layer.NewLayerBase("Layer4", img, s, nil, ebitest.NewPoint(100.0, 200.0), 0)
-	// s.SetLayer(l)
 
-	// img = ebitest.CreateRectImage(600, 400, color.RGBA{32, 255, 32, 64})
-	// l = layer.NewLayerBase("Layer5", img, s, ebitest.NewScale(0.5, 0.5), ebitest.NewPoint(500.0, 500.0), 0)
-	// s.SetLayer(l)
-
-	// img = ebitest.CreateRectImage(300, 200, color.RGBA{255, 32, 32, 64})
-	// l = layer.NewLayerBase("Layer6", img, s, ebitest.NewScale(1.0, 0.5), ebitest.NewPoint(700.0, 300.0), 30)
-	// s.SetLayer(l)
+	img = ebitest.CreateRectImage(800, 300, color.RGBA{128, 128, 128, 192})
+	l = layer.NewLayerBase("Layer4", img, s, nil, ebitest.NewPoint(300.0, 550.0), 0, false)
+	s.SetLayer(l)
+	data := [][]interface{}{
+		{1, "１行目", "あいうえお"},
+		{2, "２行目", "かきくけこ"},
+		{3, "３行目", "さしすせそ"},
+		{4, "４行目", "たちつてと"},
+		{5, "５行目", "なにぬねの"},
+		{6, "６行目", "はひふへほ"},
+		{7, "７行目", "まみむめも"},
+		{8, "８行目", "やいゆえよ"},
+		{9, "９行目", "らりるれろ"},
+		{10, "１０行目", "わをん"},
+		{11, "１１行目", "あいうえお"},
+		{12, "１２行目", "かきくけこ"},
+		{13, "１３行目", "さしすせそ"},
+		{14, "１４行目", "たちつてと"},
+		{15, "１５行目", "なにぬねの"},
+		{16, "１６行目", "はひふへほ"},
+		{17, "１７行目", "まみむめも"},
+		{18, "１８行目", "やいゆえよ"},
+		{19, "１９行目", "らりるれろ"},
+		{20, "２０行目", "わをん"},
+	}
+	c = control.NewUIScrollViewByList(l, data, 700, 250, 30)
+	l.AddUIControl(c)
 
 	return s
 }
