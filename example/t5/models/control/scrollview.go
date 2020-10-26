@@ -28,6 +28,7 @@ type listRowView struct {
 
 // newListRowView ...
 func newListRowView(row []interface{}, w, h int) *listRowView {
+
 	eimg, _ := ebiten.NewImage(w, h, ebiten.FilterDefault)
 
 	label := fmt.Sprintf("row-%s", utils.RandomLC(8))
@@ -43,12 +44,12 @@ func newListRowView(row []interface{}, w, h int) *listRowView {
 		col := row[i]
 		switch val := col.(type) {
 		case string:
-			t := utils.CreateTextImage(val, ebitest.Fonts["btnFont"], color.Black)
+			t := utils.CreateTextImage(val, ebitest.Fonts["btnFont"], color.RGBA{32, 32, 32, 255})
 			timg, _ = ebiten.NewImageFromImage(*t, ebiten.FilterDefault)
 			texts = append(texts, timg)
 			// log.Printf("string: %s", val)
 		case int:
-			t := utils.CreateTextImage(fmt.Sprintf("%d", val), ebitest.Fonts["btnFont"], color.Black)
+			t := utils.CreateTextImage(fmt.Sprintf("%d", val), ebitest.Fonts["btnFont"], color.RGBA{32, 32, 32, 255})
 			timg, _ = ebiten.NewImageFromImage(*t, ebiten.FilterDefault)
 			texts = append(texts, timg)
 			// log.Printf("int: %d", val)
@@ -70,25 +71,28 @@ func (r *listRowView) GetRowHeight() int {
 
 // DrawListRow ...
 func (r *listRowView) DrawListRow() *ebiten.Image {
-	eimg := r.bg.EbitenImage()
-	_, bh := eimg.Size()
+	var op *ebiten.DrawImageOptions
+
+	bw, bh := r.bg.EbitenImage().Size()
+	base, _ := ebiten.NewImage(bw, bh, ebiten.FilterDefault)
 
 	x := 0.0
+	h := 0
 	for i, row := range r.texts {
-		op := &ebiten.DrawImageOptions{}
+		op = &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(x, margin)
-		eimg.DrawImage(r.cols[i], op)
+		base.DrawImage(r.cols[i], op)
 
-		_, h := row.Size()
+		_, h = row.Size()
 
 		op = &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(x+padleft, float64(bh-h)/2)
-		eimg.DrawImage(row, op)
+		base.DrawImage(row, op)
 
 		x += r.colWidth[i] + margin
 	}
 
-	return eimg
+	return base
 }
 
 type listView struct {
@@ -141,7 +145,7 @@ func newListView(data [][]interface{}, roww, rowh int) *listView {
 		// カラム背景画像を作成
 		colBg := make([]*ebiten.Image, len(colWidth))
 		for i := range colWidth {
-			img := ebitest.CreateBorderedRectImage(int(colWidth[i]), rowh-margin, color.RGBA{255, 32, 32, 64})
+			img := ebitest.CreateRectImage(int(colWidth[i]), rowh-margin, color.RGBA{64, 64, 64, 64})
 			eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 			colBg[i] = eimg
 		}
@@ -174,19 +178,33 @@ func newListView(data [][]interface{}, roww, rowh int) *listView {
 }
 
 // DrawList ...
-func (l *listView) DrawList() *ebiten.Image {
+func (l *listView) DrawList(drawRect image.Rectangle) *ebiten.Image {
+	var op *ebiten.DrawImageOptions
 	eimg := l.bg.EbitenImage()
+	bw, bh := eimg.Size()
+
+	base, _ := ebiten.NewImage(bw, bh, ebiten.FilterDefault)
 
 	y := 0.0
+	top, bottom, min, max := 0.0, 0.0, 0.0, 0.0
 	for _, row := range l.rows {
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(0, y)
+		top = float64(drawRect.Min.Y)
+		bottom = float64(drawRect.Max.Y)
+
+		min = y
+		max = y + float64(row.GetRowHeight())
+
+		// 対象行の下端がtop以下あるいは対象行の上端がbottom以上、以外が描画対象
+		if !(max <= top || min >= bottom) {
+			op = &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(0, y)
+			base.DrawImage(row.DrawListRow(), op)
+		}
 
 		y += float64(row.GetRowHeight()) + margin
-		eimg.DrawImage(row.DrawListRow(), op)
 	}
 
-	return eimg
+	return base
 }
 
 func (l *listView) GetListHeight() int {
@@ -249,7 +267,7 @@ func (c *UIScrollViewImpl) Update(screen *ebiten.Image) error {
 		// スクロール最大位置
 		scrollMax := int((float64(ch) * c.list.bg.Scale().Y()) - h)
 		if c.listRect.Min.Y < scrollMax {
-			c.listRect = image.Rect(c.listRect.Min.X, c.listRect.Min.Y+int(dy*5), c.listRect.Max.X, c.listRect.Max.Y+int(dy*5))
+			c.listRect = image.Rect(c.listRect.Min.X, c.listRect.Min.Y+int(dy*2), c.listRect.Max.X, c.listRect.Max.Y+int(dy*2))
 			// c.listRect.Add(image.Point{X: 0, Y: int(dy * 5)})
 			// log.Printf("listRect: %#v", c.listRect)
 		}
@@ -262,7 +280,7 @@ func (c *UIScrollViewImpl) Update(screen *ebiten.Image) error {
 
 // Draw ...
 func (c *UIScrollViewImpl) Draw(screen *ebiten.Image) {
-	list := c.list.DrawList()
+	list := c.list.DrawList(c.listRect)
 	// x, y := list.Size()
 	// log.Printf("listsize: %d, %d", x, y)
 

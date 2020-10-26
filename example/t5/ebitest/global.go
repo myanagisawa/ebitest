@@ -112,7 +112,7 @@ func CreateBorderedRectImage(w, h int, c color.RGBA) image.Image {
 		// 縦ループ、半径*2＝直径まで
 		for y := 0; y < h; y++ {
 			if (x == 0 || x == (w-1)) || (y == 0 || y == (h-1)) {
-				m.Set(x, y, color.RGBA{0, 0, 0, 255})
+				m.Set(x, y, color.RGBA{c.R / 2, c.G / 2, c.B / 2, c.A})
 			} else {
 				m.Set(x, y, c)
 			}
