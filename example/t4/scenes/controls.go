@@ -7,16 +7,16 @@ import (
 	"log"
 	"math"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/myanagisawa/ebitest/utils"
 	"golang.org/x/image/font"
 )
 
 // UIControl ...
 type UIControl interface {
-	Update(screen *ebiten.Image) error
+	Update() error
 	Draw(screen *ebiten.Image)
 	In(x, y int) bool
 	SetLayer(l Layer)
@@ -46,7 +46,7 @@ func (c *UIControllerImpl) In(x, y int) bool {
 }
 
 // Update ...
-func (c *UIControllerImpl) Update(screen *ebiten.Image) error {
+func (c *UIControllerImpl) Update() error {
 	// log.Printf("UIControllerImpl: update")
 	return nil
 }
@@ -66,7 +66,7 @@ type UIButtonImpl struct {
 // NewButton ...
 func NewButton(label string, baseImg draw.Image, fontFace font.Face, labelColor color.Color, x, y int) UIButton {
 	img := utils.SetTextToCenter(label, baseImg, fontFace, labelColor)
-	eimg, _ := ebiten.NewImageFromImage(*img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(*img)
 	con := &UIControllerImpl{image: eimg, x: x, y: y}
 	return &UIButtonImpl{UIControllerImpl: *con}
 }
@@ -127,7 +127,7 @@ func NewUIScrollView(x, y, w, h int, bgColor color.Color) UIScrollView {
 	scrollbarhilightimg := createRectEbitenImage(10, 10, color.RGBA{127, 127, 127, 255})
 
 	img, _ := utils.GetImageByPath("resources/object_images/obj4.jpg")
-	contents, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	contents := ebiten.NewImageFromImage(img)
 
 	cw, ch := contents.Size()
 	wscale := float64(w-15) / float64(cw)
@@ -170,12 +170,12 @@ func NewUIScrollView(x, y, w, h int, bgColor color.Color) UIScrollView {
 //
 func createRectEbitenImage(w, h int, bgColor color.Color) *ebiten.Image {
 	img := createRectImage(w, h, bgColor.(color.RGBA))
-	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(img)
 	return eimg
 }
 
 // Update ...
-func (c *UIScrollViewImpl) Update(screen *ebiten.Image) error {
+func (c *UIScrollViewImpl) Update() error {
 	// ホイールイベント
 	_, dy := ebiten.Wheel()
 	// log.Printf("%0.1f < %0.1f && %0.1f > %0.1f", c.contentOffset.y, c.scrollMin, c.contentOffset.y, c.scrollMax)

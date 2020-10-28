@@ -4,7 +4,7 @@ import (
 	"image/color"
 	"image/draw"
 
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/utils"
 	"golang.org/x/image/font"
 )
@@ -67,9 +67,9 @@ func (g *GameManager) SetCurrentScene(s Scene) {
 }
 
 // Update ...
-func (g *GameManager) Update(screen *ebiten.Image) error {
+func (g *GameManager) Update() error {
 	if g.currentScene != nil {
-		return g.currentScene.Update(screen)
+		return g.currentScene.Update()
 	}
 	return nil
 }

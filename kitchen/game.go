@@ -3,8 +3,8 @@ package kitchen
 import (
 	"fmt"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type (
@@ -84,7 +84,6 @@ func (g *Game) Update(r *ebiten.Image) error {
 		fmt.Println("Game::Right")
 		sw += d
 	}
-	ebiten.SetScreenSize(sw, sh)
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
 		fmt.Println("Game::C")
@@ -128,10 +127,6 @@ func (g *Game) Update(r *ebiten.Image) error {
 			c.Collision(&g.myCoin)
 		}
 		_ = Dot(g.myCoin, c)
-	}
-
-	if ebiten.IsDrawingSkipped() {
-		return nil
 	}
 
 	g.bg.Draw(r)

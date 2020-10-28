@@ -10,8 +10,8 @@ import (
 
 	"log"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type (
@@ -73,10 +73,7 @@ func NewMyCoin() (Coin, error) {
 		}
 	}
 
-	eimg, err := ebiten.NewImageFromImage(m, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
+	eimg := ebiten.NewImageFromImage(m)
 
 	c.x, c.y = float64(rand.Intn(1344-c.r)), float64(rand.Intn(1008-c.r))
 	if int(c.x) < c.r {
@@ -129,10 +126,7 @@ func NewCoin() (Coin, error) {
 		}
 	}
 
-	eimg, err := ebiten.NewImageFromImage(m, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
+	eimg := ebiten.NewImageFromImage(m)
 
 	c.x, c.y = 600, 200
 	a := 0
@@ -175,10 +169,7 @@ func NewDebris(speed int) (Coin, error) {
 		}
 	}
 
-	eimg, err := ebiten.NewImageFromImage(m, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
+	eimg := ebiten.NewImageFromImage(m)
 
 	c.x, c.y = float64(rand.Intn(1344-c.r)), float64(rand.Intn(1008-c.r))
 	if int(c.x) < c.r {

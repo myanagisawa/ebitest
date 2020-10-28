@@ -1,10 +1,7 @@
 package main
 
 import (
-	"log"
-
-	"github.com/hajimehoshi/ebiten"
-	"github.com/myanagisawa/ebitest/example/t4/scenes"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const (
@@ -21,9 +18,9 @@ func main() {
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowPosition(100, 400)
 
-	game := scenes.NewGameManager(screenWidth, screenHeight)
+	// game := scenes.NewGameManager(screenWidth, screenHeight)
 
-	if err := ebiten.RunGame(game); err != nil {
-		log.Fatal(err)
-	}
+	// if err := ebiten.RunGame(game); err != nil {
+	// 	log.Fatal(err)
+	// }
 }

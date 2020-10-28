@@ -8,7 +8,7 @@ import (
 	"math"
 
 	"github.com/golang/freetype/truetype"
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/utils"
 	"golang.org/x/image/font"
 )
@@ -87,7 +87,7 @@ func init() {
 			a.SetAlpha(i, j, color.Alpha{b})
 		}
 	}
-	SpotLightImage, _ = ebiten.NewImageFromImage(a, ebiten.FilterDefault)
+	SpotLightImage = ebiten.NewImageFromImage(a)
 
 }
 

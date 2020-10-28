@@ -5,8 +5,8 @@ import (
 	"image"
 	"log"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/myanagisawa/ebitest/example/t5/ebitest"
 	"github.com/myanagisawa/ebitest/example/t5/enum"
 	"github.com/myanagisawa/ebitest/example/t5/interfaces"
@@ -151,7 +151,7 @@ func (l *Base) updateStroke(stroke *input.Stroke) {
 }
 
 // Update ...
-func (l *Base) Update(screen *ebiten.Image) error {
+func (l *Base) Update() error {
 
 	if l.stroke != nil {
 		l.updateStroke(l.stroke)
@@ -181,7 +181,7 @@ func (l *Base) Update(screen *ebiten.Image) error {
 
 		// log.Printf("LayerBase.Update()")
 		for _, c := range l.controls {
-			_ = c.Update(screen)
+			_ = c.Update()
 		}
 	}
 
@@ -218,7 +218,7 @@ func (l *Base) Draw(screen *ebiten.Image) {
 
 // NewLayerBase ...
 func NewLayerBase(label string, img image.Image, parent interfaces.Scene, scale *ebitest.Scale, position *ebitest.Point, angle int, draggable bool) *Base {
-	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(img)
 
 	l := &Base{
 		label:        label,

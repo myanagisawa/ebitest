@@ -9,9 +9,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/text"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 type (
@@ -87,7 +87,7 @@ func NewUnit(parent Scene, team, hp, r int, label string, x, y, angle, speed, ra
 
 	// ユニット画像読み込み
 	img := images[fmt.Sprintf("unit-%d", team)]
-	eimg, _ := ebiten.NewImageFromImage(ResizeImage(img, r*2, r*2), ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(ResizeImage(img, r*2, r*2))
 	e := &Circle{r: r, image: eimg}
 
 	unitImpl := &UnitImpl{
@@ -104,7 +104,7 @@ func NewUnit(parent Scene, team, hp, r int, label string, x, y, angle, speed, ra
 	// 索敵範囲画像読み込み
 	// eimg = getImage("search-1.png", rader*2, rader*2)
 	img = images["search-1"]
-	eimg, _ = ebiten.NewImageFromImage(ResizeImage(img, rader*2, rader*2), ebiten.FilterDefault)
+	eimg = ebiten.NewImageFromImage(ResizeImage(img, rader*2, rader*2))
 	area := &Circle{r: rader, image: eimg}
 	unitImpl.rader = area
 
@@ -504,9 +504,6 @@ func createCircleImage(r int, color1, color2 color.RGBA) *ebiten.Image {
 			}
 		}
 	}
-	eimg, err := ebiten.NewImageFromImage(m, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
+	eimg := ebiten.NewImageFromImage(m)
 	return eimg
 }

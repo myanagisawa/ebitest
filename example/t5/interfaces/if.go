@@ -1,7 +1,7 @@
 package interfaces
 
 import (
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/example/t5/ebitest"
 	"github.com/myanagisawa/ebitest/example/t5/enum"
 	"github.com/myanagisawa/ebitest/example/t5/models"
@@ -16,7 +16,6 @@ type GameManager interface {
 type Scene interface {
 	ebiten.Game
 	Label() string
-	Draw(screen *ebiten.Image)
 	SetLayer(l Layer)
 	DeleteLayer(l Layer)
 	LayerAt(x, y int) Layer
@@ -29,7 +28,7 @@ type Layer interface {
 	Label() string
 	LabelFull() string
 	EbiObjects() []*models.EbiObject
-	Update(screen *ebiten.Image) error
+	Update() error
 	Draw(screen *ebiten.Image)
 	Scroll(t enum.EdgeTypeEnum)
 	In(x, y int) bool
@@ -43,7 +42,7 @@ type Layer interface {
 type UIControl interface {
 	Label() string
 	EbiObjects() []*models.EbiObject
-	Update(screen *ebiten.Image) error
+	Update() error
 	Draw(screen *ebiten.Image)
 	In(x, y int) bool
 	SetLayer(l Layer)

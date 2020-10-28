@@ -1,8 +1,8 @@
 package scenes
 
 import (
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 // Stroke manages the current drag state by mouse.
@@ -88,7 +88,7 @@ func (m *MouseStrokeSource) IsJustReleased() bool {
 
 // TouchStrokeSource is a StrokeSource implementation of touch.
 type TouchStrokeSource struct {
-	ID int
+	ID ebiten.TouchID
 }
 
 // Position ...

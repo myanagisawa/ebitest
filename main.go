@@ -12,8 +12,7 @@ import (
 
 	_ "image/jpeg"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/myanagisawa/ebitest/kitchen"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 const (
@@ -53,20 +52,14 @@ func main() {
 	// 新着イメージの変換
 	// imgconv.CreateNewImages(orgImgDir, imgDir)
 
-	ebiten.SetRunnableInBackground(true)
+	ebiten.SetRunnableOnUnfocused(true)
 
 	ebiten.SetWindowDecorated(false)
 
 	ebiten.SetScreenTransparent(true)
 
-	game, _ := kitchen.NewGame(1344, 1008)
-	if err := ebiten.Run(game.Update, game.WindowSize.Width, game.WindowSize.Height, 0.25, "kitchen sink"); err != nil {
-		log.Fatal(err)
-	}
-
-	// game, _ := ebitest.NewGame(getResourceNames(), getObjectNames())
-	// update := game.Update
-	// if err := ebiten.Run(update, ebitest.ScreenWidth, ebitest.ScreenHeight, 1, "ebitest"); err != nil {
+	// game, _ := kitchen.NewGame(1344, 1008)
+	// if err := ebiten.Run(game.Update, game.WindowSize.Width, game.WindowSize.Height, 0.25, "kitchen sink"); err != nil {
 	// 	log.Fatal(err)
 	// }
 }

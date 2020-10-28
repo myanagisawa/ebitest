@@ -6,8 +6,8 @@ import (
 
 	"log"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 const (
@@ -44,8 +44,8 @@ var (
 )
 
 func init() {
-	transitionFrom, _ = ebiten.NewImage(ScreenWidth, ScreenHeight, ebiten.FilterDefault)
-	transitionTo, _ = ebiten.NewImage(ScreenWidth, ScreenHeight, ebiten.FilterDefault)
+	transitionFrom = ebiten.NewImage(ScreenWidth, ScreenHeight)
+	transitionTo = ebiten.NewImage(ScreenWidth, ScreenHeight)
 }
 
 // PathToImage ...
@@ -54,7 +54,7 @@ func (s *SceneManager) PathToImage(idx int) *ebiten.Image {
 		panic("idx out of range.")
 	}
 	path := s.paths[idx]
-	img, _, err := ebitenutil.NewImageFromFile(path, ebiten.FilterDefault)
+	img, _, err := ebitenutil.NewImageFromFile(path)
 	if err != nil {
 		panic(err)
 	}

@@ -4,7 +4,7 @@ import (
 	"image/color"
 	"math"
 
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/example/t5/ebitest"
 )
 

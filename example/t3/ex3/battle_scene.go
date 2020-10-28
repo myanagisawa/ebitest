@@ -3,8 +3,8 @@ package ex3
 import (
 	"log"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type (
@@ -70,7 +70,7 @@ func (s *BattleScene) Update() error {
 		log.Printf("Clicked: %d, %d", x, y)
 
 		img := images["pin"]
-		eimg, _ := ebiten.NewImageFromImage(ResizeImage(img, 9, 25), ebiten.FilterDefault)
+		eimg := ebiten.NewImageFromImage(ResizeImage(img, 9, 25))
 		pin := &Pin{&Point{x, y}, eimg}
 		pins = append(pins, pin)
 	}

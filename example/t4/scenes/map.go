@@ -5,8 +5,8 @@ import (
 	"log"
 	"math"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 // Map ...
@@ -17,7 +17,7 @@ type Map struct {
 
 // NewBattleMap ...
 func NewBattleMap(parent Scene) *Map {
-	eimg, _ := ebiten.NewImageFromImage(images["bgImage"], ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(images["bgImage"])
 
 	l := &Map{
 		LayerBase: LayerBase{
@@ -116,7 +116,7 @@ func (m *Map) BgMoveBy(x, y int) {
 }
 
 // Update ...
-func (m *Map) Update(screen *ebiten.Image) error {
+func (m *Map) Update() error {
 
 	for stroke := range m.strokes {
 		m.updateStroke(stroke)
@@ -148,7 +148,7 @@ func (m *Map) Update(screen *ebiten.Image) error {
 		}
 	}
 
-	m.LayerBase.Update(screen)
+	m.LayerBase.Update()
 	// log.Printf("bg.x=%d, bg.y=%d", s.x, s.y)
 	return nil
 }

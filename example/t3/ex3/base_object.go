@@ -6,7 +6,7 @@ import (
 	"image/color"
 
 	"github.com/golang/freetype/truetype"
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/utils"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/font"
@@ -146,10 +146,7 @@ func getImage(name string, w, h int) *ebiten.Image {
 	// if err != nil {
 	// 	panic(err)
 	// }
-	eimg, err := ebiten.NewImageFromImage(imgDst, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
+	eimg := ebiten.NewImageFromImage(imgDst)
 	return eimg
 }
 
@@ -169,9 +166,6 @@ func getResource(name string) *ebiten.Image {
 		panic(err)
 	}
 
-	eimg, err := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
+	eimg := ebiten.NewImageFromImage(img)
 	return eimg
 }

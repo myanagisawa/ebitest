@@ -15,7 +15,7 @@ import (
 	"golang.org/x/image/font"
 	"golang.org/x/image/math/fixed"
 
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/utils"
 )
 
@@ -54,14 +54,11 @@ func NewGame(paths, objPaths []string) (*Game, error) {
 			setfont(out, "てすと", 48.0)
 
 			// 画像からebiten.imageを作成
-			// img, _, err := ebitenutil.NewImageFromFile(path, ebiten.FilterDefault)
+			// img, _, err := ebitenutil.NewImageFromFile(path)
 			// if err != nil {
 			// 	panic(err)
 			// }
-			ebimg, err := ebiten.NewImageFromImage(out, ebiten.FilterDefault)
-			if err != nil {
-				panic(err)
-			}
+			ebimg := ebiten.NewImageFromImage(out)
 			list[idx] = *ebimg
 			fmt.Print(".")
 			wg.Done()
@@ -86,9 +83,6 @@ func (g *Game) Update(r *ebiten.Image) error {
 	g.input.Update()
 	if err := g.sceneManager.Update(g.input); err != nil {
 		return err
-	}
-	if ebiten.IsDrawingSkipped() {
-		return nil
 	}
 
 	g.sceneManager.Draw(r)

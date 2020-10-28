@@ -5,9 +5,9 @@ import (
 	"image"
 	"image/color"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/text"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 type (
@@ -58,7 +58,7 @@ func (s *InfoScene) Update() error {
 func (s *InfoScene) Draw(r *ebiten.Image) {
 	mx, my := ebiten.CursorPosition()
 
-	eimg, _ := ebiten.NewImageFromImage(winImg, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(winImg)
 	for i := 0; i < rownum; i++ {
 		n := float64(i)
 		y := (margin * (n + 1)) + (rowHeight * n)

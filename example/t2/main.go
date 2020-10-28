@@ -3,12 +3,11 @@ package main
 import (
 	"image"
 	"image/color"
-	"log"
 	"math"
 	"math/rand"
 	"time"
 
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type (
@@ -59,10 +58,7 @@ func (c *Circle) EImage() *ebiten.Image {
 	if c.ei != nil {
 		return c.ei
 	}
-	eimg, err := ebiten.NewImageFromImage(c.image, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
+	eimg := ebiten.NewImageFromImage(c.image)
 	c.ei = eimg
 	return eimg
 }
@@ -115,7 +111,7 @@ func update(r *ebiten.Image) error {
 
 func main() {
 	c1 = NewCircle(10)
-	if err := ebiten.Run(update, 200, 100, 1.0, "t2"); err != nil {
-		log.Fatal(err)
-	}
+	// if err := ebiten.RunGame(update, 200, 100, 1.0, "t2"); err != nil {
+	// 	log.Fatal(err)
+	// }
 }

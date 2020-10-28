@@ -8,9 +8,9 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/myanagisawa/ebitest/utils"
 )
 
@@ -161,7 +161,6 @@ func (g *Game) Update(r *ebiten.Image) error {
 		fmt.Println("Game::Right")
 		sw += d
 	}
-	ebiten.SetScreenSize(sw, sh)
 
 	if inpututil.IsKeyJustPressed(ebiten.KeyC) {
 		fmt.Println("Game::C")
@@ -176,10 +175,6 @@ func (g *Game) Update(r *ebiten.Image) error {
 		if err := g.currentScene.Update(); err != nil {
 			return err
 		}
-	}
-
-	if ebiten.IsDrawingSkipped() {
-		return nil
 	}
 
 	g.currentScene.Draw(r)

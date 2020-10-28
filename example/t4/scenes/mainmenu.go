@@ -5,9 +5,9 @@ import (
 	"image/color"
 	"log"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type (
@@ -40,7 +40,7 @@ func NewMainMenu(m *GameManager) *MainMenu {
 }
 
 // Update ...
-func (s *MainMenu) Update(screen *ebiten.Image) error {
+func (s *MainMenu) Update() error {
 	s.activeLayer = s.LayerAt(ebiten.CursorPosition())
 	if s.activeLayer != nil {
 		// log.Printf("activeLayer: %#v", s.activeLayer.Label())
@@ -52,7 +52,7 @@ func (s *MainMenu) Update(screen *ebiten.Image) error {
 	}
 
 	for _, layer := range s.layers {
-		layer.Update(screen)
+		layer.Update()
 	}
 
 	return nil

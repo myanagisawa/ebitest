@@ -1,7 +1,7 @@
 package kitchen
 
 import (
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/utils"
 )
 
@@ -28,10 +28,7 @@ func NewSink(size *Size) (*Sink, error) {
 	// 文字列を表示
 	utils.DrawFont(out, "てすと", 48.0)
 
-	eimg, err := ebiten.NewImageFromImage(out, ebiten.FilterDefault)
-	if err != nil {
-		panic(err)
-	}
+	eimg := ebiten.NewImageFromImage(out)
 	s := &Sink{
 		bgImage:     eimg,
 		brinkLooper: NewLooper(100, 1, 70, 130),

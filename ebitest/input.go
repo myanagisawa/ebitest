@@ -1,8 +1,8 @@
 package ebitest
 
 import (
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type (
@@ -94,7 +94,7 @@ type Input struct {
 	mouseDir      Dir
 
 	touchState    touchState
-	touchID       int
+	touchID       ebiten.TouchID
 	touchInitPosX int
 	touchInitPosY int
 	touchLastPosX int

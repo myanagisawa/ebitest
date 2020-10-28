@@ -8,8 +8,7 @@ import (
 
 	_ "image/jpeg"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/myanagisawa/ebitest/example/t3/ex3"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 var cpuProfile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -26,12 +25,12 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 	}
-	ebiten.SetRunnableInBackground(true)
+	ebiten.SetRunnableOnUnfocused(true)
 	// ebiten.SetWindowDecorated(false)
 	ebiten.SetScreenTransparent(true)
 
-	game, _ := ex3.NewGame(1200, 900)
-	if err := ebiten.Run(game.Update, game.WindowSize.Width, game.WindowSize.Height, 1.0, "example.t3"); err != nil {
-		log.Fatal(err)
-	}
+	// game, _ := ex3.NewGame(1200, 900)
+	// if err := ebiten.Run(game.Update, game.WindowSize.Width, game.WindowSize.Height, 1.0, "example.t3"); err != nil {
+	// 	log.Fatal(err)
+	// }
 }

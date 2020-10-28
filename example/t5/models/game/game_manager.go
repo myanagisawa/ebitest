@@ -3,7 +3,7 @@ package game
 import (
 	"fmt"
 
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/example/t5/ebitest"
 	"github.com/myanagisawa/ebitest/example/t5/enum"
 	"github.com/myanagisawa/ebitest/example/t5/interfaces"
@@ -46,9 +46,9 @@ func (g *Manager) SetCurrentScene(s interfaces.Scene) {
 }
 
 // Update ...
-func (g *Manager) Update(screen *ebiten.Image) error {
+func (g *Manager) Update() error {
 	if g.currentScene != nil {
-		return g.currentScene.Update(screen)
+		return g.currentScene.Update()
 	}
 	return nil
 }

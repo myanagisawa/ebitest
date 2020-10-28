@@ -6,9 +6,9 @@ import (
 	"image/color"
 	"log"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/hajimehoshi/ebiten/inpututil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/myanagisawa/ebitest/example/t5/ebitest"
 	"github.com/myanagisawa/ebitest/example/t5/enum"
 	"github.com/myanagisawa/ebitest/example/t5/interfaces"
@@ -89,6 +89,9 @@ func NewMainMenu(m interfaces.GameManager) *MainMenu {
 	img = ebitest.CreateRectImage(800, 300, color.RGBA{128, 128, 128, 192})
 	l = layer.NewLayerBase("Layer4", img, s, nil, ebitest.NewPoint(300.0, 550.0), 0, false)
 	s.SetLayer(l)
+	cols := []interface{}{
+		"ID", "カラム名ですColumn", "3番目",
+	}
 	data := [][]interface{}{
 		{1, "１行目", "あいうえお"},
 		{2, "２行目", "かきくけこ"},
@@ -111,14 +114,15 @@ func NewMainMenu(m interfaces.GameManager) *MainMenu {
 		{19, "１９行目", "らりるれろ"},
 		{20, "２０行目", "わをん"},
 	}
-	c = control.NewUIScrollViewByList(l, data, 700, 250, 30)
+	// TODO: スクロールバーの実装、行イベントハンドラ実装
+	c = control.NewUIScrollViewByList(l, cols, data, 700, 250, 30, ebitest.NewPoint(20.0, 20.0))
 	l.AddUIControl(c)
 
 	return s
 }
 
 // Update ...
-func (s *MainMenu) Update(screen *ebiten.Image) error {
+func (s *MainMenu) Update() error {
 	et := GetEdgeType(ebiten.CursorPosition())
 	if et != enum.EdgeTypeNotEdge {
 		s.layers[0].Scroll(et)
@@ -135,7 +139,7 @@ func (s *MainMenu) Update(screen *ebiten.Image) error {
 	}
 
 	for _, layer := range s.layers {
-		layer.Update(screen)
+		layer.Update()
 	}
 
 	return nil
@@ -161,14 +165,14 @@ func (s *MainMenu) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	mask, _ := ebiten.NewImage(200, 200, ebiten.FilterDefault)
+	mask := ebiten.NewImage(200, 200)
 	mask.Fill(color.White)
 
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(50, 650)
 	screen.DrawImage(mask.SubImage(image.Rect(0, 0, 100, 100)).(*ebiten.Image), op)
 
-	i1, _ := ebiten.NewImage(100, 100, ebiten.FilterDefault)
+	i1 := ebiten.NewImage(100, 100)
 	i1.Fill(color.Black)
 
 	op = &ebiten.DrawImageOptions{}

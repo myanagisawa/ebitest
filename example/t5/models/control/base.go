@@ -7,7 +7,7 @@ import (
 	"image/draw"
 	"log"
 
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/example/t5/ebitest"
 	"github.com/myanagisawa/ebitest/example/t5/interfaces"
 	"github.com/myanagisawa/ebitest/example/t5/models"
@@ -80,7 +80,7 @@ func (c *UIControlImpl) HasHoverAction() bool {
 }
 
 // Update ...
-func (c *UIControlImpl) Update(screen *ebiten.Image) error {
+func (c *UIControlImpl) Update() error {
 	// log.Printf("UIControlImpl: update")
 	if c.hasHoverAction {
 		c.hover = c.In(ebiten.CursorPosition())
@@ -121,7 +121,7 @@ type UIButtonImpl struct {
 // NewButton ...
 func NewButton(label string, parent interfaces.Layer, baseImg draw.Image, fontFace font.Face, labelColor color.Color, x, y float64) interfaces.UIButton {
 	img := utils.SetTextToCenter(label, baseImg, fontFace, labelColor)
-	eimg, _ := ebiten.NewImageFromImage(*img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(*img)
 
 	con := &UIControlImpl{
 		label:          label,
@@ -164,7 +164,7 @@ type UITextImpl struct {
 // NewText ...
 func NewText(text string, parent interfaces.Layer, fontFace font.Face, c color.Color, x, y float64) interfaces.UIText {
 	img := utils.CreateTextImage(text, fontFace, c)
-	eimg, _ := ebiten.NewImageFromImage(*img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(*img)
 
 	label := fmt.Sprintf("text-%s", utils.RandomLC(8))
 	con := &UIControlImpl{
@@ -203,7 +203,7 @@ type UIColumnImpl struct {
 // NewColumn ...
 func NewColumn(text string, parent interfaces.Layer, fontFace font.Face, labelColor color.Color, bgColor color.Color, x, y float64) interfaces.UIColumn {
 	img := ebitest.CreateBorderedRectImage(500, 50, bgColor.(color.RGBA))
-	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(img)
 
 	label := fmt.Sprintf("col-%s", utils.RandomLC(8))
 	con := &UIControlImpl{
@@ -213,7 +213,7 @@ func NewColumn(text string, parent interfaces.Layer, fontFace font.Face, labelCo
 	}
 
 	t := utils.CreateTextImage(text, fontFace, labelColor)
-	timg, _ := ebiten.NewImageFromImage(*t, ebiten.FilterDefault)
+	timg := ebiten.NewImageFromImage(*t)
 
 	return &UIColumnImpl{UIControlImpl: *con, text: timg}
 }

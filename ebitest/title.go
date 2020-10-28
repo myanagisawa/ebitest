@@ -3,8 +3,8 @@ package ebitest
 import (
 	"fmt"
 
-	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type (
@@ -18,7 +18,7 @@ type (
 
 // NewTitleScene ...
 func NewTitleScene() Scene {
-	img, _, err := ebitenutil.NewImageFromFile("bg2.png", ebiten.FilterDefault)
+	img, _, err := ebitenutil.NewImageFromFile("bg2.png")
 	if err != nil {
 		panic(err)
 	}

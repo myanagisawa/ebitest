@@ -1,6 +1,6 @@
 package scenes
 
-import "github.com/hajimehoshi/ebiten"
+import "github.com/hajimehoshi/ebiten/v2"
 
 // Scene ...
 type Scene interface {

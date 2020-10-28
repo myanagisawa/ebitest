@@ -4,7 +4,7 @@ import (
 	"image/color"
 	"log"
 
-	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 // Layer ...
@@ -19,7 +19,7 @@ type Layer interface {
 	IsModal() bool
 	AddEventListener(c UIControl, name string, callback func(UIControl, *EventSource))
 	FiringEvent(name string)
-	Update(screen *ebiten.Image) error
+	Update() error
 	Draw(screen *ebiten.Image)
 }
 
@@ -144,7 +144,7 @@ func (l *LayerBase) FiringEvent(name string) {
 }
 
 // Update ...
-func (l *LayerBase) Update(screen *ebiten.Image) error {
+func (l *LayerBase) Update() error {
 	if l.parent.ActiveLayer() == nil {
 		return nil
 	}
@@ -153,7 +153,7 @@ func (l *LayerBase) Update(screen *ebiten.Image) error {
 		// log.Printf("LayerBase.Update()")
 		for _, c := range l.controls {
 
-			_ = c.Update(screen)
+			_ = c.Update()
 		}
 	}
 
@@ -176,7 +176,7 @@ func (l *LayerBase) Draw(screen *ebiten.Image) {
 // NewLayerBase ...
 func NewLayerBase(parent Scene) *LayerBase {
 	img := createRectImage(width, height, color.RGBA{32, 32, 32, 255})
-	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(img)
 
 	l := &LayerBase{
 		label:    "layer base",
@@ -205,7 +205,7 @@ type TestWindow struct {
 // NewTestWindow ...
 func NewTestWindow(parent Scene) *TestWindow {
 	img := createRectImage(240, 300, color.RGBA{0, 0, 0, 128})
-	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(img)
 
 	l := &TestWindow{
 		LayerBase: LayerBase{
@@ -262,7 +262,7 @@ type TestSubWindow struct {
 // NewTestSubWindow ...
 func NewTestSubWindow(parent Scene) *TestSubWindow {
 	img := createRectImage(600, 400, color.RGBA{0, 0, 0, 128})
-	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(img)
 
 	l := &TestSubWindow{
 		LayerBase: LayerBase{
@@ -283,7 +283,7 @@ func NewTestSubWindow(parent Scene) *TestSubWindow {
 	l.translateY = float64(l.y)
 
 	subimg := createRectImage(width, height, color.RGBA{32, 32, 32, 192})
-	subeimg, _ := ebiten.NewImageFromImage(subimg, ebiten.FilterDefault)
+	subeimg := ebiten.NewImageFromImage(subimg)
 
 	l.coverimg = subeimg
 
@@ -330,7 +330,7 @@ type UnitListWindow struct {
 func NewUnitListWindow(parent Scene) *UnitListWindow {
 	// img := createRectImage(1000, 600, color.RGBA{0, 0, 0, 128})
 	img := createRectImage(1000, 600, color.RGBA{200, 200, 200, 192})
-	eimg, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+	eimg := ebiten.NewImageFromImage(img)
 
 	l := &UnitListWindow{
 		LayerBase: LayerBase{
@@ -355,13 +355,13 @@ func NewUnitListWindow(parent Scene) *UnitListWindow {
 	l.AddUIControl(list)
 
 	subimg := createRectImage(width, height, color.RGBA{32, 32, 32, 192})
-	subeimg, _ := ebiten.NewImageFromImage(subimg, ebiten.FilterDefault)
+	subeimg := ebiten.NewImageFromImage(subimg)
 	l.coverimg = subeimg
 
-	// listBase, _ := ebiten.NewImageFromImage(images["listBase"], ebiten.FilterDefault)
+	// listBase := ebiten.NewImageFromImage(images["listBase"])
 	// l.listBase = listBase
 
-	// listScroller, _ := ebiten.NewImageFromImage(images["listScroller"], ebiten.FilterDefault)
+	// listScroller := ebiten.NewImageFromImage(images["listScroller"])
 	// l.listScroller = listScroller
 
 	// c := NewButton("閉じる", images["btnBase"], fonts["btnFont"], color.Black, 780, 540)
