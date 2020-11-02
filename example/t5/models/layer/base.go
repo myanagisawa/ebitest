@@ -70,17 +70,17 @@ func (l *Base) Scroll(et enum.EdgeTypeEnum) {
 		l.bg.Position().SetDelta(dp, 0)
 	}
 
-	gx, gy := l.bg.GlobalPosition()
-	w, h := l.bg.Size()
+	bgPos := l.bg.GlobalPosition()
+	bgSize := l.bg.Size()
 	// log.Printf("global position: %0.1f, %0.1f", gx, gy)
-	if int(gx)+w < ebitest.Width {
+	if int(bgPos.X())+bgSize.W() < ebitest.Width {
 		l.bg.Position().SetDelta(dp, 0)
-	} else if gx > 0 {
+	} else if bgPos.X() > 0 {
 		l.bg.Position().SetDelta(-dp, 0)
 	}
-	if int(gy)+h < ebitest.Height {
+	if int(bgPos.Y())+bgSize.H() < ebitest.Height {
 		l.bg.Position().SetDelta(0, dp)
-	} else if gy > 0 {
+	} else if bgPos.Y() > 0 {
 		l.bg.Position().SetDelta(0, -dp)
 	}
 }
@@ -171,10 +171,14 @@ func (l *Base) Update() error {
 			if l.In(x, y) {
 				stroke := input.NewStroke(&input.MouseStrokeSource{})
 				// レイヤ内のドラッグ対象のオブジェクトを取得する仕組みが必要
-				o := l.UIControlAt(x, y)
-				if o != nil || l.bg.IsDraggable() {
+				// o := l.UIControlAt(x, y)
+				// if o != nil || l.bg.IsDraggable() {
+				// 	l.stroke = stroke
+				// 	log.Printf("drag start")
+				// }
+				if l.bg.IsDraggable() {
 					l.stroke = stroke
-					log.Printf("drag start")
+					log.Printf("%s drag start", l.label)
 				}
 			}
 		}
@@ -193,20 +197,19 @@ func (l *Base) Draw(screen *ebiten.Image) {
 	// log.Printf("LayerBase.Draw")
 	op := &ebiten.DrawImageOptions{}
 
-	w, h := l.bg.Size()
 	// 描画位置指定
 	op.GeoM.Reset()
+	op.GeoM.Scale(l.bg.GlobalScale().Get())
 
-	op.GeoM.Scale(l.bg.GlobalScale())
-
+	bgSize := l.bg.Size()
 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
-	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	op.GeoM.Translate(-float64(bgSize.W())/2, -float64(bgSize.H())/2)
 	// 中心を軸に回転
 	op.GeoM.Rotate(l.bg.Theta())
 	// ユニットの座標に移動
-	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+	op.GeoM.Translate(float64(bgSize.W())/2, float64(bgSize.H())/2)
 
-	op.GeoM.Translate(l.bg.GlobalPosition())
+	op.GeoM.Translate(l.bg.GlobalPosition().Get())
 
 	screen.DrawImage(l.bg.EbitenImage(), op)
 

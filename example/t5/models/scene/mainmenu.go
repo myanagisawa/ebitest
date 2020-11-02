@@ -114,7 +114,7 @@ func NewMainMenu(m interfaces.GameManager) *MainMenu {
 		{19, "１９行目", "らりるれろ"},
 		{20, "２０行目", "わをん"},
 	}
-	// TODO: スクロールバーの実装、行イベントハンドラ実装
+	// TODO: 行イベントハンドラ実装
 	c = control.NewUIScrollViewByList(l, cols, data, 700, 250, 30, ebitest.NewPoint(20.0, 20.0))
 	l.AddUIControl(c)
 
@@ -156,11 +156,11 @@ func (s *MainMenu) Draw(screen *ebiten.Image) {
 	control := " - "
 	if s.activeLayer != nil {
 		eo := s.activeLayer.EbiObjects()[0]
-		px, py := eo.GlobalPosition()
+		px, py := eo.GlobalPosition().Get()
 		active = fmt.Sprintf("%s: (%d, %d)", s.activeLayer.LabelFull(), int(px), int(py))
 		c := s.activeLayer.UIControlAt(ebiten.CursorPosition())
 		if c != nil {
-			px, py = c.EbiObjects()[0].GlobalPosition()
+			px, py = c.EbiObjects()[0].GlobalPosition().Get()
 			control = fmt.Sprintf("%s: (%d, %d)", c.Label(), int(px), int(py))
 		}
 	}

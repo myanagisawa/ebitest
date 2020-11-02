@@ -20,12 +20,6 @@ type (
 		uiFont        font.Face
 		uiFontMHeight int
 	}
-
-	// Size ...
-	Size struct {
-		width  int
-		height int
-	}
 )
 
 var (
@@ -226,4 +220,36 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// Size ...
+type Size struct {
+	width  int
+	height int
+}
+
+// NewSize ...
+func NewSize(width, height int) *Size {
+	return &Size{width, height}
+}
+
+// W ...
+func (s *Size) W() int {
+	return s.width
+}
+
+// H ...
+func (s *Size) H() int {
+	return s.height
+}
+
+// Get ...
+func (s *Size) Get() (int, int) {
+	return s.width, s.height
+}
+
+// Set ...
+func (s *Size) Set(width, height int) {
+	s.width = width
+	s.height = height
 }

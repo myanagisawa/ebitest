@@ -2,6 +2,7 @@ package models
 
 import (
 	"image/color"
+	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -55,9 +56,9 @@ func (o *EbiObject) EbitenImage() *ebiten.Image {
 }
 
 // Size ...
-func (o *EbiObject) Size() (int, int) {
+func (o *EbiObject) Size() *ebitest.Size {
 	x, y := o.img.Size()
-	return int(float64(x) * o.scale.X()), int(float64(y) * o.scale.Y())
+	return ebitest.NewSize(int(float64(x)*o.scale.X()), int(float64(y)*o.scale.Y()))
 }
 
 // Position ...
@@ -107,27 +108,28 @@ func (o *EbiObject) UpdatePositionByDelta() {
 }
 
 // GlobalPosition ...
-func (o *EbiObject) GlobalPosition() (float64, float64) {
+func (o *EbiObject) GlobalPosition() *ebitest.Point {
 	gx, gy := 0.0, 0.0
 	if o.parent != nil {
-		gx, gy = o.parent.GlobalPosition()
+		gx, gy = o.parent.GlobalPosition().Get()
 	}
 	dx, dy := 0.0, 0.0
 	if o.moving != nil {
 		dx, dy = o.moving.Get()
+		log.Printf("%s, moving: %0.1f,  %0.1f", o.tag, dx, dy)
 	}
-	sx, sy := o.GlobalScale()
+	sx, sy := o.GlobalScale().Get()
 	gx += (o.position.X() + dx) * sx
 	gy += (o.position.Y() + dy) * sy
-	return gx, gy
+	return ebitest.NewPoint(gx, gy)
 }
 
 // GlobalScale ...
-func (o *EbiObject) GlobalScale() (float64, float64) {
+func (o *EbiObject) GlobalScale() *ebitest.Scale {
 	if o.parent != nil && o.inheritScale {
 		return o.parent.GlobalScale()
 	}
-	return o.scale.Get()
+	return o.scale
 }
 
 // GlobalAngle ...
@@ -145,7 +147,7 @@ func (o *EbiObject) Theta() float64 {
 
 // In returns true if (x, y) is in the sprite, and false otherwise.
 func (o *EbiObject) In(x, y int) bool {
-	px, py := o.GlobalPosition()
+	px, py := o.GlobalPosition().Get()
 	return o.img.At(x-int(px), y-int(py)).(color.RGBA).A > 0
 }
 

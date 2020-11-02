@@ -43,17 +43,15 @@ func (c *UIControlImpl) SetLayer(l interfaces.Layer) {
 // In returns true if (x, y) is in the sprite, and false otherwise.
 func (c *UIControlImpl) In(x, y int) bool {
 	// パーツ位置（左上座標）
-	tx, ty := c.bg.GlobalPosition()
-
+	bgPos := c.bg.GlobalPosition()
 	// パーツサイズ(オリジナル)
-	w, h := c.bg.EbitenImage().Size()
-
+	bgSize := c.bg.Size()
 	// スケール
-	sx, sy := c.bg.GlobalScale()
+	bgScale := c.bg.GlobalScale()
 
 	// 見かけ上の右下座標を取得
-	maxX := int(float64(w)*sx + tx)
-	maxY := int(float64(h)*sy + ty)
+	maxX := int(float64(bgSize.W())*bgScale.X() + bgPos.X())
+	maxY := int(float64(bgSize.H())*bgScale.Y() + bgPos.Y())
 	if maxX > ebitest.Width {
 		maxX = ebitest.Width
 	}
@@ -62,7 +60,7 @@ func (c *UIControlImpl) In(x, y int) bool {
 	}
 
 	// 見かけ上の左上座標を取得
-	minX, minY := int(tx), int(ty)
+	minX, minY := bgPos.GetInt()
 	if minX < 0 {
 		minX = 0
 	}
@@ -95,20 +93,19 @@ func (c *UIControlImpl) Update() error {
 func (c *UIControlImpl) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 
-	w, h := c.bg.Size()
 	// 描画位置指定
 	op.GeoM.Reset()
+	op.GeoM.Scale(c.bg.GlobalScale().Get())
 
-	op.GeoM.Scale(c.bg.GlobalScale())
-
+	bgSize := c.bg.Size()
 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
-	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	op.GeoM.Translate(-float64(bgSize.W())/2, -float64(bgSize.H())/2)
 	// 中心を軸に回転
 	op.GeoM.Rotate(c.bg.Theta())
 	// ユニットの座標に移動
-	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+	op.GeoM.Translate(float64(bgSize.W())/2, float64(bgSize.H())/2)
 
-	op.GeoM.Translate(c.bg.GlobalPosition())
+	op.GeoM.Translate(c.bg.GlobalPosition().Get())
 
 	screen.DrawImage(c.bg.EbitenImage(), op)
 }
@@ -134,20 +131,19 @@ func NewButton(label string, parent interfaces.Layer, baseImg draw.Image, fontFa
 // Draw draws the sprite.
 func (c *UIButtonImpl) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	w, h := c.bg.Size()
 	// 描画位置指定
 	op.GeoM.Reset()
+	op.GeoM.Scale(c.bg.GlobalScale().Get())
 
-	op.GeoM.Scale(c.bg.GlobalScale())
-
+	bgSize := c.bg.Size()
 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
-	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	op.GeoM.Translate(-float64(bgSize.W())/2, -float64(bgSize.H())/2)
 	// 中心を軸に回転
 	op.GeoM.Rotate(c.bg.Theta())
 	// ユニットの座標に移動
-	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+	op.GeoM.Translate(float64(bgSize.W())/2, float64(bgSize.H())/2)
 
-	op.GeoM.Translate(c.bg.GlobalPosition())
+	op.GeoM.Translate(c.bg.GlobalPosition().Get())
 	r, g, b, a := 1.0, 1.0, 1.0, 1.0
 	if c.hover {
 		r, g, b, a = 0.5, 0.5, 0.5, 1.0
@@ -177,20 +173,19 @@ func NewText(text string, parent interfaces.Layer, fontFace font.Face, c color.C
 // Draw draws the sprite.
 func (c *UITextImpl) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	w, h := c.bg.Size()
 	// 描画位置指定
 	op.GeoM.Reset()
+	op.GeoM.Scale(c.bg.GlobalScale().Get())
 
-	op.GeoM.Scale(c.bg.GlobalScale())
-
+	bgSize := c.bg.Size()
 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
-	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	op.GeoM.Translate(-float64(bgSize.W())/2, -float64(bgSize.H())/2)
 	// 中心を軸に回転
 	op.GeoM.Rotate(c.bg.Theta())
 	// ユニットの座標に移動
-	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+	op.GeoM.Translate(float64(bgSize.W())/2, float64(bgSize.H())/2)
 
-	op.GeoM.Translate(c.bg.GlobalPosition())
+	op.GeoM.Translate(c.bg.GlobalPosition().Get())
 	screen.DrawImage(c.bg.EbitenImage(), op)
 }
 
@@ -221,20 +216,19 @@ func NewColumn(text string, parent interfaces.Layer, fontFace font.Face, labelCo
 // Draw draws the sprite.
 func (c *UIColumnImpl) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	w, h := c.bg.Size()
 	// 描画位置指定
 	op.GeoM.Reset()
+	op.GeoM.Scale(c.bg.GlobalScale().Get())
 
-	op.GeoM.Scale(c.bg.GlobalScale())
-
+	bgSize := c.bg.Size()
 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
-	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	op.GeoM.Translate(-float64(bgSize.W())/2, -float64(bgSize.H())/2)
 	// 中心を軸に回転
 	op.GeoM.Rotate(c.bg.Theta())
 	// ユニットの座標に移動
-	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+	op.GeoM.Translate(float64(bgSize.W())/2, float64(bgSize.H())/2)
 
-	op.GeoM.Translate(c.bg.GlobalPosition())
+	op.GeoM.Translate(c.bg.GlobalPosition().Get())
 
 	r, g, b, a := 1.0, 1.0, 1.0, 1.0
 	if c.hover {
@@ -250,25 +244,23 @@ func (c *UIColumnImpl) Draw(screen *ebiten.Image) {
 // DrawText draws the sprite.
 func (c *UIColumnImpl) DrawText(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	w, h := c.text.Size()
 	// 描画位置指定
 	op.GeoM.Reset()
 
-	op.GeoM.Scale(c.bg.GlobalScale())
+	op.GeoM.Scale(c.bg.GlobalScale().Get())
 
+	textSize := ebitest.NewSize(c.text.Size())
 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
-	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	op.GeoM.Translate(-float64(textSize.W())/2, -float64(textSize.H())/2)
 	// 中心を軸に回転
 	op.GeoM.Rotate(c.bg.Theta())
 	// ユニットの座標に移動
-	op.GeoM.Translate(float64(w)/2, float64(h)/2)
+	op.GeoM.Translate(float64(textSize.W())/2, float64(textSize.H())/2)
 
-	bw, bh := c.bg.Size()
-	_, by := c.bg.GlobalScale()
-	a := float64(bh-h) * by / 2
+	bgSize := c.bg.Size()
+	a := float64(bgSize.H()-textSize.H()) * c.bg.GlobalScale().Y() / 2
 
-	tx, ty := c.bg.GlobalPosition()
-
-	op.GeoM.Translate(tx, ty+a)
-	screen.DrawImage(c.text.SubImage(image.Rect(0, 0, bw, h)).(*ebiten.Image), op)
+	bgPos := c.bg.GlobalPosition()
+	op.GeoM.Translate(bgPos.X(), bgPos.Y()+a)
+	screen.DrawImage(c.text.SubImage(image.Rect(0, 0, bgSize.W(), textSize.H())).(*ebiten.Image), op)
 }
