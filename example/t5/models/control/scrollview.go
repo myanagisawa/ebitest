@@ -88,7 +88,7 @@ func (r *listRowView) GetRowHeight() int {
 }
 
 // DrawListRow ...
-func (r *listRowView) DrawListRow() *ebiten.Image {
+func (r *listRowView) DrawListRow(hover bool) *ebiten.Image {
 	var op *ebiten.DrawImageOptions
 
 	bgSize := r.bg.Size()
@@ -99,8 +99,7 @@ func (r *listRowView) DrawListRow() *ebiten.Image {
 	for i, row := range r.texts {
 		op = &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(x, margin)
-		if r.bg.In(ebiten.CursorPosition()) {
-			log.Printf("hover")
+		if hover {
 			op.ColorM.Scale(0.5, 0.5, 0.5, 1.0)
 		}
 		base.DrawImage(r.cols[i], op)
@@ -250,12 +249,14 @@ func (l *listView) DrawList(drawRect image.Rectangle) *ebiten.Image {
 		if !(max <= top || min >= bottom) {
 			op = &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(0, y)
+			hov := false
 			if isHover {
 				if int(min-top) <= dy && int(max-top) >= dy {
 					log.Printf("カーソルは%d行目の範囲内: x=%d, y=%d", i, dx, dy)
+					hov = true
 				}
 			}
-			base.DrawImage(row.DrawListRow(), op)
+			base.DrawImage(row.DrawListRow(hov), op)
 		}
 
 		y += float64(row.GetRowHeight()) + margin
@@ -470,7 +471,7 @@ func (c *UIScrollViewImpl) Draw(screen *ebiten.Image) {
 	// 列名を描画
 	op = &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(c.bg.GlobalPosition().Get())
-	screen.DrawImage(c.list.names.DrawListRow(), op)
+	screen.DrawImage(c.list.names.DrawListRow(false), op)
 
 	//スクロールバードラッグ位置を反映
 	rect := c.listRect
