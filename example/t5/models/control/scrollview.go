@@ -44,14 +44,16 @@ func init() {
 }
 
 // newListRowView スクロールリストの行オブジェクトを作成
-func newListRowView(row []interface{}, w, h int) *listRowView {
+func newListRowView(row []interface{}, w, h int, pos *ebitest.Point) *listRowView {
 
-	eimg := ebiten.NewImage(w, h)
+	img := ebitest.CreateRectImage(w, h, color.RGBA{0, 0, 0, 255})
+	eimg := ebiten.NewImageFromImage(img)
+	// eimg := ebiten.NewImage(w, h)
 
 	label := fmt.Sprintf("row-%s", utils.RandomLC(8))
 	con := &UIControlImpl{
 		label:          label,
-		bg:             models.NewEbiObject(label, eimg, nil, nil, ebitest.NewPoint(0, 0), 0, true, true, false),
+		bg:             models.NewEbiObject(label, eimg, nil, nil, pos, 0, true, true, false),
 		hasHoverAction: true,
 	}
 
@@ -97,6 +99,10 @@ func (r *listRowView) DrawListRow() *ebiten.Image {
 	for i, row := range r.texts {
 		op = &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(x, margin)
+		if r.bg.In(ebiten.CursorPosition()) {
+			log.Printf("hover")
+			op.ColorM.Scale(0.5, 0.5, 0.5, 1.0)
+		}
 		base.DrawImage(r.cols[i], op)
 
 		_, h = row.Size()
@@ -122,7 +128,7 @@ func newListView(parent *models.EbiObject, colNames []interface{}, data [][]inte
 	listh := 0
 	rows := []listRowView{}
 	for i := range data {
-		rowview := newListRowView(data[i], roww, rowh)
+		rowview := newListRowView(data[i], roww, rowh, ebitest.NewPoint(0, float64(listh)))
 		rows = append(rows, *rowview)
 		listh += rowh
 	}
@@ -130,7 +136,7 @@ func newListView(parent *models.EbiObject, colNames []interface{}, data [][]inte
 	listh += margin * (len(data) - 1)
 
 	// 見出し行作成
-	names := newListRowView(colNames, roww, rowh)
+	names := newListRowView(colNames, roww, rowh, ebitest.NewPoint(0, 0))
 
 	// 全データから列のサイズ比を取得
 	if len(rows) > 0 {
@@ -218,12 +224,25 @@ func (l *listView) DrawList(drawRect image.Rectangle) *ebiten.Image {
 
 	base := ebiten.NewImage(bw, bh)
 
-	y := 0.0
-	top, bottom, min, max := 0.0, 0.0, 0.0, 0.0
-	for _, row := range l.rows {
-		top = float64(drawRect.Min.Y)
-		bottom = float64(drawRect.Max.Y)
+	// カーソルIN判定
+	isHover := false
+	cx, cy := ebiten.CursorPosition()
+	bgPos := l.bg.GlobalPosition()
+	viewSize := ebitest.NewSize(drawRect.Dx(), drawRect.Dy())
+	dx, dy := 0, 0
+	if int(bgPos.X()) <= cx && int(bgPos.X())+viewSize.W() >= cx {
+		// 横位置がスクロールビュー範囲内
+		if int(bgPos.Y()) <= cy && int(bgPos.Y())+viewSize.H() >= cy {
+			// 縦位置がスクロールビュー範囲内
+			dx = cx - int(bgPos.X())
+			dy = cy - int(bgPos.Y())
+			isHover = true
+		}
+	}
 
+	y := 0.0
+	top, bottom, min, max := float64(drawRect.Min.Y), float64(drawRect.Max.Y), 0.0, 0.0
+	for i, row := range l.rows {
 		min = y
 		max = y + float64(row.GetRowHeight())
 
@@ -231,6 +250,11 @@ func (l *listView) DrawList(drawRect image.Rectangle) *ebiten.Image {
 		if !(max <= top || min >= bottom) {
 			op = &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(0, y)
+			if isHover {
+				if int(min-top) <= dy && int(max-top) >= dy {
+					log.Printf("カーソルは%d行目の範囲内: x=%d, y=%d", i, dx, dy)
+				}
+			}
 			base.DrawImage(row.DrawListRow(), op)
 		}
 
@@ -259,7 +283,7 @@ type scrollBar struct {
 	scrollMin   float64
 	scrollMax   float64
 	stroke      *input.Stroke
-	hover       bool
+	// hover       bool
 	// scrollbarScale float64
 }
 
@@ -312,8 +336,8 @@ func (c *scrollBar) Draw(r *ebiten.Image, contentHeight, contentOffsetY, content
 	// op.GeoM.Translate(3.0, -translateY)
 	// log.Printf("op: %#v", op)
 	bar := c.bar.EbitenImage()
-	if c.hover {
-		log.Printf("hover")
+	if c.base.In(ebiten.CursorPosition()) {
+		// log.Printf("hover")
 		bar = c.barHover.EbitenImage()
 	}
 	r.DrawImage(bar, op)
@@ -425,8 +449,7 @@ func (c *UIScrollViewImpl) Update() error {
 		}
 	}
 
-	c.scrollBar.hover = c.scrollBar.base.In(ebiten.CursorPosition())
-	if c.scrollBar.hover {
+	if c.scrollBar.base.In(ebiten.CursorPosition()) {
 		// log.Printf("hover")
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 			stroke := input.NewStroke(&input.MouseStrokeSource{})
