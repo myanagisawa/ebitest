@@ -147,8 +147,12 @@ func (o *EbiObject) Theta() float64 {
 
 // In returns true if (x, y) is in the sprite, and false otherwise.
 func (o *EbiObject) In(x, y int) bool {
-	px, py := o.GlobalPosition().Get()
-	return o.img.At(x-int(px), y-int(py)).(color.RGBA).A > 0
+	px, py := o.GlobalPosition().GetInt()
+	if o.scale != nil {
+		ax, ay := int(float64(x-px)/o.scale.X()), int(float64(y-py)/o.scale.Y())
+		return o.img.At(ax, ay).(color.RGBA).A > 0
+	}
+	return o.img.At(x-px, y-py).(color.RGBA).A > 0
 }
 
 // SetDraggable ...

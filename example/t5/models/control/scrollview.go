@@ -272,7 +272,9 @@ func (c *scrollBar) updateStroke(stroke *input.Stroke) {
 func (c *scrollBar) ScrollBy(x, y float64) {
 	// log.Printf("dragging: x=%d, y=%d", x, y)
 	bgSize := c.base.Size()
-	ratio := c.bar.Scale().Y() / float64(bgSize.H())
+	barSize := c.bar.Size()
+	// log.Printf("ScrollBy: bgSize: %#v", bgSize)
+	ratio := float64(barSize.H()) / float64(bgSize.H())
 	c.draggingPos.Set(c.draggingPos.X(), y/ratio)
 }
 
@@ -283,10 +285,12 @@ func (c *scrollBar) Draw(r *ebiten.Image, contentHeight, contentOffsetY, content
 	basePos := c.base.Position()
 	// 親位置
 	parentPos := c.base.Parent().GlobalPosition()
+	// スクロールバーサイズ
+	barSize := c.bar.Size()
 
 	//スクロールエリア
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(c.base.Scale().X(), c.base.Scale().Y()/sbHeight)
+	op.GeoM.Scale(c.base.Scale().X(), c.base.Scale().Y())
 	op.GeoM.Translate(parentPos.X()+basePos.X(), parentPos.Y()+basePos.Y())
 	r.DrawImage(c.base.EbitenImage(), op)
 
@@ -298,12 +302,12 @@ func (c *scrollBar) Draw(r *ebiten.Image, contentHeight, contentOffsetY, content
 		translateY = 3
 	}
 
-	if math.Abs(translateY+c.bar.Scale().Y()) > (float64(baseSize.H()) - 3) {
-		translateY = float64(baseSize.H()) - c.bar.Scale().Y() - 3
+	if math.Abs(translateY+float64(barSize.H())) > (float64(baseSize.H()) - 3) {
+		translateY = float64(baseSize.H() - barSize.H() - 3)
 	}
 	// log.Printf("表示高さ: %0.2f, Offset: %0.2f, コンテンツ高さ: %0.2f = バー移動量: %0.2f", float64(rh), contentOffsetY, (contentHeight * contentScale), translateY)
 	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(c.bar.Scale().X(), c.bar.Scale().Y()/sbHeight)
+	op.GeoM.Scale(c.bar.Scale().X(), c.bar.Scale().Y())
 	op.GeoM.Translate(parentPos.X()+basePos.X()+3, parentPos.Y()+basePos.Y()+translateY)
 	// op.GeoM.Translate(3.0, -translateY)
 	// log.Printf("op: %#v", op)
@@ -353,13 +357,13 @@ func NewUIScrollViewByList(parent interfaces.Layer, colNames []interface{}, data
 	bgSize := l.bg.Size()
 	wscale := float64(lw) / float64(bgSize.W())
 	hscale := float64(lh*lh-6) / (float64(bgSize.H()) * wscale)
-	log.Printf("scrollbarScale: %0.1f", hscale)
+	// log.Printf("scrollbarScale: %0.1f", hscale)
 
 	sbpos := ebitest.NewPoint(float64(lw), float64(rowh))
 	sb := &scrollBar{
-		base:        models.NewEbiObject(label, ebiten.NewImageFromImage(scrollbaseimg), con.bg, ebitest.NewScale(1.0, float64(lh)), sbpos, 0, true, false, false),
-		bar:         models.NewEbiObject(label, ebiten.NewImageFromImage(scrollbarimg), con.bg, ebitest.NewScale(1.0, hscale), sbpos, 0, true, false, false),
-		barHover:    models.NewEbiObject(label, ebiten.NewImageFromImage(scrollbarhilightimg), con.bg, ebitest.NewScale(1.0, hscale), sbpos, 0, true, false, false),
+		base:        models.NewEbiObject(label, ebiten.NewImageFromImage(scrollbaseimg), con.bg, ebitest.NewScale(1.0, float64(lh)/sbHeight), sbpos, 0, true, false, false),
+		bar:         models.NewEbiObject(label, ebiten.NewImageFromImage(scrollbarimg), con.bg, ebitest.NewScale(1.0, hscale/sbHeight), sbpos, 0, true, false, false),
+		barHover:    models.NewEbiObject(label, ebiten.NewImageFromImage(scrollbarhilightimg), con.bg, ebitest.NewScale(1.0, hscale/sbHeight), sbpos, 0, true, false, false),
 		draggingPos: ebitest.NewPoint(0.0, 0.0),
 		scrollMin:   0,
 		scrollMax:   float64(lh) - (float64(bgSize.H()) * wscale),
