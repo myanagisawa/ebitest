@@ -228,12 +228,12 @@ func (l *listView) DrawList(drawRect image.Rectangle) *ebiten.Image {
 	cx, cy := ebiten.CursorPosition()
 	bgPos := l.bg.GlobalPosition()
 	viewSize := ebitest.NewSize(drawRect.Dx(), drawRect.Dy())
-	dx, dy := 0, 0
+	_, dy := 0, 0
 	if int(bgPos.X()) <= cx && int(bgPos.X())+viewSize.W() >= cx {
 		// 横位置がスクロールビュー範囲内
 		if int(bgPos.Y()) <= cy && int(bgPos.Y())+viewSize.H() >= cy {
 			// 縦位置がスクロールビュー範囲内
-			dx = cx - int(bgPos.X())
+			// dx = cx - int(bgPos.X())
 			dy = cy - int(bgPos.Y())
 			isHover = true
 		}
@@ -241,7 +241,7 @@ func (l *listView) DrawList(drawRect image.Rectangle) *ebiten.Image {
 
 	y := 0.0
 	top, bottom, min, max := float64(drawRect.Min.Y), float64(drawRect.Max.Y), 0.0, 0.0
-	for i, row := range l.rows {
+	for _, row := range l.rows {
 		min = y
 		max = y + float64(row.GetRowHeight())
 
@@ -252,7 +252,7 @@ func (l *listView) DrawList(drawRect image.Rectangle) *ebiten.Image {
 			hov := false
 			if isHover {
 				if int(min-top) <= dy && int(max-top) >= dy {
-					log.Printf("カーソルは%d行目の範囲内: x=%d, y=%d", i, dx, dy)
+					// log.Printf("カーソルは%d行目の範囲内: x=%d, y=%d", i, dx, dy)
 					hov = true
 				}
 			}
@@ -504,4 +504,51 @@ func (c *UIScrollViewImpl) Draw(screen *ebiten.Image) {
 	bgScale := c.bg.GlobalScale()
 	c.scrollBar.Draw(screen, float64(listSize.H()), float64(rect.Min.Y), bgScale.Y())
 
+}
+
+// getFocusedRow カーソルのある行のインデックスと参照を返します
+func (c *UIScrollViewImpl) getFocusedRow() (int, *listRowView) {
+	drawRect := c.listRect
+	l := c.list
+
+	// カーソルIN判定
+	isHover := false
+	cx, cy := ebiten.CursorPosition()
+	bgPos := l.bg.GlobalPosition()
+	viewSize := ebitest.NewSize(drawRect.Dx(), drawRect.Dy())
+	_, dy := 0, 0
+	if int(bgPos.X()) <= cx && int(bgPos.X())+viewSize.W() >= cx {
+		// 横位置がスクロールビュー範囲内
+		if int(bgPos.Y()) <= cy && int(bgPos.Y())+viewSize.H() >= cy {
+			// 縦位置がスクロールビュー範囲内
+			// dx = cx - int(bgPos.X())
+			dy = cy - int(bgPos.Y())
+			isHover = true
+		}
+	}
+
+	y := 0.0
+	top, bottom, min, max := float64(drawRect.Min.Y), float64(drawRect.Max.Y), 0.0, 0.0
+	for i, row := range l.rows {
+		min = y
+		max = y + float64(row.GetRowHeight())
+
+		// 対象行の下端がtop以下あるいは対象行の上端がbottom以上、以外が描画対象
+		if !(max <= top || min >= bottom) {
+			if isHover {
+				if int(min-top) <= dy && int(max-top) >= dy {
+					// log.Printf("カーソルは%d行目の範囲内: x=%d, y=%d", i, dx, dy)
+					return i, &row
+				}
+			}
+		}
+		y += float64(row.GetRowHeight()) + margin
+	}
+	return -1, nil
+}
+
+// GetIndexOfFocusedRow カーソルのある行のインデックスと参照を返します
+func (c *UIScrollViewImpl) GetIndexOfFocusedRow() int {
+	i, _ := c.getFocusedRow()
+	return i
 }
