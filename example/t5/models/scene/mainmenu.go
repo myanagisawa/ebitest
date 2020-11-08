@@ -187,7 +187,7 @@ func (s *MainMenu) Draw(screen *ebiten.Image) {
 	mask.DrawImage(i1, op)
 
 	x, y := ebiten.CursorPosition()
-	dbg := fmt.Sprintf("FPS: %0.2f\npos: (%d, %d)\nactive:\n - layer: %s\n - control: %s", ebiten.CurrentFPS(), x, y, active, control)
+	dbg := fmt.Sprintf("TPS: %0.2f\nFPS: %0.2f\npos: (%d, %d)\nactive:\n - layer: %s\n - control: %s", ebiten.CurrentTPS(), ebiten.CurrentFPS(), x, y, active, control)
 	ebitenutil.DebugPrint(screen, dbg)
 }
 

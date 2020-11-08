@@ -8,18 +8,18 @@ import (
 )
 
 const (
-	screenWidth  = 1200
-	screenHeight = 900
+	screenWidth  = 1600
+	screenHeight = 1200
 )
 
 func main() {
 
 	ebiten.SetScreenTransparent(true)
 	// ebiten.SetWindowDecorated(false)
-	// ebiten.SetRunnableOnUnfocused(false)
 	ebiten.SetWindowFloating(true)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowPosition(100, 400)
+	// ebiten.SetMaxTPS(30)
 
 	manager := game.NewManager(screenWidth, screenHeight)
 
