@@ -1,117 +1,87 @@
 package main
 
 import (
-	"image"
-	"image/color"
-	"math"
-	"math/rand"
-	"time"
+	"fmt"
+	"log"
+	"runtime"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-type (
-	// Object ...
-	Object struct {
-		label string
-		image image.Image
-		ei    *ebiten.Image
-		x, y  float64
-		angle int
-		speed int
-	}
-	// Circle ...
-	Circle struct {
-		Object
-		r int
-	}
+const (
+	screenWidth  = 640
+	screenHeight = 480
 )
-
-// NewCircle ...
-func NewCircle(r int) Circle {
-	c := Circle{
-		r: r,
-	}
-	c.Object = Object{
-		x:     0,
-		y:     0,
-		angle: 0,
-		speed: 0,
-	}
-	c.SetImage()
-
-	return c
-}
-
-// SetOption ...
-func (o *Object) SetOption(op *ebiten.DrawImageOptions) {
-	w, h := o.ei.Size()
-	op.GeoM.Reset()
-	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
-	op.GeoM.Rotate(-2 * math.Pi * float64(o.angle) / float64(maxAngle))
-	op.GeoM.Translate(float64(w)/2, float64(h)/2)
-	op.GeoM.Translate(float64(o.x), float64(o.y))
-}
-
-// EImage ...
-func (c *Circle) EImage() *ebiten.Image {
-	if c.ei != nil {
-		return c.ei
-	}
-	eimg := ebiten.NewImageFromImage(c.image)
-	c.ei = eimg
-	return eimg
-}
-
-// SetImage ...
-func (c *Circle) SetImage() {
-	w, h := c.r*2, c.r*2
-	m := image.NewRGBA(image.Rect(0, 0, w, h))
-	for x := 0; x < w; x++ {
-		for y := 0; y < h; y++ {
-			d := c.Distance(x, y)
-			if d <= 1.0 && d > 0.5 {
-				m.Set(x, y, color.RGBA{212, 215, 143, 255})
-			} else {
-				m.Set(x, y, color.RGBA{0, 0, 0, 0})
-			}
-		}
-	}
-	c.image = m
-	c.EImage()
-}
-
-// Distance ...
-func (c *Circle) Distance(x, y int) float64 {
-	var dx, dy int = c.r - x, c.r - y
-	return math.Sqrt(float64(dx*dx+dy*dy)) / float64(c.r)
-}
 
 var (
-	c1 Circle
-
-	maxAngle = 360
+	ms  runtime.MemStats
+	dbg string
 )
 
-func init() {
-	rand.Seed(time.Now().UnixNano())
+// Game ...
+type Game struct {
 }
 
-func update(r *ebiten.Image) error {
-	c1.angle += 2
-	if c1.angle > maxAngle {
-		c1.angle = 0
-	}
-
-	op := &ebiten.DrawImageOptions{}
-	c1.SetOption(op)
-	r.DrawImage(c1.EImage(), op)
+// Update ...
+func (g *Game) Update() error {
+	// Change the text color for each second.
 	return nil
 }
 
+// Draw ...
+func (g *Game) Draw(screen *ebiten.Image) {
+	dbg = fmt.Sprintf("%s", printMemoryStats())
+	log.Printf("%s", dbg)
+}
+
+// Layout ...
+func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return screenWidth, screenHeight
+}
+
 func main() {
-	c1 = NewCircle(10)
-	// if err := ebiten.RunGame(update, 200, 100, 1.0, "t2"); err != nil {
-	// 	log.Fatal(err)
-	// }
+	ebiten.SetWindowSize(screenWidth, screenHeight)
+	ebiten.SetWindowTitle("Font (Ebiten Demo)")
+	if err := ebiten.RunGame(&Game{}); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func printMemoryStats() string {
+	// --------------------------------------------------------
+	// runtime.MemoryStats() から、現在の割当メモリ量などが取得できる.
+	//
+	// まず、データの受け皿となる runtime.MemStats を初期化し
+	// runtime.ReadMemStats(*runtime.MemStats) を呼び出して
+	// 取得する.
+	// --------------------------------------------------------
+	runtime.ReadMemStats(&ms)
+
+	// // Alloc は、現在ヒープに割り当てられているメモリ
+	// // HeapAlloc と同じ.
+	// output.Stdoutl("Alloc", toKb(ms.Alloc))
+	// output.Stdoutl("HeapAlloc", toKb(ms.HeapAlloc))
+
+	// // TotalAlloc は、ヒープに割り当てられたメモリ量の累積
+	// // Allocと違い、こちらは増えていくが減ることはない
+	// output.Stdoutl("TotalAlloc", toKb(ms.TotalAlloc))
+
+	// // HeapObjects は、ヒープに割り当てられているオブジェクトの数
+	// output.Stdoutl("HeapObjects", toKb(ms.HeapObjects))
+
+	// // Sys は、OSから割り当てられたメモリの合計量
+	// output.Stdoutl("Sys", toKb(ms.Sys))
+
+	// // NumGC は、実施されたGCの回数
+	// output.Stdoutl("NumGC", ms.NumGC)
+	return fmt.Sprintf("Alloc, Sys, GC: %dMB, %dMB, %d", toMb(ms.Alloc), toMb(ms.Sys), ms.NumGC)
+}
+
+func toKb(bytes uint64) uint64 {
+	return bytes / 1024
+}
+
+//noinspection GoUnusedFunction
+func toMb(bytes uint64) uint64 {
+	return toKb(bytes) / 1024
 }

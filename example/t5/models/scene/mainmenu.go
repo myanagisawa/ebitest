@@ -2,7 +2,6 @@ package scene
 
 import (
 	"fmt"
-	"image"
 	"image/color"
 	"log"
 
@@ -35,8 +34,12 @@ func NewMainMenu(m interfaces.GameManager) *MainMenu {
 	l := layer.NewLayerBase("Layer1", ebitest.Images["bgFlower"], s, ebitest.NewScale(1.0, 1.0), nil, 0, false)
 	s.SetLayer(l)
 
-	c := control.NewButton("一緒にスクロール", l, ebitest.Images["btnBase"], ebitest.Fonts["btnFont"], color.Black, 500, 500)
+	c := control.NewButton("マップ", l, ebitest.Images["btnBase"], ebitest.Fonts["btnFont"], color.Black, 500, 500)
 	l.AddUIControl(c)
+	l.EventHandler().AddEventListener(c, "click", func(target interfaces.UIControl, scene interfaces.Scene, point *ebitest.Point) {
+		log.Printf("%s clicked", target.Label())
+		m.TransitionTo(enum.MapEnum)
+	})
 
 	img := ebitest.CreateRectImage(400, 600, color.RGBA{0, 0, 0, 128})
 	l = layer.NewLayerBase("Layer2", img, s, ebitest.NewScale(0.7, 0.7), ebitest.NewPoint(10.0, 50.0), 0, true)
@@ -130,6 +133,7 @@ func NewMainMenu(m interfaces.GameManager) *MainMenu {
 
 // Update ...
 func (s *MainMenu) Update() error {
+	log.Printf("(s *MainMenu) Update()")
 	et := GetEdgeType(ebiten.CursorPosition())
 	if et != enum.EdgeTypeNotEdge {
 		s.layers[0].Scroll(et)
@@ -154,6 +158,7 @@ func (s *MainMenu) Update() error {
 
 // Draw ...
 func (s *MainMenu) Draw(screen *ebiten.Image) {
+	log.Printf("(s *MainMenu) Draw(screen *ebiten.Image)")
 
 	for _, layer := range s.layers {
 		layer.Draw(screen)
@@ -172,54 +177,21 @@ func (s *MainMenu) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	mask := ebiten.NewImage(200, 200)
-	mask.Fill(color.White)
+	// mask := ebiten.NewImage(200, 200)
+	// mask.Fill(color.White)
 
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(50, 650)
-	screen.DrawImage(mask.SubImage(image.Rect(0, 0, 100, 100)).(*ebiten.Image), op)
+	// op := &ebiten.DrawImageOptions{}
+	// op.GeoM.Translate(50, 650)
+	// screen.DrawImage(mask.SubImage(image.Rect(0, 0, 100, 100)).(*ebiten.Image), op)
 
-	i1 := ebiten.NewImage(100, 100)
-	i1.Fill(color.Black)
+	// i1 := ebiten.NewImage(100, 100)
+	// i1.Fill(color.Black)
 
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(50, 50)
-	mask.DrawImage(i1, op)
+	// op = &ebiten.DrawImageOptions{}
+	// op.GeoM.Translate(50, 50)
+	// mask.DrawImage(i1, op)
 
 	x, y := ebiten.CursorPosition()
-	dbg := fmt.Sprintf("TPS: %0.2f\nFPS: %0.2f\npos: (%d, %d)\nactive:\n - layer: %s\n - control: %s", ebiten.CurrentTPS(), ebiten.CurrentFPS(), x, y, active, control)
+	dbg := fmt.Sprintf("%s\nTPS: %0.2f\nFPS: %0.2f\npos: (%d, %d)\nactive:\n - layer: %s\n - control: %s", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS(), x, y, active, control)
 	ebitenutil.DebugPrint(screen, dbg)
-}
-
-// GetEdgeType ...
-func GetEdgeType(x, y int) enum.EdgeTypeEnum {
-	minX, maxX := ebitest.EdgeSize, ebitest.Width-ebitest.EdgeSize
-	minY, maxY := ebitest.EdgeSize, ebitest.Height-ebitest.EdgeSize
-
-	// 範囲外判定
-	if x < -ebitest.EdgeSizeOuter || x > ebitest.Width+ebitest.EdgeSizeOuter {
-		return enum.EdgeTypeNotEdge
-	} else if y < -ebitest.EdgeSizeOuter || y > ebitest.Height+ebitest.EdgeSizeOuter {
-		return enum.EdgeTypeNotEdge
-	}
-
-	// 判定
-	if x <= minX && y <= minY {
-		return enum.EdgeTypeTopLeft
-	} else if x > minX && x < maxX && y <= minY {
-		return enum.EdgeTypeTop
-	} else if x >= maxX && y <= minY {
-		return enum.EdgeTypeTopRight
-	} else if x >= maxX && y > minY && y < maxY {
-		return enum.EdgeTypeRight
-	} else if x >= maxX && y >= maxY {
-		return enum.EdgeTypeBottomRight
-	} else if x > minX && x < maxX && y >= maxY {
-		return enum.EdgeTypeBottom
-	} else if x <= minX && y >= maxY {
-		return enum.EdgeTypeBottomLeft
-	} else if x <= minX && y > minY && y < maxY {
-		return enum.EdgeTypeLeft
-	}
-	return enum.EdgeTypeNotEdge
 }

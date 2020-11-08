@@ -5,10 +5,8 @@ import (
 	"image/color"
 	"image/draw"
 	"io/ioutil"
-	"math"
 
 	"github.com/golang/freetype/truetype"
-	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/utils"
 	"golang.org/x/image/font"
 )
@@ -36,8 +34,8 @@ var (
 	// Images ...
 	Images map[string]draw.Image
 
-	// SpotLightImage ...
-	SpotLightImage *ebiten.Image
+	// // SpotLightImage ...
+	// SpotLightImage *ebiten.Image
 
 	// fontFile
 	fontFile = "resources/fonts/GenShinGothic-Regular.ttf"
@@ -62,6 +60,7 @@ func init() {
 	Images["btnBase"], _ = utils.GetImageByPath("resources/system_images/button.png")
 	Images["btnBaseHover"], _ = utils.GetImageByPath("resources/system_images/button-hover.png")
 	Images["bgFlower"], _ = utils.GetImageByPath("resources/system_images/bg_flower.jpg")
+	Images["bg-1"], _ = utils.GetImageByPath("resources/system_images/bg-1.jpg")
 
 	img := CreateRectImage(10, 10, color.RGBA{0, 0, 0, 255})
 	Images["listBase"] = img.(draw.Image)
@@ -69,19 +68,19 @@ func init() {
 	img = CreateRectImage(10, 10, color.RGBA{128, 128, 128, 128})
 	Images["listScroller"] = img.(draw.Image)
 
-	const r = 64
-	alphas := image.Point{r * 2, r * 2}
-	a := image.NewAlpha(image.Rectangle{image.ZP, alphas})
-	for j := 0; j < alphas.Y; j++ {
-		for i := 0; i < alphas.X; i++ {
-			// d is the distance between (i, j) and the (circle) center.
-			d := math.Sqrt(float64((i-r)*(i-r) + (j-r)*(j-r)))
-			// Alphas around the center are 0 and values outside of the circle are 0xff.
-			b := uint8(max(0, min(0xff, int(3*d*0xff/r)-2*0xff)))
-			a.SetAlpha(i, j, color.Alpha{b})
-		}
-	}
-	SpotLightImage = ebiten.NewImageFromImage(a)
+	// const r = 64
+	// alphas := image.Point{r * 2, r * 2}
+	// a := image.NewAlpha(image.Rectangle{image.ZP, alphas})
+	// for j := 0; j < alphas.Y; j++ {
+	// 	for i := 0; i < alphas.X; i++ {
+	// 		// d is the distance between (i, j) and the (circle) center.
+	// 		d := math.Sqrt(float64((i-r)*(i-r) + (j-r)*(j-r)))
+	// 		// Alphas around the center are 0 and values outside of the circle are 0xff.
+	// 		b := uint8(max(0, min(0xff, int(3*d*0xff/r)-2*0xff)))
+	// 		a.SetAlpha(i, j, color.Alpha{b})
+	// 	}
+	// }
+	// SpotLightImage = ebiten.NewImageFromImage(a)
 
 }
 
