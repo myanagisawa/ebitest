@@ -35,13 +35,25 @@ func NewMap(m interfaces.GameManager) *Map {
 		},
 	}
 
-	l := layer.NewLayerBase("Layer1", ebitest.Images["bg-1"], s, ebitest.NewScale(1.0, 1.0), nil, 0, false)
+	l := layer.NewMapLayer("Layer1", ebitest.Images["world"], s, ebitest.NewScale(1.0, 1.0), nil, 0, false)
 	s.SetLayer(l)
 	c := control.NewButton("menu", l, ebitest.Images["btnBase"], ebitest.Fonts["btnFont"], color.Black, 500, 500)
 	l.AddUIControl(c)
 	l.EventHandler().AddEventListener(c, "click", func(target interfaces.UIControl, scene interfaces.Scene, point *ebitest.Point) {
 		log.Printf("%s clicked", target.Label())
 		m.TransitionTo(enum.MainMenuEnum)
+	})
+	c = control.NewButton("拡大/縮小", l, ebitest.Images["btnBase"], ebitest.Fonts["btnFont"], color.Black, 50, 30)
+	l.AddUIControl(c)
+	l.EventHandler().AddEventListener(c, "click", func(target interfaces.UIControl, scene interfaces.Scene, point *ebitest.Point) {
+		log.Printf("%s clicked", target.Label())
+		layer := scene.GetLayerByLabel("Layer1")
+		s := layer.EbiObjects()[0].Scale()
+		if s.X() >= 1.0 {
+			s.Set(0.5, 0.5)
+		} else {
+			s.Set(1.0, 1.0)
+		}
 	})
 
 	return s

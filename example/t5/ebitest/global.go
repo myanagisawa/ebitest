@@ -61,8 +61,13 @@ func init() {
 	Images["btnBaseHover"], _ = utils.GetImageByPath("resources/system_images/button-hover.png")
 	Images["bgFlower"], _ = utils.GetImageByPath("resources/system_images/bg_flower.jpg")
 	Images["bg-1"], _ = utils.GetImageByPath("resources/system_images/bg-1.jpg")
+	Images["pin"], _ = utils.GetImageByPath("resources/system_images/pin.png")
+	Images["world"], _ = utils.GetImageByPath("resources/system_images/world.png")
 
-	img := CreateRectImage(10, 10, color.RGBA{0, 0, 0, 255})
+	img := CreateRectImage(1, 1, color.RGBA{200, 200, 200, 255})
+	Images["routeLine"] = img.(draw.Image)
+
+	img = CreateRectImage(10, 10, color.RGBA{0, 0, 0, 255})
 	Images["listBase"] = img.(draw.Image)
 
 	img = CreateRectImage(10, 10, color.RGBA{128, 128, 128, 128})
