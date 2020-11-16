@@ -13,18 +13,18 @@ type Route struct {
 	Code  string
 	Type  enum.RouteTypeEnum
 	Name  string
-	Site1 string
-	Site2 string
+	Site1 *Site
+	Site2 *Site
 	Image *ebiten.Image
 }
 
 // NewRoute ...
-func NewRoute(code string, t enum.RouteTypeEnum, name, site1, site2 string) *Route {
-	if code == "" || site1 == "" || site2 == "" {
+func NewRoute(code string, t enum.RouteTypeEnum, name string, site1, site2 *Site) *Route {
+	if code == "" || site1 == nil || site2 == nil {
 		panic(fmt.Sprintf("Route初期化エラー: code=%#v, site1=%#v, site2=%#v", code, site1, site2))
 	}
 
-	img := ebiten.NewImageFromImage(ebitest.Images["pin"])
+	img := ebiten.NewImageFromImage(ebitest.Images[fmt.Sprintf("route_%d", t)])
 
 	return &Route{
 		Code:  code,

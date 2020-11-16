@@ -5,11 +5,14 @@ import (
 	"github.com/myanagisawa/ebitest/example/t5/ebitest"
 	"github.com/myanagisawa/ebitest/example/t5/enum"
 	"github.com/myanagisawa/ebitest/example/t5/models"
+	"github.com/myanagisawa/ebitest/example/t5/parts"
 )
 
 // GameManager ...
 type GameManager interface {
 	TransitionTo(enum.SceneEnum)
+	GetSites() []*parts.Site
+	GetRoutes(sites []*parts.Site) []*parts.Route
 }
 
 // Scene ...

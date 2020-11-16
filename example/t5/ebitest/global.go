@@ -61,8 +61,17 @@ func init() {
 	Images["btnBaseHover"], _ = utils.GetImageByPath("resources/system_images/button-hover.png")
 	Images["bgFlower"], _ = utils.GetImageByPath("resources/system_images/bg_flower.jpg")
 	Images["bg-1"], _ = utils.GetImageByPath("resources/system_images/bg-1.jpg")
-	Images["pin"], _ = utils.GetImageByPath("resources/system_images/pin.png")
 	Images["world"], _ = utils.GetImageByPath("resources/system_images/world.png")
+
+	Images["site_1"], _ = utils.GetImageByPath("resources/system_images/site_1.png")
+	Images["site_2"], _ = utils.GetImageByPath("resources/system_images/site_2.png")
+	Images["site_3"], _ = utils.GetImageByPath("resources/system_images/site_3.png")
+	Images["site_4"], _ = utils.GetImageByPath("resources/system_images/site_4.png")
+	Images["site_5"], _ = utils.GetImageByPath("resources/system_images/site_5.png")
+
+	Images["route_1"], _ = utils.GetImageByPath("resources/system_images/route_1.png")
+	Images["route_2"], _ = utils.GetImageByPath("resources/system_images/route_2.png")
+	Images["route_3"], _ = utils.GetImageByPath("resources/system_images/route_3.png")
 
 	img := CreateRectImage(1, 1, color.RGBA{200, 200, 200, 255})
 	Images["routeLine"] = img.(draw.Image)

@@ -36,6 +36,8 @@ func NewMap(m interfaces.GameManager) *Map {
 	}
 
 	l := layer.NewMapLayer("Layer1", ebitest.Images["world"], s, ebitest.NewScale(1.0, 1.0), nil, 0, false)
+	l.Sites = m.GetSites()
+	l.Routes = m.GetRoutes(l.Sites)
 	s.SetLayer(l)
 	c := control.NewButton("menu", l, ebitest.Images["btnBase"], ebitest.Fonts["btnFont"], color.Black, 500, 500)
 	l.AddUIControl(c)

@@ -7,7 +7,7 @@ type (
 
 const (
 	// SiteTypeBase 拠点
-	SiteTypeBase SiteTypeEnum = iota
+	SiteTypeBase SiteTypeEnum = iota + 1
 	// SiteTypeCity 都市
 	SiteTypeCity
 	// SiteTypeFort 砦

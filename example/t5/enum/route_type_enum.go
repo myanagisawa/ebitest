@@ -7,7 +7,7 @@ type (
 
 const (
 	// RouteTypePlain 平地
-	RouteTypePlain RouteTypeEnum = iota
+	RouteTypePlain RouteTypeEnum = iota + 1
 	// RouteTypeMountain 山道
 	RouteTypeMountain
 	// RouteTypeSea 海路

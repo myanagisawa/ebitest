@@ -23,7 +23,7 @@ func NewSite(code string, t enum.SiteTypeEnum, name string, loc *ebitest.Point) 
 		panic(fmt.Sprintf("Site初期化エラー: code=%#v, loc=%#v", code, loc))
 	}
 
-	img := ebiten.NewImageFromImage(ebitest.Images["pin"])
+	img := ebiten.NewImageFromImage(ebitest.Images[fmt.Sprintf("site_%d", t)])
 
 	return &Site{
 		Code:     code,
