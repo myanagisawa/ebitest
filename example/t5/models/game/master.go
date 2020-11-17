@@ -118,7 +118,7 @@ func DefSites() []*MSite {
 func DefRoutes() []*MRoute {
 	return []*MRoute{
 		NewMRoute("route-1", enum.RouteTypeSea, "route-1", "site-11", "site-12"),
-		NewMRoute("route-2", enum.RouteTypePlain, "route-2", "site-12", "site-27"),
+		NewMRoute("route-2", enum.RouteTypePlain, "route-2", "site-11", "site-27"),
 		NewMRoute("route-3", enum.RouteTypeMountain, "route-3", "site-27", "site-2"),
 		NewMRoute("route-4", enum.RouteTypeMountain, "route-4", "site-2", "site-38"),
 		NewMRoute("route-5", enum.RouteTypeMountain, "route-5", "site-2", "site-28"),
@@ -130,7 +130,7 @@ func DefRoutes() []*MRoute {
 		NewMRoute("route-11", enum.RouteTypeMountain, "route-11", "site-3", "site-33"),
 		NewMRoute("route-12", enum.RouteTypePlain, "route-12", "site-29", "site-16"),
 		NewMRoute("route-13", enum.RouteTypeMountain, "route-13", "site-29", "site-34"),
-		NewMRoute("route-14", enum.RouteTypePlain, "route-14", "site-33", "site-14"),
+		NewMRoute("route-14", enum.RouteTypePlain, "route-14", "site-15", "site-5"),
 		NewMRoute("route-15", enum.RouteTypePlain, "route-15", "site-33", "site-5"),
 		NewMRoute("route-16", enum.RouteTypePlain, "route-16", "site-14", "site-15"),
 		NewMRoute("route-17", enum.RouteTypePlain, "route-17", "site-14", "site-33"),
@@ -152,7 +152,7 @@ func DefRoutes() []*MRoute {
 		NewMRoute("route-33", enum.RouteTypePlain, "route-33", "site-9", "site-1"),
 		NewMRoute("route-34", enum.RouteTypeSea, "route-34", "site-9", "site-31"),
 		NewMRoute("route-35", enum.RouteTypePlain, "route-35", "site-1", "site-8"),
-		NewMRoute("route-36", enum.RouteTypeSea, "route-36", "site-31", "site-12"),
+		NewMRoute("route-36", enum.RouteTypeSea, "route-36", "site-31", "site-11"),
 		NewMRoute("route-37", enum.RouteTypeSea, "route-37", "site-8", "site-7"),
 		NewMRoute("route-38", enum.RouteTypeSea, "route-38", "site-18", "site-30"),
 		NewMRoute("route-39", enum.RouteTypeSea, "route-39", "site-30", "site-20"),
