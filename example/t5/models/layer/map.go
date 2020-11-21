@@ -59,6 +59,11 @@ func (l *MapLayer) drawSite(site *parts.Site, screen *ebiten.Image) {
 
 	// log.Printf("site: %s, (%0.2f, %0.2f)", site.Code, x, y)
 	screen.DrawImage(site.Image, op)
+
+	// site名を描画
+	textSize := ebitest.NewSize(site.Text.Size())
+	op.GeoM.Translate(-float64(textSize.W()-size.W())/2, float64(size.H()))
+	screen.DrawImage(site.Text, op)
 }
 
 func (l *MapLayer) getSitePosition(site *parts.Site) *ebitest.Point {

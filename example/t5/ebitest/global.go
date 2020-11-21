@@ -51,8 +51,9 @@ func init() {
 	Fonts["btnFont"] = FontLoad(16)
 
 	ScaleFonts = make(map[int]font.Face)
-	ScaleFonts[16] = FontLoad(16)
 	ScaleFonts[8] = FontLoad(8)
+	ScaleFonts[12] = FontLoad(12)
+	ScaleFonts[16] = FontLoad(16)
 	ScaleFonts[24] = FontLoad(24)
 
 	Images = make(map[string]draw.Image)
