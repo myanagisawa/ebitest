@@ -20,6 +20,12 @@ type GlobalAnglable interface {
 	GlobalAngle() int
 }
 
+// Movable ...
+type Movable interface {
+	Moving() *ebitest.Point
+	SetMoving(dx, dy float64)
+}
+
 // Scene ...
 type Scene interface {
 	ebiten.Game
@@ -29,6 +35,26 @@ type Scene interface {
 	// LayerAt(x, y int) Layer
 	// ActiveLayer() Layer
 	// GetLayerByLabel(label string) Layer
+}
+
+// Frame ...
+type Frame interface {
+	GlobalPositionable
+}
+
+// Layer ...
+type Layer interface {
+	GlobalPositionable
+	GlobalScaleable
+	Movable
+}
+
+// UIControl ...
+type UIControl interface {
+	GlobalPositionable
+	GlobalScaleable
+	GlobalAnglable
+	Movable
 }
 
 // // Layer ...
