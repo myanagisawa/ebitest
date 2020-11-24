@@ -3,21 +3,22 @@ package interfaces
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/ebitest"
+	"github.com/myanagisawa/ebitest/enum"
 )
 
-// GlobalPositionable ...
-type GlobalPositionable interface {
-	GlobalPosition() *ebitest.Point
+// Positionable ...
+type Positionable interface {
+	Position(enum.ValueTypeEnum) *ebitest.Point
 }
 
-// GlobalScaleable ...
-type GlobalScaleable interface {
-	GlobalScale() *ebitest.Scale
+// Scaleable ...
+type Scaleable interface {
+	Scale(enum.ValueTypeEnum) *ebitest.Scale
 }
 
-// GlobalAnglable ...
-type GlobalAnglable interface {
-	GlobalAngle() int
+// Anglable ...
+type Anglable interface {
+	Angle(enum.ValueTypeEnum) int
 }
 
 // Movable ...
@@ -26,9 +27,16 @@ type Movable interface {
 	SetMoving(dx, dy float64)
 }
 
+// GameManager ...
+type GameManager interface {
+	TransitionTo(enum.SceneEnum)
+}
+
 // Scene ...
 type Scene interface {
 	ebiten.Game
+	AddFrame(f Frame)
+	ActiveFrame() Frame
 	// Label() string
 	// SetLayer(l Layer)
 	// DeleteLayer(l Layer)
@@ -39,22 +47,41 @@ type Scene interface {
 
 // Frame ...
 type Frame interface {
-	GlobalPositionable
+	Positionable
+	Size() *ebitest.Size
+	Parent() Scene
+	SetParent(parent Scene)
+	AddLayer(l Layer)
+	In(x, y int) bool
+	LayerAt(x, y int) Layer
+	ActiveLayer() Layer
+	Update() error
+	Draw(screen *ebiten.Image)
 }
 
 // Layer ...
 type Layer interface {
-	GlobalPositionable
-	GlobalScaleable
+	Positionable
+	Scaleable
 	Movable
+	Label() string
+	Parent() Frame
+	SetParent(parent Frame)
+	In(x, y int) bool
+	IsModal() bool
+	Scroll(et enum.EdgeTypeEnum)
+	Update() error
+	Draw(screen *ebiten.Image)
 }
 
 // UIControl ...
 type UIControl interface {
-	GlobalPositionable
-	GlobalScaleable
-	GlobalAnglable
+	Positionable
+	Scaleable
+	Anglable
 	Movable
+	In(x, y int) bool
+	SetLayer(l Layer)
 }
 
 // // Layer ...
@@ -103,13 +130,13 @@ type UIControl interface {
 // 	UIControl
 // }
 
-// // EventHandler ...
-// type EventHandler interface {
-// 	AddEventListener(c UIControl, name string, callback func(UIControl, Scene, *ebitest.Point))
-// 	Firing(s Scene, name string, x, y int)
-// 	Set(name string, ev Event)
-// }
+// EventHandler ...
+type EventHandler interface {
+	AddEventListener(c UIControl, name string, callback func(UIControl, *ebitest.Point))
+	Firing(s Scene, name string, x, y int)
+	Set(name string, ev Event)
+}
 
-// // Event ...
-// type Event interface {
-// }
+// Event ...
+type Event interface {
+}

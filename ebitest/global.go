@@ -62,7 +62,7 @@ func init() {
 	Images["btnBaseHover"], _ = utils.GetImageByPath("resources/system_images/button-hover.png")
 	Images["bgFlower"], _ = utils.GetImageByPath("resources/system_images/bg_flower.jpg")
 	Images["bg-1"], _ = utils.GetImageByPath("resources/system_images/bg-1.jpg")
-	Images["world"], _ = utils.GetImageByPath("resources/system_images/world.png")
+	Images["world"], _ = utils.GetImageByPath("resources/system_images/world.jpg")
 
 	Images["site_1"], _ = utils.GetImageByPath("resources/system_images/site_1.png")
 	Images["site_2"], _ = utils.GetImageByPath("resources/system_images/site_2.png")

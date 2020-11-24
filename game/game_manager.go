@@ -1,10 +1,16 @@
 package game
 
 import (
+	"fmt"
+	"image/color"
+	"runtime"
+
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
+	"github.com/myanagisawa/ebitest/models/scene"
 )
 
 /*
@@ -12,13 +18,17 @@ import (
 	- レイヤサイズを画面サイズに合わせるオプション
 	- ゲームデータの画面上への描画
 */
+var (
+	ms runtime.MemStats
+)
 
 type (
 	// Manager ...
 	Manager struct {
-		// master       *MasterData
+		background   *ebiten.Image
 		currentScene interfaces.Scene
 		scenes       map[enum.SceneEnum]interfaces.Scene
+		// master       *MasterData
 	}
 )
 
@@ -59,16 +69,16 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 	ebitest.Width, ebitest.Height = screenWidth, screenHeight
 
 	gm := &Manager{
+		background: ebiten.NewImageFromImage(ebitest.CreateRectImage(screenWidth, screenHeight, color.RGBA{0, 0, 0, 255})),
 		// master: NewMasterData(),
 	}
 
-	// scenes := map[enum.SceneEnum]interfaces.Scene{}
-	// scenes[enum.MainMenuEnum] = scene.NewMainMenu(gm)
-	// scenes[enum.MapEnum] = scene.NewMap(gm)
-	// gm.scenes = scenes
+	scenes := map[enum.SceneEnum]interfaces.Scene{}
+	scenes[enum.MapEnum] = scene.NewMap(gm)
+	gm.scenes = scenes
 
-	// // MainMenuを表示
-	// gm.TransitionTo(enum.MapEnum)
+	// MainMenuを表示
+	gm.TransitionTo(enum.MapEnum)
 	return gm
 }
 
@@ -101,12 +111,61 @@ func (g *Manager) Update() error {
 
 // Draw ...
 func (g *Manager) Draw(screen *ebiten.Image) {
+	var op *ebiten.DrawImageOptions
+
+	op = &ebiten.DrawImageOptions{}
+	screen.DrawImage(g.background, op)
+
 	if g.currentScene != nil {
 		g.currentScene.Draw(screen)
 	}
+
+	// x, y := ebiten.CursorPosition()
+	// dbg := fmt.Sprintf("%s\nTPS: %0.2f\nFPS: %0.2f\npos: (%d, %d)", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS(), x, y)
+	dbg := fmt.Sprintf("%s", printMemoryStats())
+	ebitenutil.DebugPrint(screen, dbg)
 }
 
 // Layout ...
 func (g *Manager) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return ebitest.Width, ebitest.Height
+}
+
+func printMemoryStats() string {
+	// --------------------------------------------------------
+	// runtime.MemoryStats() から、現在の割当メモリ量などが取得できる.
+	//
+	// まず、データの受け皿となる runtime.MemStats を初期化し
+	// runtime.ReadMemStats(*runtime.MemStats) を呼び出して
+	// 取得する.
+	// --------------------------------------------------------
+	runtime.ReadMemStats(&ms)
+
+	// // Alloc は、現在ヒープに割り当てられているメモリ
+	// // HeapAlloc と同じ.
+	// output.Stdoutl("Alloc", toKb(ms.Alloc))
+	// output.Stdoutl("HeapAlloc", toKb(ms.HeapAlloc))
+
+	// // TotalAlloc は、ヒープに割り当てられたメモリ量の累積
+	// // Allocと違い、こちらは増えていくが減ることはない
+	// output.Stdoutl("TotalAlloc", toKb(ms.TotalAlloc))
+
+	// // HeapObjects は、ヒープに割り当てられているオブジェクトの数
+	// output.Stdoutl("HeapObjects", toKb(ms.HeapObjects))
+
+	// // Sys は、OSから割り当てられたメモリの合計量
+	// output.Stdoutl("Sys", toKb(ms.Sys))
+
+	// // NumGC は、実施されたGCの回数
+	// output.Stdoutl("NumGC", ms.NumGC)
+	return fmt.Sprintf("Alloc, Sys, GC: %dMB, %dMB, %d", toMb(ms.Alloc), toMb(ms.Sys), ms.NumGC)
+}
+
+func toKb(bytes uint64) uint64 {
+	return bytes / 1024
+}
+
+//noinspection GoUnusedFunction
+func toMb(bytes uint64) uint64 {
+	return toKb(bytes) / 1024
 }
