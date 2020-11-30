@@ -20,6 +20,8 @@ type Base struct {
 
 	layers      []interfaces.Layer
 	activeLayer interfaces.Layer
+
+	scrollable bool
 }
 
 // Label ...
@@ -118,10 +120,12 @@ func (o *Base) GetEdgeType(x, y int) enum.EdgeTypeEnum {
 
 // Update ...
 func (o *Base) Update() error {
-	if len(o.layers) > 0 {
-		et := o.GetEdgeType(ebiten.CursorPosition())
-		if et != enum.EdgeTypeNotEdge {
-			o.layers[0].Scroll(et)
+	if o.scrollable {
+		if len(o.layers) > 0 {
+			et := o.GetEdgeType(ebiten.CursorPosition())
+			if et != enum.EdgeTypeNotEdge {
+				o.layers[0].Scroll(et)
+			}
 		}
 	}
 
@@ -163,13 +167,14 @@ func (o *Base) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 // NewFrame ...
-func NewFrame(label string, pos *ebitest.Point, size *ebitest.Size, c color.RGBA) interfaces.Frame {
+func NewFrame(label string, pos *ebitest.Point, size *ebitest.Size, c color.RGBA, scrollable bool) interfaces.Frame {
 	img := ebiten.NewImageFromImage(ebitest.CreateRectImage(size.W(), size.H(), c))
 
 	s := &Base{
-		label:    label,
-		image:    img,
-		position: pos,
+		label:      label,
+		image:      img,
+		position:   pos,
+		scrollable: scrollable,
 	}
 
 	return s

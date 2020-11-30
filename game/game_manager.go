@@ -122,7 +122,7 @@ func (g *Manager) Draw(screen *ebiten.Image) {
 
 	// x, y := ebiten.CursorPosition()
 	// dbg := fmt.Sprintf("%s\nTPS: %0.2f\nFPS: %0.2f\npos: (%d, %d)", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS(), x, y)
-	dbg := fmt.Sprintf("%s", printMemoryStats())
+	dbg := fmt.Sprintf("%s / TPS: %0.2f / FPS: %0.2f", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS())
 	ebitenutil.DebugPrint(screen, dbg)
 }
 

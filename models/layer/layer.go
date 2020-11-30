@@ -47,17 +47,17 @@ func (o *Base) SetParent(parent interfaces.Frame) {
 
 // Position ...
 func (o *Base) Position(t enum.ValueTypeEnum) *ebitest.Point {
-	if t == enum.TypeLocal {
-		return o.position
-	}
-	gx, gy := 0.0, 0.0
-	if o.parent != nil {
-		gx, gy = o.parent.Position(enum.TypeGlobal).Get()
-	}
 	dx, dy := 0.0, 0.0
 	if o.moving != nil {
 		dx, dy = o.moving.Get()
 		log.Printf("%s, moving: %0.1f,  %0.1f", o.label, dx, dy)
+	}
+	if t == enum.TypeLocal {
+		return ebitest.NewPoint(o.position.X()+dx, o.position.Y()+dy)
+	}
+	gx, gy := 0.0, 0.0
+	if o.parent != nil {
+		gx, gy = o.parent.Position(enum.TypeGlobal).Get()
 	}
 	sx, sy := o.Scale(enum.TypeGlobal).Get()
 	gx += (o.position.X() + dx) * sx
