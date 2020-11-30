@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 
+	"github.com/pkg/profile"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/game"
 )
@@ -13,6 +15,7 @@ const (
 )
 
 func main() {
+	defer profile.Start(profile.MemProfile, profile.ProfilePath(".")).Stop()
 
 	ebiten.SetScreenTransparent(true)
 	// ebiten.SetWindowDecorated(false)
