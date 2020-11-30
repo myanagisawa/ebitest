@@ -144,11 +144,15 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(o.position.Get())
 	screen.DrawImage(o.image, op)
 
-	i := ebiten.NewImage(o.image.Size())
+	// i := ebiten.NewImage(o.image.Size())
+	// for _, layer := range o.layers {
+	// 	layer.Draw(i)
+	// }
+	// screen.DrawImage(i, op)
+
 	for _, layer := range o.layers {
-		layer.Draw(i)
+		layer.Draw(screen)
 	}
-	screen.DrawImage(i, op)
 
 	if o.parent.ActiveFrame() != nil && o.parent.ActiveFrame() == o {
 		n := "-"

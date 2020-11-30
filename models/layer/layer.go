@@ -150,6 +150,9 @@ func (o *Base) Scroll(et enum.EdgeTypeEnum) {
 	} else if posY+layerSize.H() < frameSize.H() {
 		o.position.SetDelta(0, dp)
 	}
+
+	x, y := o.position.GetInt()
+	log.Printf("%s: %d, %d", o.Label(), x, y)
 }
 
 // Update ...
@@ -205,13 +208,42 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	op.GeoM.Reset()
 	op.GeoM.Scale(o.Scale(enum.TypeGlobal).Get())
 
-	op.GeoM.Translate(o.Position(enum.TypeLocal).Get())
+	// op.GeoM.Translate(o.Position(enum.TypeLocal).Get())
+	// screen.DrawImage(o.image, op)
 
-	screen.DrawImage(o.image, op)
-	// fx, fy := o.frame.Position(enum.TypeGlobal).GetInt()
-	// fs := o.frame.Size()
-	// fr := image.Rect(fx, fy, fx+fs.W(), fy+fs.H())
-	// screen.DrawImage(o.image.SubImage(fr).(*ebiten.Image), op)
+	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
+
+	lx, ly := o.Position(enum.TypeLocal).GetInt()
+	lw, lh := o.image.Size()
+	fs := o.frame.Size()
+
+	x0, y0, x1, y1 := 0, 0, lw, lh
+	// frame外れ判定
+	if lx < 0 {
+		// 左にはみ出し
+		op.GeoM.Translate(float64(-lx), 0)
+		x0 = -lx
+		x1 += x0
+	}
+	if ly < 0 {
+		// 上にはみ出し
+		op.GeoM.Translate(0, float64(-ly))
+		y0 = -ly
+		y1 += y0
+	}
+	if lx+lw > fs.W() {
+		// 右にはみ出し
+		x1 = x0 + fs.W()
+	}
+
+	if ly+lh > fs.H() {
+		// 下にはみ出し
+		y1 = y0 + fs.H()
+	}
+
+	fr := image.Rect(x0, y0, x1, y1)
+	// log.Printf("%s: pos: %d, %d, fr: %d, %d, %d, %d", o.label, lx, ly, x0, y0, x1, y1)
+	screen.DrawImage(o.image.SubImage(fr).(*ebiten.Image), op)
 
 	// for _, c := range o.controls {
 	// 	c.Draw(screen)
