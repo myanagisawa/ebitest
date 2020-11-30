@@ -190,6 +190,9 @@ func (o *Base) Update() error {
 		// }
 	}
 
+	// frame外に出ないようにする制御
+	o.updatePos()
+
 	return nil
 }
 
@@ -234,10 +237,18 @@ func (o *Base) updatePositionByDelta() {
 
 	o.position.SetDelta(o.moving.Get())
 
+	o.moving = nil
+}
+
+func (o *Base) updateStroke(stroke *input.Stroke) {
+	stroke.Update()
+	o.SetMoving(stroke.PositionDiff())
+}
+
+func (o *Base) updatePos() {
+	// 自layerがframe外に出ないようにする制御
 	px, py := o.position.GetInt()
-
 	frameSize := o.frame.Size()
-
 	lw, lh := o.image.Size()
 
 	//左側に全て隠れてしまう場合
@@ -257,11 +268,4 @@ func (o *Base) updatePositionByDelta() {
 		py = frameSize.H() - 20
 	}
 	o.position.Set(float64(px), float64(py))
-
-	o.moving = nil
-}
-
-func (o *Base) updateStroke(stroke *input.Stroke) {
-	stroke.Update()
-	o.SetMoving(stroke.PositionDiff())
 }
