@@ -208,6 +208,10 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(o.Position(enum.TypeLocal).Get())
 
 	screen.DrawImage(o.image, op)
+	// fx, fy := o.frame.Position(enum.TypeGlobal).GetInt()
+	// fs := o.frame.Size()
+	// fr := image.Rect(fx, fy, fx+fs.W(), fy+fs.H())
+	// screen.DrawImage(o.image.SubImage(fr).(*ebiten.Image), op)
 
 	// for _, c := range o.controls {
 	// 	c.Draw(screen)
@@ -247,7 +251,7 @@ func (o *Base) updateStroke(stroke *input.Stroke) {
 
 func (o *Base) updatePos() {
 	// 自layerがframe外に出ないようにする制御
-	px, py := o.position.GetInt()
+	px, py := o.Position(enum.TypeLocal).GetInt()
 	frameSize := o.frame.Size()
 	lw, lh := o.image.Size()
 

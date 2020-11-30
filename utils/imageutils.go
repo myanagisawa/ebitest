@@ -116,14 +116,14 @@ func EncodeImage(buf io.Writer, i image.Image, ext string) error {
 }
 
 // GetImageByPath 指定したパスからimageを取得します
-func GetImageByPath(path string) (draw.Image, string) {
+func GetImageByPath(path string) (image.Image, string) {
 	//画像読み込み
 	fileIn, err := os.Open(path)
-	defer fileIn.Close()
 	if err != nil {
 		fmt.Println("error:file\n", err)
 		log.Panic(err.Error())
 	}
+	defer fileIn.Close()
 
 	//画像をimage型として読み込む
 	img, format, err := image.Decode(fileIn)
@@ -131,9 +131,10 @@ func GetImageByPath(path string) (draw.Image, string) {
 		fmt.Println("error:decode\n", format, err)
 		log.Panic(err.Error())
 	}
-	out := image.NewRGBA(img.Bounds())
-	draw.Copy(out, image.Point{}, img, img.Bounds(), draw.Src, nil)
-	return out, format
+	return img, format
+	// out := image.NewRGBA(img.Bounds())
+	// draw.Copy(out, image.Point{}, img, img.Bounds(), draw.Src, nil)
+	// return out, format
 }
 
 // MaskImage srcをmaskした結果を返します
