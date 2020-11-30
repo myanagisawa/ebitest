@@ -41,7 +41,7 @@ func (o *Base) SetParent(parent interfaces.Scene) {
 
 /// AddLayer ...
 func (o *Base) AddLayer(l interfaces.Layer) {
-	l.SetParent(o)
+	l.SetFrame(o)
 	o.layers = append(o.layers, l)
 }
 

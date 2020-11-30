@@ -18,7 +18,7 @@ import (
 type Base struct {
 	label    string
 	image    *ebiten.Image
-	parent   interfaces.Frame
+	frame    interfaces.Frame
 	position *ebitest.Point
 	scale    *ebitest.Scale
 	moving   *ebitest.Point
@@ -35,14 +35,14 @@ func (o *Base) Label() string {
 	return o.label
 }
 
-// Parent ...
-func (o *Base) Parent() interfaces.Frame {
-	return o.parent
+// Frame ...
+func (o *Base) Frame() interfaces.Frame {
+	return o.frame
 }
 
-// SetParent ...
-func (o *Base) SetParent(parent interfaces.Frame) {
-	o.parent = parent
+// SetFrame ...
+func (o *Base) SetFrame(frame interfaces.Frame) {
+	o.frame = frame
 }
 
 // Position ...
@@ -56,8 +56,8 @@ func (o *Base) Position(t enum.ValueTypeEnum) *ebitest.Point {
 		return ebitest.NewPoint(o.position.X()+dx, o.position.Y()+dy)
 	}
 	gx, gy := 0.0, 0.0
-	if o.parent != nil {
-		gx, gy = o.parent.Position(enum.TypeGlobal).Get()
+	if o.frame != nil {
+		gx, gy = o.frame.Position(enum.TypeGlobal).Get()
 	}
 	sx, sy := o.Scale(enum.TypeGlobal).Get()
 	gx += (o.position.X() + dx) * sx
@@ -137,7 +137,7 @@ func (o *Base) Scroll(et enum.EdgeTypeEnum) {
 
 	posX, posY := o.Position(enum.TypeLocal).GetInt()
 	layerSize := ebitest.NewSize(o.image.Size())
-	frameSize := o.parent.Size()
+	frameSize := o.frame.Size()
 
 	if posX > 0 {
 		o.position.SetDelta(-dp, 0)
@@ -164,8 +164,8 @@ func (o *Base) Update() error {
 		}
 	}
 
-	if o.parent.ActiveLayer() != nil && o.parent.ActiveLayer() == o {
-		// log.Printf("active layer: %s", l.parent.ActiveLayer().Label())
+	if o.frame.ActiveLayer() != nil && o.frame.ActiveLayer() == o {
+		// log.Printf("active layer: %s", l.frame.ActiveLayer().Label())
 
 		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 			x, y := ebiten.CursorPosition()
@@ -233,6 +233,31 @@ func NewLayerBase(label string, img image.Image, pos *ebitest.Point, scale *ebit
 func (o *Base) updatePositionByDelta() {
 
 	o.position.SetDelta(o.moving.Get())
+
+	px, py := o.position.GetInt()
+
+	frameSize := o.frame.Size()
+
+	lw, lh := o.image.Size()
+
+	//左側に全て隠れてしまう場合
+	if px+lw-20 < 0 {
+		px = -lw + 20
+	}
+	// 上に全て隠れてしまう場合
+	if py+lh-20 < 0 {
+		py = -lh + 20
+	}
+	// 右に全て隠れてしまう場合
+	if px+20 > frameSize.W() {
+		px = frameSize.W() - 20
+	}
+	// 下に全て隠れてしまう場合
+	if py+20 > frameSize.H() {
+		py = frameSize.H() - 20
+	}
+	o.position.Set(float64(px), float64(py))
+
 	o.moving = nil
 }
 

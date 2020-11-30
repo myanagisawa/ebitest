@@ -65,8 +65,8 @@ type Layer interface {
 	Scaleable
 	Movable
 	Label() string
-	Parent() Frame
-	SetParent(parent Frame)
+	Frame() Frame
+	SetFrame(frame Frame)
 	In(x, y int) bool
 	IsModal() bool
 	Scroll(et enum.EdgeTypeEnum)
