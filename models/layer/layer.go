@@ -50,7 +50,6 @@ func (o *Base) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	dx, dy := 0.0, 0.0
 	if o.moving != nil {
 		dx, dy = o.moving.Get()
-		log.Printf("%s, moving: %0.1f,  %0.1f", o.label, dx, dy)
 	}
 	if t == enum.TypeLocal {
 		return ebitest.NewPoint(o.position.X()+dx, o.position.Y()+dy)
@@ -151,8 +150,8 @@ func (o *Base) Scroll(et enum.EdgeTypeEnum) {
 		o.position.SetDelta(0, dp)
 	}
 
-	x, y := o.position.GetInt()
-	log.Printf("%s: %d, %d", o.Label(), x, y)
+	// x, y := o.position.GetInt()
+	// log.Printf("%s: %d, %d", o.Label(), x, y)
 }
 
 // Update ...
@@ -211,6 +210,7 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	// op.GeoM.Translate(o.Position(enum.TypeLocal).Get())
 	// screen.DrawImage(o.image, op)
 
+	// log.Printf("%s: translate(%0.2f, %0.2f)", o.label, o.Position(enum.TypeGlobal).X(), o.Position(enum.TypeGlobal).Y())
 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
 
 	lx, ly := o.Position(enum.TypeLocal).GetInt()
@@ -283,7 +283,8 @@ func (o *Base) updateStroke(stroke *input.Stroke) {
 
 func (o *Base) updatePos() {
 	// 自layerがframe外に出ないようにする制御
-	px, py := o.Position(enum.TypeLocal).GetInt()
+	// ここでmovingを加算してはいけないので素のpositionで取得する
+	px, py := o.position.GetInt()
 	frameSize := o.frame.Size()
 	lw, lh := o.image.Size()
 

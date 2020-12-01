@@ -21,7 +21,7 @@ func main() {
 	// ebiten.SetWindowDecorated(false)
 	ebiten.SetWindowFloating(true)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
-	ebiten.SetWindowPosition(100, 400)
+	ebiten.SetWindowPosition(100, 100)
 	// ebiten.SetMaxTPS(30)
 
 	manager := game.NewManager(screenWidth, screenHeight)
