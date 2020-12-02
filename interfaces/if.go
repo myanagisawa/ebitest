@@ -72,6 +72,8 @@ type Layer interface {
 	Scroll(et enum.EdgeTypeEnum)
 	Update() error
 	Draw(screen *ebiten.Image)
+	AddUIControl(c UIControl)
+	EventHandler() EventHandler
 }
 
 // UIControl ...
@@ -80,8 +82,14 @@ type UIControl interface {
 	Scaleable
 	Anglable
 	Movable
+	Label() string
 	In(x, y int) bool
 	SetLayer(l Layer)
+	SetPosition(x, y float64)
+	SetScale(x, y float64)
+	SetAngle(a int)
+	Update() error
+	Draw(screen *ebiten.Image)
 }
 
 // // Layer ...

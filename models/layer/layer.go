@@ -187,9 +187,9 @@ func (o *Base) Update() error {
 			}
 		}
 
-		// for _, c := range o.controls {
-		// 	_ = c.Update()
-		// }
+		for _, c := range o.controls {
+			_ = c.Update()
+		}
 	}
 
 	// frame外に出ないようにする制御
@@ -245,10 +245,14 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	// log.Printf("%s: pos: %d, %d, fr: %d, %d, %d, %d", o.label, lx, ly, x0, y0, x1, y1)
 	screen.DrawImage(o.image.SubImage(fr).(*ebiten.Image), op)
 
-	// for _, c := range o.controls {
-	// 	c.Draw(screen)
-	// }
+	for _, c := range o.controls {
+		c.Draw(screen)
+	}
+}
 
+// EventHandler ...
+func (o *Base) EventHandler() interfaces.EventHandler {
+	return o.eventHandler
 }
 
 // NewLayerBase ...
