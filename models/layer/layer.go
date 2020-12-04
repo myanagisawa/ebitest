@@ -256,7 +256,14 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 }
 
 // NewLayerBase ...
-func NewLayerBase(label string, img image.Image, pos *ebitest.Point, scale *ebitest.Scale, draggable bool) interfaces.Layer {
+func NewLayerBase(label string, pos *ebitest.Point, size *ebitest.Size, c *color.RGBA, draggable bool) interfaces.Layer {
+	img := ebitest.CreateRectImage(size.W(), size.H(), c)
+
+	return NewLayerBaseByImage(label, img, pos, draggable)
+}
+
+// NewLayerBaseByImage ...
+func NewLayerBaseByImage(label string, img image.Image, pos *ebitest.Point, draggable bool) interfaces.Layer {
 	eimg := ebiten.NewImageFromImage(img)
 
 	// draggable, ismodal 未実装
@@ -265,7 +272,7 @@ func NewLayerBase(label string, img image.Image, pos *ebitest.Point, scale *ebit
 		label:        label,
 		image:        eimg,
 		position:     pos,
-		scale:        scale,
+		scale:        ebitest.NewScale(1.0, 1.0),
 		draggable:    draggable,
 		eventHandler: event.NewEventHandler(),
 	}

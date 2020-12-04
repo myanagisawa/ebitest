@@ -21,6 +21,8 @@ type (
 )
 
 var (
+	// DebugText ...
+	DebugText string
 
 	// Width ...
 	Width int
@@ -74,13 +76,13 @@ func init() {
 	Images["route_2"], _ = utils.GetImageByPath("resources/system_images/route_2.png")
 	Images["route_3"], _ = utils.GetImageByPath("resources/system_images/route_3.png")
 
-	img := CreateRectImage(1, 1, color.RGBA{200, 200, 200, 255})
+	img := CreateRectImage(1, 1, &color.RGBA{200, 200, 200, 255})
 	Images["routeLine"] = img.(draw.Image)
 
-	img = CreateRectImage(10, 10, color.RGBA{0, 0, 0, 255})
+	img = CreateRectImage(10, 10, &color.RGBA{0, 0, 0, 255})
 	Images["listBase"] = img.(draw.Image)
 
-	img = CreateRectImage(10, 10, color.RGBA{128, 128, 128, 128})
+	img = CreateRectImage(10, 10, &color.RGBA{128, 128, 128, 128})
 	Images["listScroller"] = img.(draw.Image)
 
 	// const r = 64
@@ -100,7 +102,7 @@ func init() {
 }
 
 // CreateRectImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
-func CreateRectImage(w, h int, color color.RGBA) image.Image {
+func CreateRectImage(w, h int, color *color.RGBA) image.Image {
 	m := image.NewRGBA(image.Rect(0, 0, w, h))
 	// 横ループ、半径*2＝直径まで
 	for x := 0; x < w; x++ {
@@ -113,7 +115,7 @@ func CreateRectImage(w, h int, color color.RGBA) image.Image {
 }
 
 // CreateBorderedRectImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
-func CreateBorderedRectImage(w, h int, c color.RGBA) image.Image {
+func CreateBorderedRectImage(w, h int, c *color.RGBA) image.Image {
 	m := image.NewRGBA(image.Rect(0, 0, w, h))
 	// 横ループ、半径*2＝直径まで
 	for x := 0; x < w; x++ {

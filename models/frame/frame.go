@@ -5,7 +5,6 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
@@ -144,24 +143,23 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(o.position.Get())
 	screen.DrawImage(o.image, op)
 
-	// i := ebiten.NewImage(o.image.Size())
-	// for _, layer := range o.layers {
-	// 	layer.Draw(i)
-	// }
-	// screen.DrawImage(i, op)
-
 	for _, layer := range o.layers {
 		layer.Draw(screen)
 	}
 
 	if o.parent.ActiveFrame() != nil && o.parent.ActiveFrame() == o {
 		n := "-"
+		ac := "-"
 		if o.activeLayer != nil {
-			x, y := o.activeLayer.Position(enum.TypeLocal).GetInt()
+			x, y := o.activeLayer.Position(enum.TypeGlobal).GetInt()
 			n = fmt.Sprintf("%s(%d, %d)", o.activeLayer.Label(), x, y)
+			c := o.activeLayer.UIControlAt(ebiten.CursorPosition())
+			if c != nil {
+				x, y = c.Position(enum.TypeGlobal).GetInt()
+				ac = fmt.Sprintf("%s(%d, %d)", c.Label(), x, y)
+			}
 		}
-		dbg := fmt.Sprintf("\n%s / %s", o.label, n)
-		ebitenutil.DebugPrint(screen, dbg)
+		ebitest.DebugText += fmt.Sprintf("\n%s / %s / %s", o.label, n, ac)
 	}
 }
 
@@ -171,7 +169,7 @@ func (o *Base) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 // NewFrame ...
-func NewFrame(label string, pos *ebitest.Point, size *ebitest.Size, c color.RGBA, scrollable bool) interfaces.Frame {
+func NewFrame(label string, pos *ebitest.Point, size *ebitest.Size, c *color.RGBA, scrollable bool) interfaces.Frame {
 	img := ebiten.NewImageFromImage(ebitest.CreateRectImage(size.W(), size.H(), c))
 
 	s := &Base{

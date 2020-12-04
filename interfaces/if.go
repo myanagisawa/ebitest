@@ -73,6 +73,7 @@ type Layer interface {
 	Update() error
 	Draw(screen *ebiten.Image)
 	AddUIControl(c UIControl)
+	UIControlAt(x, y int) UIControl
 	EventHandler() EventHandler
 }
 
@@ -133,10 +134,10 @@ type UIControl interface {
 // 	UIControl
 // }
 
-// // UIScrollView ...
-// type UIScrollView interface {
-// 	UIControl
-// }
+// UIScrollView ...
+type UIScrollView interface {
+	UIControl
+}
 
 // EventHandler ...
 type EventHandler interface {

@@ -69,7 +69,7 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 	ebitest.Width, ebitest.Height = screenWidth, screenHeight
 
 	gm := &Manager{
-		background: ebiten.NewImageFromImage(ebitest.CreateRectImage(screenWidth, screenHeight, color.RGBA{0, 0, 0, 255})),
+		background: ebiten.NewImageFromImage(ebitest.CreateRectImage(screenWidth, screenHeight, &color.RGBA{0, 0, 0, 255})),
 		// master: NewMasterData(),
 	}
 
@@ -111,6 +111,7 @@ func (g *Manager) Update() error {
 
 // Draw ...
 func (g *Manager) Draw(screen *ebiten.Image) {
+	ebitest.DebugText = ""
 	var op *ebiten.DrawImageOptions
 
 	op = &ebiten.DrawImageOptions{}
@@ -123,6 +124,9 @@ func (g *Manager) Draw(screen *ebiten.Image) {
 	// x, y := ebiten.CursorPosition()
 	// dbg := fmt.Sprintf("%s\nTPS: %0.2f\nFPS: %0.2f\npos: (%d, %d)", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS(), x, y)
 	dbg := fmt.Sprintf("%s / TPS: %0.2f / FPS: %0.2f", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS())
+	if ebitest.DebugText != "" {
+		dbg += fmt.Sprintf("%s", ebitest.DebugText)
+	}
 	ebitenutil.DebugPrint(screen, dbg)
 }
 
