@@ -205,14 +205,6 @@ func SetTextToCenter(text string, src image.Image, face font.Face, c color.Color
 
 // CreateTextImage textのイメージを作成します
 func CreateTextImage(text string, face font.Face, c color.Color) *draw.Image {
-	// tmp := image.NewRGBA(src.Bounds())
-	// draw.Copy(tmp, image.Point{}, src, src.Bounds(), draw.Src, nil)
-	// td := &font.Drawer{
-	// 	Dst:  tmp,
-	// 	Src:  image.NewUniform(c),
-	// 	Face: face,
-	// }
-
 	d := &font.Drawer{
 		Src:  image.NewUniform(c),
 		Face: face,
@@ -230,7 +222,7 @@ func CreateTextImage(text string, face font.Face, c color.Color) *draw.Image {
 			// out.Set(x, y, color.RGBA{255, 255, 255, 255})
 		}
 	}
-	log.Printf("width=%d, height=%d", width, height)
+	log.Printf("%s: width=%d, height=%d", text, width, height)
 
 	d.Dst = out
 	d.Dot.X = fixed.I(0)

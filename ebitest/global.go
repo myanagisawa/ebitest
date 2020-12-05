@@ -85,20 +85,6 @@ func init() {
 	img = CreateRectImage(10, 10, &color.RGBA{128, 128, 128, 128})
 	Images["listScroller"] = img.(draw.Image)
 
-	// const r = 64
-	// alphas := image.Point{r * 2, r * 2}
-	// a := image.NewAlpha(image.Rectangle{image.ZP, alphas})
-	// for j := 0; j < alphas.Y; j++ {
-	// 	for i := 0; i < alphas.X; i++ {
-	// 		// d is the distance between (i, j) and the (circle) center.
-	// 		d := math.Sqrt(float64((i-r)*(i-r) + (j-r)*(j-r)))
-	// 		// Alphas around the center are 0 and values outside of the circle are 0xff.
-	// 		b := uint8(max(0, min(0xff, int(3*d*0xff/r)-2*0xff)))
-	// 		a.SetAlpha(i, j, color.Alpha{b})
-	// 	}
-	// }
-	// SpotLightImage = ebiten.NewImageFromImage(a)
-
 }
 
 // CreateRectImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です

@@ -9,13 +9,24 @@ import (
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
+	"github.com/myanagisawa/ebitest/models/char"
 )
+
+/*****************************************************************/
 
 // UIScrollView ...
 type UIScrollView struct {
 	Base
 	listView      *listView
 	scrollbarBase *scrollbarBase
+	fontSet       *char.Resource
+}
+
+// SetDataSource ...
+func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{}) {
+	// まずは幅を測ってカラムサイズを決めてしまうのが良いか。
+
+	o.listView.SetRows(data)
 }
 
 // Update ...
@@ -33,6 +44,7 @@ func (o *UIScrollView) Draw(screen *ebiten.Image) {
 	o.scrollbarBase.Draw(screen)
 }
 
+// listViewSize スクロールビューの中のリスト領域のサイズを返す
 func (o *UIScrollView) listViewSize() (int, int) {
 	iw, ih := o.image.Size()
 
@@ -59,7 +71,8 @@ func NewUIScrollView(label string, pos *ebitest.Point, size *ebitest.Size) inter
 	}
 
 	o := &UIScrollView{
-		Base: cb,
+		Base:    cb,
+		fontSet: char.Res.Get(12, enum.FontStyleGenShinGothicNormal),
 	}
 
 	// スクロール部分の初期化
@@ -72,6 +85,8 @@ func NewUIScrollView(label string, pos *ebitest.Point, size *ebitest.Size) inter
 
 	return o
 }
+
+/*****************************************************************/
 
 // scrollViewParts パーツの基底
 type scrollViewParts struct {
@@ -104,10 +119,23 @@ func (o *scrollViewParts) Draw(screen *ebiten.Image) {
 	screen.DrawImage(o.image, op)
 }
 
+/*****************************************************************/
+
 // listView ...
 type listView struct {
 	scrollViewParts
 	scrollingPos *ebitest.Point
+	rows         []*listRow
+}
+
+// SetRows ...
+func (o *listView) SetRows(data [][]interface{}) {
+
+	rows := make([]*listRow, len(data))
+	for i := range data {
+		rows[i] = newListRow(fmt.Sprintf("listRow[%d]", i), o.parent, i, data[i])
+	}
+	o.rows = rows
 }
 
 // Update ...
@@ -143,6 +171,24 @@ func (o *listView) Draw(screen *ebiten.Image) {
 	// log.Printf("%s: pos: %0.1f, %0.1f, fr: %d, %d, %d, %d", o.label, o.Position(enum.TypeGlobal).X(), o.Position(enum.TypeGlobal).Y(), fr.Min.X, fr.Min.Y, fr.Max.X, fr.Max.Y)
 	screen.DrawImage(o.image.SubImage(fr).(*ebiten.Image), op)
 
+	// rows描画
+	x, y := o.Position(enum.TypeGlobal).GetInt()
+	th := 0
+	for i := range o.rows {
+		row := o.rows[i]
+		tw := 0
+		for j := range row.texts {
+			op = &ebiten.DrawImageOptions{}
+
+			op.GeoM.Translate(float64(x+tw), float64(y+th))
+			screen.DrawImage(row.texts[j], op)
+
+			w, h = row.texts[j].Size()
+			tw += w
+		}
+		th += h
+	}
+
 }
 
 func newListView(label string, parent *UIScrollView, pos *ebitest.Point) *listView {
@@ -168,20 +214,47 @@ func newListView(label string, parent *UIScrollView, pos *ebitest.Point) *listVi
 	return o
 }
 
+/*****************************************************************/
+
+// listRow ...
+type listRow struct {
+	scrollViewParts
+	index  int
+	texts  []*ebiten.Image
+	source []interface{}
+}
+
+func newListRow(label string, parent *UIScrollView, idx int, row []interface{}) *listRow {
+	cb := Base{
+		label:          label,
+		scale:          ebitest.NewScale(1.0, 1.0),
+		hasHoverAction: true,
+	}
+
+	o := &listRow{
+		scrollViewParts: scrollViewParts{
+			Base:   cb,
+			parent: parent,
+		},
+		index:  idx,
+		source: row,
+	}
+
+	// テキスト画像生成
+	for i := range row {
+		str := fmt.Sprintf("%v / ", row[i])
+		col := parent.fontSet.GetByString(str)
+		o.texts = append(o.texts, col...)
+	}
+
+	return o
+}
+
+/*****************************************************************/
+
 // scrollbarBase ...
 type scrollbarBase struct {
 	scrollViewParts
-}
-
-// Draw ...
-func (o *scrollbarBase) Draw(screen *ebiten.Image) {
-	// var op *ebiten.DrawImageOptions
-
-	// op = &ebiten.DrawImageOptions{}
-	// op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
-
-	// screen.DrawImage(o.image, op)
-	o.scrollViewParts.Draw(screen)
 }
 
 func newScrollbarBase(label string, parent *UIScrollView, pos *ebitest.Point) *scrollbarBase {

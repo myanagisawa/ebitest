@@ -137,6 +137,7 @@ type UIControl interface {
 // UIScrollView ...
 type UIScrollView interface {
 	UIControl
+	SetDataSource(colNames []interface{}, data [][]interface{})
 }
 
 // EventHandler ...
