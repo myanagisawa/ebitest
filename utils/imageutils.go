@@ -231,3 +231,10 @@ func CreateTextImage(text string, face font.Face, c color.Color) *draw.Image {
 	d.DrawString(text)
 	return &d.Dst
 }
+
+// StackImage ...
+func StackImage(base draw.Image, img image.Image, pos image.Point) draw.Image {
+	rct := image.Rectangle{pos, base.Bounds().Size()}       // 元画像への描画位置を決める
+	draw.Draw(base, rct, img, image.Point{0, 0}, draw.Over) // 乗せる画像を描画
+	return base
+}
