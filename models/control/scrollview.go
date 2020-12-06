@@ -176,17 +176,32 @@ func (o *listView) Draw(screen *ebiten.Image) {
 	th := 0
 	for i := range o.rows {
 		row := o.rows[i]
-		tw := 0
-		for j := range row.texts {
+		tw, nw, nh := 0, 0, 0
+		str := fmt.Sprintf("ty=%d, y=%d, h=%d", int(y+th-sy), y, h)
+		imgs := o.parent.fontSet.GetByString(str)
+		list := append(row.texts, imgs...)
+		for j := range list {
+			nw, nh = list[j].Size()
+
+			tx := float64(x + tw)
+			ty := float64(y + th - sy)
+			// text shadow
+			ops := &ebiten.DrawImageOptions{}
+			ops.GeoM.Translate(tx+1, ty+1)
+			ops.ColorM.Scale(0, 0, 0, 0.5)
+			screen.DrawImage(list[j], ops)
+
 			op = &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(tx, ty)
+			if int(ty)+nh < y || int(ty) > y+h {
+				// リスト表示領域外
+				op.ColorM.Scale(0.3, 0.3, 0.3, 0.5)
+			}
+			screen.DrawImage(list[j], op)
 
-			op.GeoM.Translate(float64(x+tw), float64(y+th))
-			screen.DrawImage(row.texts[j], op)
-
-			w, h = row.texts[j].Size()
-			tw += w
+			tw += nw
 		}
-		th += h
+		th += nh
 	}
 
 }
