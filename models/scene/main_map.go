@@ -64,7 +64,7 @@ func NewMap(m interfaces.GameManager) *Map {
 	l.AddUIControl(scrollView)
 
 	cols := []interface{}{
-		"ID", "カラム名ですColumn", "3番目", "HOGE",
+		"ID", "カラム名", "3番目", "HOGE",
 	}
 	data := [][]interface{}{
 		{1, "１行目", "あいうえお", 12345},
