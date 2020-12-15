@@ -96,6 +96,7 @@ type UIControl interface {
 	Movable
 	Label() string
 	Manager() GameManager
+	Layer() Layer
 	In(x, y int) bool
 	SetLayer(l Layer)
 	SetPosition(x, y float64)

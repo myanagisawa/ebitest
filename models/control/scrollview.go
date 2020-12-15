@@ -101,7 +101,7 @@ func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{
 			headerheight = s.H()
 		}
 	}
-	row := newListRow("header", o, headers, 0, listWidth, headerheight)
+	row := newListRow("header", o, headers, 0, ebitest.NewPoint(0, 0), listWidth, headerheight)
 	o.header = row
 
 	headerheight += marginY
@@ -110,6 +110,7 @@ func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{
 	o.listView = list
 
 	// 行オブジェクト作成
+	totalHeight := 0
 	for i := 0; i < columns.rowCount; i++ {
 		// 対象行のカラムリスト取得
 		cols := columns.GetByRowIndex(i)
@@ -123,8 +124,10 @@ func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{
 			}
 		}
 		// 行を作成
-		row := newListRow(fmt.Sprintf("row-%d", i), o, cols, i, listWidth, rowheight)
+		row := newListRow(fmt.Sprintf("row-%d", i), o, cols, i, ebitest.NewPoint(0, float64(totalHeight)), listWidth, rowheight)
 		o.listView.SetRow(row)
+		// height更新
+		totalHeight += rowheight + marginY
 	}
 
 	// スクロールバー部分の初期化
@@ -210,6 +213,10 @@ func (o *scrollViewParts) Manager() interfaces.GameManager {
 	return o.parent.Manager()
 }
 
+func (o *scrollViewParts) Layer() interfaces.Layer {
+	return o.parent.Layer()
+}
+
 // Position ...
 func (o *scrollViewParts) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	if t == enum.TypeLocal {
@@ -227,38 +234,12 @@ func (o *scrollViewParts) Position(t enum.ValueTypeEnum) *ebitest.Point {
 
 // In ...
 func (o *scrollViewParts) In(x, y int) bool {
-	// パーツ位置（左上座標）
-	minX, minY := o.Position(enum.TypeGlobal).GetInt()
-	// パーツサイズ(オリジナル)
-	size := ebitest.NewSize(o.image.Size())
-	// スケール
-	scale := o.Scale(enum.TypeGlobal)
-
-	// 見かけ上の右下座標を取得
-	maxX := int(float64(size.W())*scale.X()) + minX
-	maxY := int(float64(size.H())*scale.Y()) + minY
-
-	// フレーム領域
-	fPosX, fPosY := o.parent.layer.Frame().Position(enum.TypeGlobal).GetInt()
-	fSize := o.parent.layer.Frame().Size()
-	fMaxX, fMaxY := fPosX+fSize.W(), fPosY+fSize.H()
-	// 座標がフレーム外の場合はフレームのmax座標で置き換え
-	if maxX > fMaxX {
-		maxX = fMaxX
-	}
-	if maxY > fMaxY {
-		maxY = fMaxY
-	}
-
-	// 座標がフレーム外の場合はフレームのmin座標で置き換え
-	if minX < fPosX {
-		minX = fPosX
-	}
-	if minY < fPosY {
-		minY = fPosY
-	}
-	// log.Printf("レイヤ座標: {(%d, %d), (%d, %d)}", minX, minY, maxX, maxY)
-	return (x >= minX && x <= maxX) && (y > minY && y <= maxY)
+	return controlIn(x, y,
+		o.Position(enum.TypeGlobal),
+		ebitest.NewSize(o.image.Size()),
+		o.Scale(enum.TypeGlobal),
+		o.Layer().Frame().Position(enum.TypeGlobal),
+		o.Layer().Frame().Size())
 }
 
 // Update ...
@@ -290,6 +271,8 @@ type listView struct {
 	scrollingPos *ebitest.Point
 	rows         []*listRow
 	size         *ebitest.Size
+	displayFrom  int
+	displayTo    int
 }
 
 func (o *listView) calcScrollingPos(dy int) *ebitest.Point {
@@ -323,22 +306,47 @@ func (o *listView) ScrollingPos() *ebitest.Point {
 
 // Update ...
 func (o *listView) Update() error {
+	o.scrollViewParts.Update()
 	// ホイールイベント
 	_, dy := ebiten.Wheel()
 	o.scrollingPos.Set(o.calcScrollingPos(int(dy * 2)).Get())
-	// o.scrollingPos.SetDelta(0, dy*2)
-	// if o.scrollingPos.Y() < 0 {
-	// 	// 上に余白ができる
-	// 	o.scrollingPos.Set(0, 0)
-	// } else {
-	// 	ih := o.size.H()
-	// 	_, ph := o.parent.listViewSize()
-	// 	if int(o.scrollingPos.Y())+ph > ih {
-	// 		// 下に余白ができる
-	// 		o.scrollingPos.Set(0, float64(ih-ph))
-	// 	}
-	// }
 
+	// 表示領域確定
+	// スクロール量
+	_, sy := o.ScrollingPos().GetInt()
+	_, lh := o.parent.listViewSize()
+	topY, bottomY := 0, lh
+
+	from, to := -1, -1
+	for i := range o.rows {
+		row := o.rows[i]
+		_, rh := row.image.Size()
+
+		ty := int(row.position.Y()) - sy
+
+		// 描画領域判定
+		if ty <= topY {
+			if ty+rh > topY {
+				// 上端に一部隠れた状態=表示対象の先頭
+				from = i
+			}
+		} else if ty+rh > bottomY {
+			to = i
+			break
+		} else {
+			// 通常描画領域
+			if from == -1 {
+				from = i
+			}
+		}
+	}
+	o.displayFrom = from
+	o.displayTo = to
+
+	// 表示対象業のアップデート処理
+	for i := from; i < to; i++ {
+		o.rows[i].Update()
+	}
 	return nil
 }
 
@@ -358,19 +366,26 @@ func (o *listView) Draw(screen *ebiten.Image) {
 	topY := y
 	_, lh := o.parent.listViewSize()
 	bottomY := y + lh
-	th := 0
-	for i := range o.rows {
+	for i := o.displayFrom; i < o.displayTo; i++ {
 		row := o.rows[i]
 		rw, rh := row.image.Size()
+		_, ry := row.position.GetInt()
+		ty := y + ry - sy
 
-		ty := y + th - sy
+		op = &ebiten.DrawImageOptions{}
+		r, g, b, a := 1.0, 1.0, 1.0, 1.0
+		if o.hover {
+			log.Printf("ホバー行: %s", o.Label())
+			r, g, b, a = 0.5, 0.5, 0.5, 1.0
+		}
+		op.ColorM.Scale(r, g, b, a)
+
 		// 描画領域判定
 		if ty <= topY {
 			if ty+rh > topY {
 				// 上端に一部隠れた状態
 				a := topY - ty
 
-				op = &ebiten.DrawImageOptions{}
 				op.GeoM.Translate(float64(x), float64(ty+a))
 
 				fr := image.Rect(0, a, rw, rh+a)
@@ -381,7 +396,6 @@ func (o *listView) Draw(screen *ebiten.Image) {
 				// 下端に一部隠れた状態
 				a := ty - bottomY
 
-				op = &ebiten.DrawImageOptions{}
 				op.GeoM.Translate(float64(x), float64(ty))
 
 				fr := image.Rect(0, 0, rw, -a)
@@ -392,12 +406,10 @@ func (o *listView) Draw(screen *ebiten.Image) {
 			}
 		} else {
 			// 通常描画領域
-			op = &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(float64(x), float64(ty))
 
 			screen.DrawImage(row.image, op)
 		}
-		th += rh + marginY
 	}
 
 }
@@ -442,7 +454,57 @@ type listRow struct {
 	index int
 }
 
-func newListRow(label string, parent *UIScrollView, columns []*column, index, width, height int) *listRow {
+// Position ...
+func (o *listRow) Position(t enum.ValueTypeEnum) *ebitest.Point {
+	// スクロールバー位置: x = リスト位置(sy)*スクロール領域サイズ(sh) / リストサイズ(lh)
+	by := 0.0
+	d := ""
+	{
+		_, sy := o.parent.listView.ScrollingPos().GetInt()
+		py := 0
+		for i := range o.parent.listView.rows {
+			if i == o.index {
+				break
+			}
+			r := o.parent.listView.rows[i]
+			_, h := r.image.Size()
+			py += h
+		}
+		by = float64(py - sy)
+		d = fmt.Sprintf("sy=%d, py=%d, by=%d", sy, py, by)
+	}
+	if t == enum.TypeLocal {
+		return ebitest.NewPoint(0, by)
+	}
+	_, gy := o.parent.Position(enum.TypeGlobal).Get()
+	_, sy := o.Scale(enum.TypeGlobal).Get()
+	gy += by * sy
+	log.Printf("row(%d): Position: %s, gy=", d)
+	// {
+	// 	_, basey := o.parent.scrollbarBase.Position(enum.TypeGlobal).Get()
+	// 	_, bh := o.parent.scrollbarBase.image.Size()
+	// 	log.Printf("scrollbarBar.Position: %0.1f, o.pos=%0.1f, by=%0.1f, base: y=%0.1f, h=%d", gy, o.position.Y(), by, basey, bh)
+	// }
+	return ebitest.NewPoint(0, gy)
+}
+
+// In ...
+func (o *listRow) In(x, y int) bool {
+	return controlIn(x, y,
+		o.Position(enum.TypeGlobal),
+		ebitest.NewSize(o.image.Size()),
+		o.Scale(enum.TypeGlobal),
+		o.Layer().Frame().Position(enum.TypeGlobal),
+		o.Layer().Frame().Size())
+}
+
+// Update ...
+func (o *listRow) Update() error {
+	o.hover = o.In(ebiten.CursorPosition())
+	return nil
+}
+
+func newListRow(label string, parent *UIScrollView, columns []*column, index int, pos *ebitest.Point, width, height int) *listRow {
 	// 行画像を作成
 	img := ebitest.CreateRectImage(width, height, &color.RGBA{0, 0, 0, 32}).(draw.Image)
 
@@ -487,6 +549,7 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index, wi
 	}
 	cb := Base{
 		label:          label,
+		position:       pos,
 		scale:          ebitest.NewScale(1.0, 1.0),
 		image:          ebiten.NewImageFromImage(img),
 		hasHoverAction: true,
@@ -715,55 +778,26 @@ func (o *scrollbarBar) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	if t == enum.TypeLocal {
 		return ebitest.NewPoint(o.position.X(), o.position.Y()+by)
 	}
-	gx, gy := 0.0, 0.0
-	if o.parent.layer != nil {
-		gx, gy = o.parent.layer.Position(enum.TypeGlobal).Get()
-	}
+	gx, gy := o.parent.Position(enum.TypeGlobal).Get()
 	sx, sy := o.Scale(enum.TypeGlobal).Get()
 	gx += o.position.X() * sx
 	gy += (o.position.Y() + by) * sy
-	{
-		_, by := o.parent.scrollbarBase.Position(enum.TypeGlobal).Get()
-		_, bh := o.parent.scrollbarBase.image.Size()
-		log.Printf("scrollbarBar.Position: %0.1f,  %0.1f(%0.1f), base: y=%0.1f, h=%d", gx, gy, o.position.Y(), by, bh)
-	}
+	// {
+	// 	_, basey := o.parent.scrollbarBase.Position(enum.TypeGlobal).Get()
+	// 	_, bh := o.parent.scrollbarBase.image.Size()
+	// 	log.Printf("scrollbarBar.Position: %0.1f, o.pos=%0.1f, by=%0.1f, base: y=%0.1f, h=%d", gy, o.position.Y(), by, basey, bh)
+	// }
 	return ebitest.NewPoint(gx, gy)
 }
 
 // In ...
 func (o *scrollbarBar) In(x, y int) bool {
-	// パーツ位置（左上座標）
-	minX, minY := o.Position(enum.TypeGlobal).GetInt()
-	// パーツサイズ(オリジナル)
-	size := ebitest.NewSize(o.image.Size())
-	// スケール
-	scale := o.Scale(enum.TypeGlobal)
-
-	// 見かけ上の右下座標を取得
-	maxX := int(float64(size.W())*scale.X()) + minX
-	maxY := int(float64(size.H())*scale.Y()) + minY
-
-	// フレーム領域
-	fPosX, fPosY := o.parent.layer.Frame().Position(enum.TypeGlobal).GetInt()
-	fSize := o.parent.layer.Frame().Size()
-	fMaxX, fMaxY := fPosX+fSize.W(), fPosY+fSize.H()
-	// 座標がフレーム外の場合はフレームのmax座標で置き換え
-	if maxX > fMaxX {
-		maxX = fMaxX
-	}
-	if maxY > fMaxY {
-		maxY = fMaxY
-	}
-
-	// 座標がフレーム外の場合はフレームのmin座標で置き換え
-	if minX < fPosX {
-		minX = fPosX
-	}
-	if minY < fPosY {
-		minY = fPosY
-	}
-	// log.Printf("レイヤ座標: {(%d, %d), (%d, %d)}", minX, minY, maxX, maxY)
-	return (x >= minX && x <= maxX) && (y > minY && y <= maxY)
+	return controlIn(x, y,
+		o.Position(enum.TypeGlobal),
+		ebitest.NewSize(o.image.Size()),
+		o.Scale(enum.TypeGlobal),
+		o.Layer().Frame().Position(enum.TypeGlobal),
+		o.Layer().Frame().Size())
 }
 
 // Update ...

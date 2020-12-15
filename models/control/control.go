@@ -31,31 +31,41 @@ type Base struct {
 
 // Label ...
 func (o *Base) Label() string {
-	return fmt.Sprintf("%s.%s", o.layer.Label(), o.label)
+	return fmt.Sprintf("%s.%s", o.Layer().Label(), o.label)
 }
 
 // Manager ...
 func (o *Base) Manager() interfaces.GameManager {
-	return o.layer.Manager()
+	return o.Layer().Manager()
+}
+
+// Layer ...
+func (o *Base) Layer() interfaces.Layer {
+	return o.layer
 }
 
 // In ...
 func (o *Base) In(x, y int) bool {
+	return controlIn(x, y,
+		o.Position(enum.TypeGlobal),
+		ebitest.NewSize(o.image.Size()),
+		o.Scale(enum.TypeGlobal),
+		o.Layer().Frame().Position(enum.TypeGlobal),
+		o.Layer().Frame().Size())
+}
+
+// controlIn
+func controlIn(x, y int, pos *ebitest.Point, size *ebitest.Size, scale *ebitest.Scale, framePos *ebitest.Point, frameSize *ebitest.Size) bool {
 	// パーツ位置（左上座標）
-	minX, minY := o.Position(enum.TypeGlobal).GetInt()
-	// パーツサイズ(オリジナル)
-	size := ebitest.NewSize(o.image.Size())
-	// スケール
-	scale := o.Scale(enum.TypeGlobal)
+	minX, minY := pos.GetInt()
 
 	// 見かけ上の右下座標を取得
 	maxX := int(float64(size.W())*scale.X()) + minX
 	maxY := int(float64(size.H())*scale.Y()) + minY
 
 	// フレーム領域
-	fPosX, fPosY := o.layer.Frame().Position(enum.TypeGlobal).GetInt()
-	fSize := o.layer.Frame().Size()
-	fMaxX, fMaxY := fPosX+fSize.W(), fPosY+fSize.H()
+	fPosX, fPosY := framePos.GetInt()
+	fMaxX, fMaxY := fPosX+frameSize.W(), fPosY+frameSize.H()
 	// 座標がフレーム外の場合はフレームのmax座標で置き換え
 	if maxX > fMaxX {
 		maxX = fMaxX
@@ -90,8 +100,8 @@ func (o *Base) Position(t enum.ValueTypeEnum) *ebitest.Point {
 		return ebitest.NewPoint(o.position.X()+dx, o.position.Y()+dy)
 	}
 	gx, gy := 0.0, 0.0
-	if o.layer != nil {
-		gx, gy = o.layer.Position(enum.TypeGlobal).Get()
+	if o.Layer() != nil {
+		gx, gy = o.Layer().Position(enum.TypeGlobal).Get()
 	}
 	sx, sy := o.Scale(enum.TypeGlobal).Get()
 	gx += (o.position.X() + dx) * sx
