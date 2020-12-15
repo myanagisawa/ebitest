@@ -14,7 +14,6 @@ import (
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/models/char"
-	"github.com/myanagisawa/ebitest/models/input"
 	"github.com/myanagisawa/ebitest/utils"
 )
 
@@ -293,34 +292,52 @@ type listView struct {
 	size         *ebitest.Size
 }
 
-// ScrollingPos ...
-func (o *listView) ScrollingPos() *ebitest.Point {
+func (o *listView) calcScrollingPos(dy int) *ebitest.Point {
 	sx, sy := o.scrollingPos.GetInt()
-	if o.moving != nil {
-		// スクロールバードラッグ中
-		dx, dy := o.moving.GetInt()
-		sx += dx
+	if dy != 0 {
 		sy += dy
+		if sy < 0 {
+			// 上に余白ができる
+			sy = 0
+		} else {
+			ih := o.size.H()
+			_, ph := o.parent.listViewSize()
+			if sy+ph > ih {
+				// 下に余白ができる
+				sy = ih - ph
+			}
+		}
 	}
 	return ebitest.NewPoint(float64(sx), float64(sy))
+}
+
+// ScrollingPos ...
+func (o *listView) ScrollingPos() *ebitest.Point {
+	if o.moving == nil {
+		return o.scrollingPos
+	}
+	// スクロールバードラッグ中
+	_, dy := o.moving.GetInt()
+	return o.calcScrollingPos(dy)
 }
 
 // Update ...
 func (o *listView) Update() error {
 	// ホイールイベント
 	_, dy := ebiten.Wheel()
-	o.scrollingPos.SetDelta(0, dy*2)
-	if o.scrollingPos.Y() < 0 {
-		// 上に余白ができる
-		o.scrollingPos.Set(0, 0)
-	} else {
-		ih := o.size.H()
-		_, ph := o.parent.listViewSize()
-		if int(o.scrollingPos.Y())+ph > ih {
-			// 下に余白ができる
-			o.scrollingPos.Set(0, float64(ih-ph))
-		}
-	}
+	o.scrollingPos.Set(o.calcScrollingPos(int(dy * 2)).Get())
+	// o.scrollingPos.SetDelta(0, dy*2)
+	// if o.scrollingPos.Y() < 0 {
+	// 	// 上に余白ができる
+	// 	o.scrollingPos.Set(0, 0)
+	// } else {
+	// 	ih := o.size.H()
+	// 	_, ph := o.parent.listViewSize()
+	// 	if int(o.scrollingPos.Y())+ph > ih {
+	// 		// 下に余白ができる
+	// 		o.scrollingPos.Set(0, float64(ih-ph))
+	// 	}
+	// }
 
 	return nil
 }
@@ -669,11 +686,11 @@ func newScrollbarBase(label string, parent *UIScrollView, pos *ebitest.Point) *s
 // scrollbarBar ...
 type scrollbarBar struct {
 	scrollViewParts
-	stroke *input.Stroke
 }
 
 func (o *scrollbarBar) UpdatePositionByDelta() {
-	o.parent.listView.scrollingPos.SetDelta(o.parent.listView.moving.Get())
+	_, dy := o.parent.listView.moving.GetInt()
+	o.parent.listView.scrollingPos.Set(o.parent.listView.calcScrollingPos(dy).Get())
 	o.parent.listView.moving = nil
 }
 
@@ -705,7 +722,11 @@ func (o *scrollbarBar) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	sx, sy := o.Scale(enum.TypeGlobal).Get()
 	gx += o.position.X() * sx
 	gy += (o.position.Y() + by) * sy
-	// log.Printf("scrollbarBar.Position: %0.1f,  %0.1f", gx, gy)
+	{
+		_, by := o.parent.scrollbarBase.Position(enum.TypeGlobal).Get()
+		_, bh := o.parent.scrollbarBase.image.Size()
+		log.Printf("scrollbarBar.Position: %0.1f,  %0.1f(%0.1f), base: y=%0.1f, h=%d", gx, gy, o.position.Y(), by, bh)
+	}
 	return ebitest.NewPoint(gx, gy)
 }
 
