@@ -27,9 +27,16 @@ type Movable interface {
 	SetMoving(dx, dy float64)
 }
 
+// StrokeTarget ...
+type StrokeTarget interface {
+	UpdateStroke(stroke Stroke)
+	UpdatePositionByDelta()
+}
+
 // GameManager ...
 type GameManager interface {
 	TransitionTo(enum.SceneEnum)
+	SetStroke(target StrokeTarget)
 }
 
 // Scene ...
@@ -37,7 +44,8 @@ type Scene interface {
 	ebiten.Game
 	AddFrame(f Frame)
 	ActiveFrame() Frame
-	// Label() string
+	Label() string
+	Manager() GameManager
 	// SetLayer(l Layer)
 	// DeleteLayer(l Layer)
 	// LayerAt(x, y int) Layer
@@ -48,6 +56,8 @@ type Scene interface {
 // Frame ...
 type Frame interface {
 	Positionable
+	Label() string
+	Manager() GameManager
 	Size() *ebitest.Size
 	Parent() Scene
 	SetParent(parent Scene)
@@ -65,6 +75,7 @@ type Layer interface {
 	Scaleable
 	Movable
 	Label() string
+	Manager() GameManager
 	Frame() Frame
 	SetFrame(frame Frame)
 	In(x, y int) bool
@@ -84,6 +95,7 @@ type UIControl interface {
 	Anglable
 	Movable
 	Label() string
+	Manager() GameManager
 	In(x, y int) bool
 	SetLayer(l Layer)
 	SetPosition(x, y float64)
@@ -92,47 +104,6 @@ type UIControl interface {
 	Update() error
 	Draw(screen *ebiten.Image)
 }
-
-// // Layer ...
-// type Layer interface {
-// 	Label() string
-// 	LabelFull() string
-// 	EbiObjects() []*models.EbiObject
-// 	Update() error
-// 	Draw(screen *ebiten.Image)
-// 	Scroll(t enum.EdgeTypeEnum)
-// 	In(x, y int) bool
-// 	IsModal() bool
-// 	AddUIControl(c UIControl)
-// 	UIControlAt(x, y int) UIControl
-// 	EventHandler() EventHandler
-// }
-
-// // UIControl ...
-// type UIControl interface {
-// 	Label() string
-// 	EbiObjects() []*models.EbiObject
-// 	Update() error
-// 	Draw(screen *ebiten.Image)
-// 	In(x, y int) bool
-// 	SetLayer(l Layer)
-// 	HasHoverAction() bool
-// }
-
-// // UIButton ...
-// type UIButton interface {
-// 	UIControl
-// }
-
-// // UIText ...
-// type UIText interface {
-// 	UIControl
-// }
-
-// // UIColumn ...
-// type UIColumn interface {
-// 	UIControl
-// }
 
 // UIScrollView ...
 type UIScrollView interface {
@@ -149,4 +120,10 @@ type EventHandler interface {
 
 // Event ...
 type Event interface {
+}
+
+// Stroke ...
+type Stroke interface {
+	Update()
+	PositionDiff() (float64, float64)
 }

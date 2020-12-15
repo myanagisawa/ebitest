@@ -34,6 +34,11 @@ func (o *Base) Label() string {
 	return fmt.Sprintf("%s.%s", o.layer.Label(), o.label)
 }
 
+// Manager ...
+func (o *Base) Manager() interfaces.GameManager {
+	return o.layer.Manager()
+}
+
 // In ...
 func (o *Base) In(x, y int) bool {
 	// パーツ位置（左上座標）

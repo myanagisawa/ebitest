@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"image/color"
+	"log"
 	"runtime"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -10,6 +11,7 @@ import (
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
+	"github.com/myanagisawa/ebitest/models/input"
 	"github.com/myanagisawa/ebitest/models/scene"
 )
 
@@ -28,6 +30,7 @@ type (
 		background   *ebiten.Image
 		currentScene interfaces.Scene
 		scenes       map[enum.SceneEnum]interfaces.Scene
+		stroke       *input.Stroke
 		// master       *MasterData
 	}
 )
@@ -79,6 +82,7 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 
 	// MainMenuを表示
 	gm.TransitionTo(enum.MapEnum)
+
 	return gm
 }
 
@@ -101,8 +105,28 @@ func (g *Manager) SetCurrentScene(s interfaces.Scene) {
 	g.currentScene = s
 }
 
+// SetStroke ...
+func (g *Manager) SetStroke(target interfaces.StrokeTarget) {
+	if g.stroke != nil {
+		log.Printf("別のstrokeがあるため追加できません(target=%#v)", g.stroke.DraggingObject())
+		return
+	}
+	stroke := input.NewStroke(&input.MouseStrokeSource{})
+	stroke.SetDraggingObject(target)
+	g.stroke = stroke
+}
+
 // Update ...
 func (g *Manager) Update() error {
+	if g.stroke != nil {
+		target := g.stroke.DraggingObject()
+		target.UpdateStroke(g.stroke)
+		if g.stroke.IsReleased() {
+			target.UpdatePositionByDelta()
+			g.stroke = nil
+			log.Printf("drag end")
+		}
+	}
 	if g.currentScene != nil {
 		return g.currentScene.Update()
 	}

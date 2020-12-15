@@ -11,7 +11,6 @@ import (
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/models/event"
-	"github.com/myanagisawa/ebitest/models/input"
 )
 
 // Base ...
@@ -27,12 +26,16 @@ type Base struct {
 	draggable    bool
 	controls     []interfaces.UIControl
 	eventHandler interfaces.EventHandler
-	stroke       *input.Stroke
 }
 
 // Label ...
 func (o *Base) Label() string {
 	return o.label
+}
+
+// Manager ...
+func (o *Base) Manager() interfaces.GameManager {
+	return o.frame.Manager()
 }
 
 // Frame ...
@@ -157,15 +160,6 @@ func (o *Base) Scroll(et enum.EdgeTypeEnum) {
 // Update ...
 func (o *Base) Update() error {
 
-	if o.stroke != nil {
-		o.updateStroke(o.stroke)
-		if o.stroke.IsReleased() {
-			o.updatePositionByDelta()
-			o.stroke = nil
-			log.Printf("drag end")
-		}
-	}
-
 	if o.frame.ActiveLayer() != nil && o.frame.ActiveLayer() == o {
 		// log.Printf("active layer: %s", l.frame.ActiveLayer().Label())
 
@@ -173,7 +167,6 @@ func (o *Base) Update() error {
 			x, y := ebiten.CursorPosition()
 			// log.Printf("left button push: x=%d, y=%d", x, y)
 			if o.In(x, y) {
-				stroke := input.NewStroke(&input.MouseStrokeSource{})
 				// レイヤ内のドラッグ対象のオブジェクトを取得する仕組みが必要
 				// o := l.UIControlAt(x, y)
 				// if o != nil || l.bg.IsDraggable() {
@@ -181,7 +174,7 @@ func (o *Base) Update() error {
 				// 	log.Printf("drag start")
 				// }
 				if o.draggable {
-					o.stroke = stroke
+					o.Manager().SetStroke(o)
 					log.Printf("%s drag start", o.label)
 				}
 			}
@@ -279,15 +272,16 @@ func NewLayerBaseByImage(label string, img image.Image, pos *ebitest.Point, drag
 	return l
 }
 
-// updatePositionByDelta ...
-func (o *Base) updatePositionByDelta() {
+// UpdatePositionByDelta ...
+func (o *Base) UpdatePositionByDelta() {
 
 	o.position.SetDelta(o.moving.Get())
 
 	o.moving = nil
 }
 
-func (o *Base) updateStroke(stroke *input.Stroke) {
+// UpdateStroke ...
+func (o *Base) UpdateStroke(stroke interfaces.Stroke) {
 	stroke.Update()
 	o.SetMoving(stroke.PositionDiff())
 }

@@ -8,6 +8,7 @@ import (
 // Base ...
 type Base struct {
 	label       string
+	manager     interfaces.GameManager
 	frames      []interfaces.Frame
 	activeFrame interfaces.Frame
 }
@@ -17,7 +18,12 @@ func (o *Base) Label() string {
 	return o.label
 }
 
-/// AddFrame ...
+// Manager ...
+func (o *Base) Manager() interfaces.GameManager {
+	return o.manager
+}
+
+// AddFrame ...
 func (o *Base) AddFrame(f interfaces.Frame) {
 	f.SetParent(o)
 	o.frames = append(o.frames, f)
@@ -39,7 +45,7 @@ func (o *Base) ActiveFrame() interfaces.Frame {
 	return o.activeFrame
 }
 
-/// Update ...
+// Update ...
 func (o *Base) Update() error {
 
 	o.activeFrame = o.FrameAt(ebiten.CursorPosition())
@@ -68,7 +74,8 @@ func (o *Base) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func NewScene(m interfaces.GameManager) interfaces.Scene {
 
 	s := &Base{
-		label: "BaseScene",
+		label:   "BaseScene",
+		manager: m,
 	}
 
 	return s

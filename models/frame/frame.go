@@ -28,6 +28,11 @@ func (o *Base) Label() string {
 	return o.label
 }
 
+// Manager ...
+func (o *Base) Manager() interfaces.GameManager {
+	return o.parent.Manager()
+}
+
 // Parent ...
 func (o *Base) Parent() interfaces.Scene {
 	return o.parent

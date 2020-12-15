@@ -3,6 +3,7 @@ package input
 import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/myanagisawa/ebitest/interfaces"
 )
 
 // Stroke manages the current drag state by mouse.
@@ -21,7 +22,7 @@ type Stroke struct {
 
 	// draggingObject represents a object (sprite in this case)
 	// that is being dragged.
-	draggingObject interface{}
+	draggingObject interfaces.StrokeTarget
 }
 
 // Update ...
@@ -58,12 +59,12 @@ func (s *Stroke) PositionDiff() (float64, float64) {
 }
 
 // DraggingObject ...
-func (s *Stroke) DraggingObject() interface{} {
+func (s *Stroke) DraggingObject() interfaces.StrokeTarget {
 	return s.draggingObject
 }
 
 // SetDraggingObject ...
-func (s *Stroke) SetDraggingObject(object interface{}) {
+func (s *Stroke) SetDraggingObject(object interfaces.StrokeTarget) {
 	s.draggingObject = object
 }
 
