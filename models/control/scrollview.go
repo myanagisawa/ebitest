@@ -129,6 +129,8 @@ func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{
 		// height更新
 		totalHeight += rowheight + marginY
 	}
+	// 表示領域確定
+	o.listView.setDisplayIndex()
 
 	// スクロールバー部分の初期化
 	barBase := newScrollbarBase(fmt.Sprintf("%s.scrollbar.base", o.label), o, ebitest.NewPoint(float64(listWidth-12), float64(headerheight)))
@@ -291,6 +293,7 @@ func (o *listView) calcScrollingPos(dy int) *ebitest.Point {
 			}
 		}
 	}
+	log.Printf("calcScrollingPos: %d", sy) // 別フレームもしくは別レイヤーでドロップでおかしくなってそう
 	return ebitest.NewPoint(float64(sx), float64(sy))
 }
 
@@ -312,6 +315,17 @@ func (o *listView) Update() error {
 	o.scrollingPos.Set(o.calcScrollingPos(int(dy * 2)).Get())
 
 	// 表示領域確定
+	o.setDisplayIndex()
+
+	// 表示対象業のアップデート処理
+	for i := o.displayFrom; i <= o.displayTo; i++ {
+		o.rows[i].Update()
+	}
+	return nil
+}
+
+// setDisplayIndex 表示対象行の設定を行います
+func (o *listView) setDisplayIndex() {
 	// スクロール量
 	_, sy := o.ScrollingPos().GetInt()
 	_, lh := o.parent.listViewSize()
@@ -340,14 +354,11 @@ func (o *listView) Update() error {
 			}
 		}
 	}
+	if to == -1 {
+		to = len(o.rows) - 1
+	}
 	o.displayFrom = from
 	o.displayTo = to
-
-	// 表示対象業のアップデート処理
-	for i := from; i < to; i++ {
-		o.rows[i].Update()
-	}
-	return nil
 }
 
 // Draw ...
@@ -366,48 +377,41 @@ func (o *listView) Draw(screen *ebiten.Image) {
 	topY := y
 	_, lh := o.parent.listViewSize()
 	bottomY := y + lh
-	for i := o.displayFrom; i < o.displayTo; i++ {
+	for i := o.displayFrom; i <= o.displayTo; i++ {
 		row := o.rows[i]
-		rw, rh := row.image.Size()
 		_, ry := row.position.GetInt()
 		ty := y + ry - sy
 
+		// 行の描画
 		op = &ebiten.DrawImageOptions{}
 		r, g, b, a := 1.0, 1.0, 1.0, 1.0
-		if o.hover {
-			log.Printf("ホバー行: %s", o.Label())
-			r, g, b, a = 0.5, 0.5, 0.5, 1.0
+		if row.hover {
+			// log.Printf("ホバー行: %s(%d)", row.label, row.index)
+			r, g, b, a = 0.75, 0.75, 0.75, 1.0
 		}
 		op.ColorM.Scale(r, g, b, a)
 
-		// 描画領域判定
-		if ty <= topY {
-			if ty+rh > topY {
-				// 上端に一部隠れた状態
-				a := topY - ty
+		if i == o.displayFrom {
+			// 先頭データ
+			a := topY - ty
+			op.GeoM.Translate(float64(x), float64(ty+a))
 
-				op.GeoM.Translate(float64(x), float64(ty+a))
-
-				fr := image.Rect(0, a, rw, rh+a)
-				screen.DrawImage(row.image.SubImage(fr).(*ebiten.Image), op)
-			}
-		} else if ty+rh > bottomY {
-			if ty <= bottomY {
-				// 下端に一部隠れた状態
-				a := ty - bottomY
-
-				op.GeoM.Translate(float64(x), float64(ty))
-
-				fr := image.Rect(0, 0, rw, -a)
-				screen.DrawImage(row.image.SubImage(fr).(*ebiten.Image), op)
-			} else {
-				// ここに到達したらもう以降は表示範囲外なのでループを抜ける
-				break
-			}
-		} else {
-			// 通常描画領域
+			// 画像の表示範囲を計算
+			rw, rh := row.image.Size()
+			fr := image.Rect(0, a, rw, rh+a)
+			screen.DrawImage(row.image.SubImage(fr).(*ebiten.Image), op)
+		} else if i == o.displayTo {
+			// 末尾データ
+			a := ty - bottomY
 			op.GeoM.Translate(float64(x), float64(ty))
 
+			// 画像の表示範囲を計算
+			rw, _ := row.image.Size()
+			fr := image.Rect(0, 0, rw, -a)
+			screen.DrawImage(row.image.SubImage(fr).(*ebiten.Image), op)
+		} else {
+			// 境界以外
+			op.GeoM.Translate(float64(x), float64(ty))
 			screen.DrawImage(row.image, op)
 		}
 	}
@@ -422,9 +426,6 @@ func (o *listView) SetRow(row *listRow) {
 }
 
 func newListView(label string, parent *UIScrollView, pos *ebitest.Point) *listView {
-	// img := ebitest.Images["world"]
-	// eimg := ebiten.NewImageFromImage(img)
-
 	// positionは親positionからのdeltaを指定する
 	cb := Base{
 		label: label,
@@ -458,33 +459,17 @@ type listRow struct {
 func (o *listRow) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	// スクロールバー位置: x = リスト位置(sy)*スクロール領域サイズ(sh) / リストサイズ(lh)
 	by := 0.0
-	d := ""
 	{
-		_, sy := o.parent.listView.ScrollingPos().GetInt()
-		py := 0
-		for i := range o.parent.listView.rows {
-			if i == o.index {
-				break
-			}
-			r := o.parent.listView.rows[i]
-			_, h := r.image.Size()
-			py += h
-		}
-		by = float64(py - sy)
-		d = fmt.Sprintf("sy=%d, py=%d, by=%d", sy, py, by)
+		_, sy := o.parent.listView.ScrollingPos().Get()
+		py := o.position.Y()
+		by = py - sy
 	}
 	if t == enum.TypeLocal {
 		return ebitest.NewPoint(0, by)
 	}
-	_, gy := o.parent.Position(enum.TypeGlobal).Get()
+	_, gy := o.parent.listView.Position(enum.TypeGlobal).Get()
 	_, sy := o.Scale(enum.TypeGlobal).Get()
 	gy += by * sy
-	log.Printf("row(%d): Position: %s, gy=", d)
-	// {
-	// 	_, basey := o.parent.scrollbarBase.Position(enum.TypeGlobal).Get()
-	// 	_, bh := o.parent.scrollbarBase.image.Size()
-	// 	log.Printf("scrollbarBar.Position: %0.1f, o.pos=%0.1f, by=%0.1f, base: y=%0.1f, h=%d", gy, o.position.Y(), by, basey, bh)
-	// }
 	return ebitest.NewPoint(0, gy)
 }
 
@@ -564,49 +549,6 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 
 	return o
 }
-
-// func newListRowOld(label string, parent *UIScrollView, idx int, row []interface{}) *listRow {
-// 	cb := Base{
-// 		label:          label,
-// 		scale:          ebitest.NewScale(1.0, 1.0),
-// 		hasHoverAction: true,
-// 	}
-
-// 	o := &listRow{
-// 		scrollViewParts: scrollViewParts{
-// 			Base:   cb,
-// 			parent: parent,
-// 		},
-// 		index:  idx,
-// 		source: row,
-// 	}
-
-// 	w, _ := parent.image.Size()
-// 	img := ebitest.CreateRectImage(w, 30, &color.RGBA{127, 127, 127, 127}).(draw.Image)
-
-// 	// テキスト画像生成
-// 	splitter := parent.fontSet.GetByString(" | ")
-// 	tx := 0
-// 	for i := range row {
-// 		str := fmt.Sprintf("%v", row[i])
-// 		col := parent.fontSet.GetByString(str)
-// 		// o.texts = append(o.texts, col...)
-// 		for j := range col {
-// 			t := col[j]
-// 			img = utils.StackImage(img, t, image.Point{tx, 5})
-// 			tx += t.Bounds().Size().X
-// 		}
-// 		// カラム区切りの文字列描画
-// 		for j := range splitter {
-// 			img = utils.StackImage(img, splitter[j], image.Point{tx, 5})
-// 			tx += splitter[j].Bounds().Size().X
-// 		}
-// 	}
-
-// 	o.image = ebiten.NewImageFromImage(img)
-
-// 	return o
-// }
 
 /*****************************************************************/
 
@@ -820,6 +762,13 @@ func (o *scrollbarBar) Draw(screen *ebiten.Image) {
 
 	op = &ebiten.DrawImageOptions{}
 
+	r, g, b, a := 1.0, 1.0, 1.0, 1.0
+	if o.hover {
+		// log.Printf("ホバー: %s", o.label)
+		r, g, b, a = 0.5, 0.5, 0.5, 1.0
+	}
+	op.ColorM.Scale(r, g, b, a)
+
 	// x, y := o.Position(enum.TypeGlobal).Get()
 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
 	screen.DrawImage(o.image, op)
@@ -854,4 +803,5 @@ func newScrollbarBar(label string, parent *UIScrollView, pos *ebitest.Point) *sc
 		},
 	}
 	return o
+
 }
