@@ -293,7 +293,7 @@ func (o *listView) calcScrollingPos(dy int) *ebitest.Point {
 			}
 		}
 	}
-	log.Printf("calcScrollingPos: %d", sy) // 別フレームもしくは別レイヤーでドロップでおかしくなってそう
+	// log.Printf("calcScrollingPos: %d", sy)
 	return ebitest.NewPoint(float64(sx), float64(sy))
 }
 
@@ -312,10 +312,11 @@ func (o *listView) Update() error {
 	o.scrollViewParts.Update()
 	// ホイールイベント
 	_, dy := ebiten.Wheel()
-	o.scrollingPos.Set(o.calcScrollingPos(int(dy * 2)).Get())
-
-	// 表示領域確定
-	o.setDisplayIndex()
+	if dy != 0 {
+		o.scrollingPos.Set(o.calcScrollingPos(int(dy * 2)).Get())
+		// 表示領域確定
+		o.setDisplayIndex()
+	}
 
 	// 表示対象業のアップデート処理
 	for i := o.displayFrom; i <= o.displayTo; i++ {
@@ -324,7 +325,7 @@ func (o *listView) Update() error {
 	return nil
 }
 
-// setDisplayIndex 表示対象行の設定を行います
+// setDisplayIndex 表示対象行の設定を行います. 表示対象領域の変化があった場合に再計算させる処理なので、スクロール処理に関連づけて実行する
 func (o *listView) setDisplayIndex() {
 	// スクロール量
 	_, sy := o.ScrollingPos().GetInt()
@@ -394,6 +395,11 @@ func (o *listView) Draw(screen *ebiten.Image) {
 		if i == o.displayFrom {
 			// 先頭データ
 			a := topY - ty
+			if a < 0 {
+				// 行の間のマージン部分が上端にかかっている場合にマイナスで出る
+				// そのままだと先頭セルが上にズレるので0で上書き
+				a = 0
+			}
 			op.GeoM.Translate(float64(x), float64(ty+a))
 
 			// 画像の表示範囲を計算
@@ -552,6 +558,157 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 
 /*****************************************************************/
 
+// scrollbarBase ...
+type scrollbarBase struct {
+	scrollViewParts
+}
+
+func newScrollbarBase(label string, parent *UIScrollView, pos *ebitest.Point) *scrollbarBase {
+	_, ph := parent.listViewSize()
+	scrollbaseimg := ebitest.CreateRectImage(12, ph, &color.RGBA{223, 223, 223, 255})
+	eimg := ebiten.NewImageFromImage(scrollbaseimg)
+
+	// positionは親positionからのdeltaを指定する
+	cb := Base{
+		label:          label,
+		image:          eimg,
+		position:       pos,
+		scale:          ebitest.NewScale(1.0, 1.0),
+		hasHoverAction: false,
+	}
+
+	o := &scrollbarBase{
+		scrollViewParts: scrollViewParts{
+			Base:   cb,
+			parent: parent,
+		},
+	}
+	return o
+}
+
+/*****************************************************************/
+
+// scrollbarBar ...
+type scrollbarBar struct {
+	scrollViewParts
+}
+
+func (o *scrollbarBar) UpdatePositionByDelta() {
+	_, dy := o.parent.listView.moving.GetInt()
+	o.parent.listView.scrollingPos.Set(o.parent.listView.calcScrollingPos(dy).Get())
+	o.parent.listView.moving = nil
+}
+
+func (o *scrollbarBar) UpdateStroke(stroke interfaces.Stroke) {
+	stroke.Update()
+	_, y := stroke.PositionDiff()
+	o.parent.listView.SetMoving(0, y)
+	o.parent.listView.setDisplayIndex()
+}
+
+// Position ...
+func (o *scrollbarBar) Position(t enum.ValueTypeEnum) *ebitest.Point {
+	// スクロールバー位置: x = リスト位置(sy)*スクロール領域サイズ(sh) / リストサイズ(lh)
+	by := 0.0
+	{
+		_, sy := o.parent.listView.ScrollingPos().GetInt()
+		_, sh := o.parent.scrollbarBase.image.Size()
+		sh -= 6 // ベース領域から、バーのマージン上下各3px分を引く
+		lh := o.parent.listView.size.H()
+		by = math.Abs(float64(sy)) * float64(sh) / float64(lh)
+	}
+
+	if t == enum.TypeLocal {
+		return ebitest.NewPoint(o.position.X(), o.position.Y()+by)
+	}
+	gx, gy := o.parent.Position(enum.TypeGlobal).Get()
+	sx, sy := o.Scale(enum.TypeGlobal).Get()
+	gx += o.position.X() * sx
+	gy += (o.position.Y() + by) * sy
+	// {
+	// 	_, basey := o.parent.scrollbarBase.Position(enum.TypeGlobal).Get()
+	// 	_, bh := o.parent.scrollbarBase.image.Size()
+	// 	log.Printf("scrollbarBar.Position: %0.1f, o.pos=%0.1f, by=%0.1f, base: y=%0.1f, h=%d", gy, o.position.Y(), by, basey, bh)
+	// }
+	return ebitest.NewPoint(gx, gy)
+}
+
+// In ...
+func (o *scrollbarBar) In(x, y int) bool {
+	return controlIn(x, y,
+		o.Position(enum.TypeGlobal),
+		ebitest.NewSize(o.image.Size()),
+		o.Scale(enum.TypeGlobal),
+		o.Layer().Frame().Position(enum.TypeGlobal),
+		o.Layer().Frame().Size())
+}
+
+// Update ...
+func (o *scrollbarBar) Update() error {
+	o.hover = o.In(ebiten.CursorPosition())
+
+	if o.hover {
+		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+			o.Manager().SetStroke(o)
+			log.Printf("%s drag start", o.label)
+		}
+	}
+
+	return nil
+}
+
+// Draw ...
+func (o *scrollbarBar) Draw(screen *ebiten.Image) {
+	var op *ebiten.DrawImageOptions
+
+	op = &ebiten.DrawImageOptions{}
+
+	r, g, b, a := 1.0, 1.0, 1.0, 1.0
+	if o.hover {
+		// log.Printf("ホバー: %s", o.label)
+		r, g, b, a = 0.75, 0.75, 0.75, 1.0
+	}
+	op.ColorM.Scale(r, g, b, a)
+
+	// x, y := o.Position(enum.TypeGlobal).Get()
+	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
+	screen.DrawImage(o.image, op)
+}
+
+func newScrollbarBar(label string, parent *UIScrollView, pos *ebitest.Point) *scrollbarBar {
+	// リスト表示領域高さ
+	_, ph := parent.listViewSize()
+	// リスト全体の高さ
+	lh := parent.listView.size.H()
+
+	// barの高さ
+	barheight := int(float64(ph*ph) / float64(lh))
+	barheight -= 3
+
+	scrollbarimg := ebitest.CreateRectImage(8, barheight, &color.RGBA{192, 192, 192, 255})
+	eimg := ebiten.NewImageFromImage(scrollbarimg)
+
+	// positionは親positionからのdeltaを指定する
+	cb := Base{
+		label:          label,
+		image:          eimg,
+		position:       pos,
+		scale:          ebitest.NewScale(1.0, 1.0),
+		hasHoverAction: true,
+	}
+
+	o := &scrollbarBar{
+		scrollViewParts: scrollViewParts{
+			Base:   cb,
+			parent: parent,
+		},
+	}
+	return o
+
+}
+
+/*****************************************************************/
+
 // columnSet ...
 type columnSet struct {
 	header   []*column
@@ -654,154 +811,4 @@ func newColumn(label string, parent *UIScrollView, rowIdx, colIdx int, c interfa
 	}
 
 	return o
-}
-
-/*****************************************************************/
-
-// scrollbarBase ...
-type scrollbarBase struct {
-	scrollViewParts
-}
-
-func newScrollbarBase(label string, parent *UIScrollView, pos *ebitest.Point) *scrollbarBase {
-	_, ph := parent.listViewSize()
-	scrollbaseimg := ebitest.CreateRectImage(12, ph, &color.RGBA{255, 255, 255, 127})
-	eimg := ebiten.NewImageFromImage(scrollbaseimg)
-
-	// positionは親positionからのdeltaを指定する
-	cb := Base{
-		label:          label,
-		image:          eimg,
-		position:       pos,
-		scale:          ebitest.NewScale(1.0, 1.0),
-		hasHoverAction: false,
-	}
-
-	o := &scrollbarBase{
-		scrollViewParts: scrollViewParts{
-			Base:   cb,
-			parent: parent,
-		},
-	}
-	return o
-}
-
-/*****************************************************************/
-
-// scrollbarBar ...
-type scrollbarBar struct {
-	scrollViewParts
-}
-
-func (o *scrollbarBar) UpdatePositionByDelta() {
-	_, dy := o.parent.listView.moving.GetInt()
-	o.parent.listView.scrollingPos.Set(o.parent.listView.calcScrollingPos(dy).Get())
-	o.parent.listView.moving = nil
-}
-
-func (o *scrollbarBar) UpdateStroke(stroke interfaces.Stroke) {
-	stroke.Update()
-	_, y := stroke.PositionDiff()
-	o.parent.listView.SetMoving(0, y)
-}
-
-// Position ...
-func (o *scrollbarBar) Position(t enum.ValueTypeEnum) *ebitest.Point {
-	// スクロールバー位置: x = リスト位置(sy)*スクロール領域サイズ(sh) / リストサイズ(lh)
-	by := 0.0
-	{
-		_, sy := o.parent.listView.ScrollingPos().GetInt()
-		_, sh := o.parent.scrollbarBase.image.Size()
-		sh -= 6 // ベース領域から、バーのマージン上下各3px分を引く
-		lh := o.parent.listView.size.H()
-		by = math.Abs(float64(sy)) * float64(sh) / float64(lh)
-	}
-
-	if t == enum.TypeLocal {
-		return ebitest.NewPoint(o.position.X(), o.position.Y()+by)
-	}
-	gx, gy := o.parent.Position(enum.TypeGlobal).Get()
-	sx, sy := o.Scale(enum.TypeGlobal).Get()
-	gx += o.position.X() * sx
-	gy += (o.position.Y() + by) * sy
-	// {
-	// 	_, basey := o.parent.scrollbarBase.Position(enum.TypeGlobal).Get()
-	// 	_, bh := o.parent.scrollbarBase.image.Size()
-	// 	log.Printf("scrollbarBar.Position: %0.1f, o.pos=%0.1f, by=%0.1f, base: y=%0.1f, h=%d", gy, o.position.Y(), by, basey, bh)
-	// }
-	return ebitest.NewPoint(gx, gy)
-}
-
-// In ...
-func (o *scrollbarBar) In(x, y int) bool {
-	return controlIn(x, y,
-		o.Position(enum.TypeGlobal),
-		ebitest.NewSize(o.image.Size()),
-		o.Scale(enum.TypeGlobal),
-		o.Layer().Frame().Position(enum.TypeGlobal),
-		o.Layer().Frame().Size())
-}
-
-// Update ...
-func (o *scrollbarBar) Update() error {
-	o.hover = o.In(ebiten.CursorPosition())
-
-	if o.hover {
-		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-			o.Manager().SetStroke(o)
-			log.Printf("%s drag start", o.label)
-		}
-	}
-
-	return nil
-}
-
-// Draw ...
-func (o *scrollbarBar) Draw(screen *ebiten.Image) {
-	var op *ebiten.DrawImageOptions
-
-	op = &ebiten.DrawImageOptions{}
-
-	r, g, b, a := 1.0, 1.0, 1.0, 1.0
-	if o.hover {
-		// log.Printf("ホバー: %s", o.label)
-		r, g, b, a = 0.5, 0.5, 0.5, 1.0
-	}
-	op.ColorM.Scale(r, g, b, a)
-
-	// x, y := o.Position(enum.TypeGlobal).Get()
-	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
-	screen.DrawImage(o.image, op)
-}
-
-func newScrollbarBar(label string, parent *UIScrollView, pos *ebitest.Point) *scrollbarBar {
-	// リスト表示領域高さ
-	_, ph := parent.listViewSize()
-	// リスト全体の高さ
-	lh := parent.listView.size.H()
-
-	// barの高さ
-	barheight := int(float64(ph*ph) / float64(lh))
-	barheight -= 3
-
-	scrollbarimg := ebitest.CreateRectImage(8, barheight, &color.RGBA{192, 192, 192, 127})
-	eimg := ebiten.NewImageFromImage(scrollbarimg)
-
-	// positionは親positionからのdeltaを指定する
-	cb := Base{
-		label:          label,
-		image:          eimg,
-		position:       pos,
-		scale:          ebitest.NewScale(1.0, 1.0),
-		hasHoverAction: true,
-	}
-
-	o := &scrollbarBar{
-		scrollViewParts: scrollViewParts{
-			Base:   cb,
-			parent: parent,
-		},
-	}
-	return o
-
 }

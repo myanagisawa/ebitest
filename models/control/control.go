@@ -92,6 +92,7 @@ func (o *Base) SetLayer(l interfaces.Layer) {
 
 // Position ...
 func (o *Base) Position(t enum.ValueTypeEnum) *ebitest.Point {
+	// log.Printf("UIControlBase: Position: %s", o.label)
 	dx, dy := 0.0, 0.0
 	if o.moving != nil {
 		dx, dy = o.moving.Get()
