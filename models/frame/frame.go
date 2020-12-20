@@ -122,6 +122,20 @@ func (o *Base) GetEdgeType(x, y int) enum.EdgeTypeEnum {
 	return enum.EdgeTypeNotEdge
 }
 
+// GetObjects ...
+func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
+	objs := []interfaces.EbiObject{}
+	for i := len(o.layers) - 1; i >= 0; i-- {
+		c := o.layers[i]
+		objs = append(objs, c.GetObjects(x, y)...)
+	}
+
+	if o.In(x, y) {
+		objs = append(objs, o)
+	}
+	return objs
+}
+
 // Update ...
 func (o *Base) Update() error {
 	if o.scrollable {

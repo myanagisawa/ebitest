@@ -45,6 +45,16 @@ func (o *Base) ActiveFrame() interfaces.Frame {
 	return o.activeFrame
 }
 
+// GetObjects ...
+func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
+	objs := []interfaces.EbiObject{}
+	for i := len(o.frames) - 1; i >= 0; i-- {
+		c := o.frames[i]
+		objs = append(objs, c.GetObjects(x, y)...)
+	}
+	return objs
+}
+
 // Update ...
 func (o *Base) Update() error {
 

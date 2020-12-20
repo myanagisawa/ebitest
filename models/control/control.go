@@ -1,7 +1,6 @@
 package control
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"log"
@@ -31,7 +30,7 @@ type Base struct {
 
 // Label ...
 func (o *Base) Label() string {
-	return fmt.Sprintf("%s.%s", o.Layer().Label(), o.label)
+	return o.label
 }
 
 // Manager ...
@@ -152,6 +151,14 @@ func (o *Base) SetMoving(dx, dy float64) {
 // Moving ...
 func (o *Base) Moving() *ebitest.Point {
 	return o.moving
+}
+
+// GetObjects ...
+func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
+	if o.In(x, y) {
+		return []interfaces.EbiObject{o}
+	}
+	return nil
 }
 
 // Update ...

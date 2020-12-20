@@ -6,6 +6,11 @@ import (
 	"github.com/myanagisawa/ebitest/enum"
 )
 
+// EbiObject ...
+type EbiObject interface {
+	Label() string
+}
+
 // Positionable ...
 type Positionable interface {
 	Position(enum.ValueTypeEnum) *ebitest.Point
@@ -46,6 +51,7 @@ type Scene interface {
 	ActiveFrame() Frame
 	Label() string
 	Manager() GameManager
+	GetObjects(x, y int) []EbiObject
 	// SetLayer(l Layer)
 	// DeleteLayer(l Layer)
 	// LayerAt(x, y int) Layer
@@ -55,8 +61,8 @@ type Scene interface {
 
 // Frame ...
 type Frame interface {
+	EbiObject
 	Positionable
-	Label() string
 	Manager() GameManager
 	Size() *ebitest.Size
 	Parent() Scene
@@ -65,22 +71,24 @@ type Frame interface {
 	In(x, y int) bool
 	LayerAt(x, y int) Layer
 	ActiveLayer() Layer
+	GetObjects(x, y int) []EbiObject
 	Update() error
 	Draw(screen *ebiten.Image)
 }
 
 // Layer ...
 type Layer interface {
+	EbiObject
 	Positionable
 	Scaleable
 	Movable
-	Label() string
 	Manager() GameManager
 	Frame() Frame
 	SetFrame(frame Frame)
 	In(x, y int) bool
 	IsModal() bool
 	Scroll(et enum.EdgeTypeEnum)
+	GetObjects(x, y int) []EbiObject
 	Update() error
 	Draw(screen *ebiten.Image)
 	AddUIControl(c UIControl)
@@ -90,11 +98,11 @@ type Layer interface {
 
 // UIControl ...
 type UIControl interface {
+	EbiObject
 	Positionable
 	Scaleable
 	Anglable
 	Movable
-	Label() string
 	Manager() GameManager
 	Layer() Layer
 	In(x, y int) bool
@@ -102,6 +110,7 @@ type UIControl interface {
 	SetPosition(x, y float64)
 	SetScale(x, y float64)
 	SetAngle(a int)
+	GetObjects(x, y int) []EbiObject
 	Update() error
 	Draw(screen *ebiten.Image)
 }

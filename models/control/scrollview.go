@@ -141,6 +141,31 @@ func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{
 	o.scrollbarBar = bar
 }
 
+// GetObjects ...
+func (o *UIScrollView) GetObjects(x, y int) []interfaces.EbiObject {
+	if o.In(x, y) {
+		objs := []interfaces.EbiObject{}
+		if o.header.In(x, y) {
+			log.Printf("header in")
+			objs = append(objs, o.header)
+		}
+		if o.scrollbarBar.In(x, y) {
+			objs = append(objs, o.scrollbarBar)
+		}
+		if o.scrollbarBase.In(x, y) {
+			objs = append(objs, o.scrollbarBase)
+		}
+		for i := o.listView.displayFrom; i <= o.listView.displayTo; i++ {
+			c := o.listView.rows[i]
+			if c.In(x, y) {
+				objs = append(objs, c)
+			}
+		}
+		return objs
+	}
+	return nil
+}
+
 // Update ...
 func (o *UIScrollView) Update() error {
 	o.listView.Update()
@@ -465,15 +490,24 @@ type listRow struct {
 func (o *listRow) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	// スクロールバー位置: x = リスト位置(sy)*スクロール領域サイズ(sh) / リストサイズ(lh)
 	by := 0.0
-	{
+	// FIXME: 分岐条件をちゃんと定義or共通の産出ロジックで実装
+	if o.label != "header" {
 		_, sy := o.parent.listView.ScrollingPos().Get()
 		py := o.position.Y()
 		by = py - sy
+	} else {
+		by = o.position.Y()
 	}
 	if t == enum.TypeLocal {
 		return ebitest.NewPoint(0, by)
 	}
-	_, gy := o.parent.listView.Position(enum.TypeGlobal).Get()
+	gy := 0.0
+	// FIXME: 分岐条件をちゃんと定義or共通の産出ロジックで実装
+	if o.label != "header" {
+		_, gy = o.parent.listView.Position(enum.TypeGlobal).Get()
+	} else {
+		_, gy = o.parent.Position(enum.TypeGlobal).Get()
+	}
 	_, sy := o.Scale(enum.TypeGlobal).Get()
 	gy += by * sy
 	return ebitest.NewPoint(0, gy)

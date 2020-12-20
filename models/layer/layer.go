@@ -157,6 +157,20 @@ func (o *Base) Scroll(et enum.EdgeTypeEnum) {
 	// log.Printf("%s: %d, %d", o.Label(), x, y)
 }
 
+// GetObjects ...
+func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
+	objs := []interfaces.EbiObject{}
+	for i := len(o.controls) - 1; i >= 0; i-- {
+		c := o.controls[i]
+		objs = append(objs, c.GetObjects(x, y)...)
+	}
+
+	if o.In(x, y) {
+		objs = append(objs, o)
+	}
+	return objs
+}
+
 // Update ...
 func (o *Base) Update() error {
 

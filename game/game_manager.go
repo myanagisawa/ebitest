@@ -116,6 +116,20 @@ func (g *Manager) SetStroke(target interfaces.StrokeTarget) {
 	g.stroke = stroke
 }
 
+// GetObjects ...
+func (g *Manager) GetObjects(x, y int) []interfaces.EbiObject {
+	return g.currentScene.GetObjects(x, y)
+}
+
+// GetFocusedObject ...
+func (g *Manager) GetFocusedObject(x, y int) interfaces.EbiObject {
+	objs := g.GetObjects(x, y)
+	if objs != nil && len(objs) > 0 {
+		return objs[0]
+	}
+	return nil
+}
+
 // Update ...
 func (g *Manager) Update() error {
 	if g.stroke != nil {
@@ -145,11 +159,18 @@ func (g *Manager) Draw(screen *ebiten.Image) {
 		g.currentScene.Draw(screen)
 	}
 
+	// カーソル位置に存在するオブジェクトのリスト、操作対象のオブジェクトを返すインターフェースを実装する
+	// GetObjects / GetFocusedObject
+
 	// x, y := ebiten.CursorPosition()
 	// dbg := fmt.Sprintf("%s\nTPS: %0.2f\nFPS: %0.2f\npos: (%d, %d)", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS(), x, y)
 	dbg := fmt.Sprintf("%s / TPS: %0.2f / FPS: %0.2f", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS())
 	if ebitest.DebugText != "" {
 		dbg += fmt.Sprintf("%s", ebitest.DebugText)
+	}
+	focused := g.GetFocusedObject(ebiten.CursorPosition())
+	if focused != nil {
+		dbg += fmt.Sprintf(" / cursor target: %s", focused.Label())
 	}
 	ebitenutil.DebugPrint(screen, dbg)
 }
