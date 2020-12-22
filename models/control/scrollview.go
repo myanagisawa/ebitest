@@ -146,7 +146,6 @@ func (o *UIScrollView) GetObjects(x, y int) []interfaces.EbiObject {
 	if o.In(x, y) {
 		objs := []interfaces.EbiObject{}
 		if o.header.In(x, y) {
-			log.Printf("header in")
 			objs = append(objs, o.header)
 		}
 		if o.scrollbarBar.In(x, y) {
