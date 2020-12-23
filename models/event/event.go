@@ -2,52 +2,45 @@ package event
 
 import (
 	"github.com/myanagisawa/ebitest/ebitest"
+	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
 )
 
 // Handler ...
 type Handler struct {
-	events map[string]map[interfaces.Event]struct{}
+	owner  interfaces.EventOwner
+	events map[enum.EventTypeEnum]interfaces.Event
 }
 
 // AddEventListener ...
-func (o *Handler) AddEventListener(c interfaces.UIControl, name string, callback func(interfaces.UIControl, *ebitest.Point)) {
-	ev := &Event{c, callback}
-	o.Set(name, ev)
+func (o *Handler) AddEventListener(t enum.EventTypeEnum, callback func(interfaces.EventOwner, *ebitest.Point)) {
+	ev := &Event{o.owner, callback}
+	o.events[t] = ev
 }
 
 // Firing イベントの発火を行います
-func (o *Handler) Firing(s interfaces.Scene, name string, x, y int) {
-	for e := range o.events[name] {
-		event := e.(*Event)
-		if event.target.In(x, y) {
-			p := ebitest.NewPoint(float64(x), float64(y))
-			event.callback(event.target, p)
-			break
-		}
-	}
+func (o *Handler) Firing(t enum.EventTypeEnum, x, y int) {
+	event := o.events[t].(*Event)
+	event.callback(event.target, ebitest.NewPoint(float64(x), float64(y)))
 }
 
-// Set ...
-func (o *Handler) Set(name string, ev interfaces.Event) {
-	if o.events[name] != nil {
-		o.events[name][ev] = struct{}{}
-	} else {
-		m := map[interfaces.Event]struct{}{ev: {}}
-		o.events[name] = m
-	}
+// Has 指定のイベント種別の保持状態を返します
+func (o *Handler) Has(t enum.EventTypeEnum) bool {
+	_, ok := o.events[t]
+	return ok
 }
 
 // NewEventHandler ...
-func NewEventHandler() interfaces.EventHandler {
+func NewEventHandler(o interfaces.EventOwner) interfaces.EventHandler {
 	eh := &Handler{
-		events: map[string]map[interfaces.Event]struct{}{},
+		owner:  o,
+		events: map[enum.EventTypeEnum]interfaces.Event{},
 	}
 	return eh
 }
 
 // Event ...
 type Event struct {
-	target   interfaces.UIControl
-	callback func(interfaces.UIControl, *ebitest.Point)
+	target   interfaces.EventOwner
+	callback func(interfaces.EventOwner, *ebitest.Point)
 }

@@ -26,6 +26,8 @@ type Base struct {
 
 	hasHoverAction bool
 	hover          bool
+
+	eventHandler interfaces.EventHandler
 }
 
 // Label ...
@@ -190,39 +192,6 @@ func (o *Base) Draw(screen *ebiten.Image) {
 
 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
 
-	// // フレームからのはみ出し判定
-	// cx, cy := o.Position(enum.TypeLocal).GetInt()
-	// lx, ly := o.layer.Position(enum.TypeLocal).GetInt()
-	// cx += lx
-	// cy += cy
-	// lw, lh := o.image.Size()
-	// fs := o.layer.Frame().Size()
-
-	// x0, y0, x1, y1 := 0, 0, lw, lh
-	// // frame外れ判定
-	// if cx < 0 {
-	// 	// 左にはみ出し
-	// 	op.GeoM.Translate(float64(-cx), 0)
-	// 	x0 = -cx
-	// 	x1 += x0
-	// }
-	// if cy < 0 {
-	// 	// 上にはみ出し
-	// 	op.GeoM.Translate(0, float64(-cy))
-	// 	y0 = -cy
-	// 	y1 += y0
-	// }
-	// if cx+lw > fs.W() {
-	// 	// 右にはみ出し
-	// 	x1 = x0 + fs.W()
-	// }
-
-	// if cy+lh > fs.H() {
-	// 	// 下にはみ出し
-	// 	y1 = y0 + fs.H()
-	// }
-
-	// fr := image.Rect(x0, y0, x1, y1)
 	// log.Printf("%s: pos: %d, %d, fr: %d, %d, %d, %d", o.label, lx, ly, x0, y0, x1, y1)
 	// screen.DrawImage(o.image.SubImage(fr).(*ebiten.Image), op)
 	r, g, b, a := 1.0, 1.0, 1.0, 1.0
@@ -231,6 +200,11 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	}
 	op.ColorM.Scale(r, g, b, a)
 	screen.DrawImage(o.image, op)
+}
+
+// EventHandler ...
+func (o *Base) EventHandler() interfaces.EventHandler {
+	return o.eventHandler
 }
 
 // NewControlBase ...

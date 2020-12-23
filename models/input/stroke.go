@@ -1,6 +1,8 @@
 package input
 
 import (
+	"time"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/myanagisawa/ebitest/interfaces"
@@ -9,6 +11,8 @@ import (
 // Stroke manages the current drag state by mouse.
 type Stroke struct {
 	source StrokeSource
+
+	initTS time.Time
 
 	// initX and initY represents the position when dragging starts.
 	initX int
@@ -20,9 +24,12 @@ type Stroke struct {
 
 	released bool
 
+	dragging bool
+
+	mouseDownTargets []interfaces.StrokeTarget
 	// draggingObject represents a object (sprite in this case)
 	// that is being dragged.
-	draggingObject interfaces.StrokeTarget
+	targetObject interfaces.StrokeTarget
 }
 
 // Update ...
@@ -37,12 +44,23 @@ func (s *Stroke) Update() {
 	x, y := s.source.Position()
 	s.currentX = x
 	s.currentY = y
+
+	if !s.dragging {
+		if s.initX != s.currentX || s.initY != s.currentY {
+			s.dragging = true
+		}
+	}
 	// log.Printf("stroke: x: %d->%d, y: %d->%d", s.initX, s.currentX, s.initY, s.currentY)
 }
 
 // IsReleased ...
 func (s *Stroke) IsReleased() bool {
 	return s.released
+}
+
+// IsDragging ...
+func (s *Stroke) IsDragging() bool {
+	return s.dragging
 }
 
 // Position ...
@@ -60,12 +78,29 @@ func (s *Stroke) PositionDiff() (float64, float64) {
 
 // DraggingObject ...
 func (s *Stroke) DraggingObject() interfaces.StrokeTarget {
-	return s.draggingObject
+	return s.targetObject
 }
 
 // SetDraggingObject ...
 func (s *Stroke) SetDraggingObject(object interfaces.StrokeTarget) {
-	s.draggingObject = object
+	s.targetObject = object
+}
+
+// MouseDownTargets ...
+func (s *Stroke) MouseDownTargets() []interfaces.StrokeTarget {
+	return s.mouseDownTargets
+}
+
+// SetMouseDownTargets ...
+func (s *Stroke) SetMouseDownTargets(targets []interfaces.StrokeTarget) {
+	s.mouseDownTargets = targets
+}
+
+// StrokeTime ...
+func (s *Stroke) StrokeTime() int {
+	now := time.Now()
+	duration := now.Sub(s.initTS)
+	return int(duration.Milliseconds())
 }
 
 // StrokeSource represents a input device to provide strokes.
@@ -107,6 +142,7 @@ func NewStroke(source StrokeSource) *Stroke {
 	cx, cy := source.Position()
 	return &Stroke{
 		source:   source,
+		initTS:   time.Now(),
 		initX:    cx,
 		initY:    cy,
 		currentX: cx,

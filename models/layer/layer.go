@@ -276,13 +276,13 @@ func NewLayerBaseByImage(label string, img image.Image, pos *ebitest.Point, drag
 	// draggable, ismodal 未実装
 
 	l := &Base{
-		label:        label,
-		image:        eimg,
-		position:     pos,
-		scale:        ebitest.NewScale(1.0, 1.0),
-		draggable:    draggable,
-		eventHandler: event.NewEventHandler(),
+		label:     label,
+		image:     eimg,
+		position:  pos,
+		scale:     ebitest.NewScale(1.0, 1.0),
+		draggable: draggable,
 	}
+	l.eventHandler = event.NewEventHandler(l)
 	return l
 }
 

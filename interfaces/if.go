@@ -38,6 +38,11 @@ type StrokeTarget interface {
 	UpdatePositionByDelta()
 }
 
+// EventOwner ...
+type EventOwner interface {
+	EventHandler() EventHandler
+}
+
 // GameManager ...
 type GameManager interface {
 	TransitionTo(enum.SceneEnum)
@@ -52,11 +57,6 @@ type Scene interface {
 	Label() string
 	Manager() GameManager
 	GetObjects(x, y int) []EbiObject
-	// SetLayer(l Layer)
-	// DeleteLayer(l Layer)
-	// LayerAt(x, y int) Layer
-	// ActiveLayer() Layer
-	// GetLayerByLabel(label string) Layer
 }
 
 // Frame ...
@@ -82,6 +82,7 @@ type Layer interface {
 	Positionable
 	Scaleable
 	Movable
+	EventOwner
 	Manager() GameManager
 	Frame() Frame
 	SetFrame(frame Frame)
@@ -93,7 +94,6 @@ type Layer interface {
 	Draw(screen *ebiten.Image)
 	AddUIControl(c UIControl)
 	UIControlAt(x, y int) UIControl
-	EventHandler() EventHandler
 }
 
 // UIControl ...
@@ -103,6 +103,7 @@ type UIControl interface {
 	Scaleable
 	Anglable
 	Movable
+	EventOwner
 	Manager() GameManager
 	Layer() Layer
 	In(x, y int) bool
@@ -123,9 +124,9 @@ type UIScrollView interface {
 
 // EventHandler ...
 type EventHandler interface {
-	AddEventListener(c UIControl, name string, callback func(UIControl, *ebitest.Point))
-	Firing(s Scene, name string, x, y int)
-	Set(name string, ev Event)
+	AddEventListener(t enum.EventTypeEnum, callback func(EventOwner, *ebitest.Point))
+	Firing(t enum.EventTypeEnum, x, y int)
+	Has(t enum.EventTypeEnum) bool
 }
 
 // Event ...
