@@ -9,6 +9,7 @@ import (
 // EbiObject ...
 type EbiObject interface {
 	Label() string
+	In(x, y int) bool
 }
 
 // Positionable ...
@@ -24,6 +25,11 @@ type Scaleable interface {
 // Anglable ...
 type Anglable interface {
 	Angle(enum.ValueTypeEnum) int
+}
+
+// Focusable ...
+type Focusable interface {
+	SetHover(x int, y int)
 }
 
 // Movable ...
@@ -46,7 +52,6 @@ type EventOwner interface {
 // GameManager ...
 type GameManager interface {
 	TransitionTo(enum.SceneEnum)
-	SetStroke(target StrokeTarget)
 }
 
 // Scene ...
@@ -68,7 +73,6 @@ type Frame interface {
 	Parent() Scene
 	SetParent(parent Scene)
 	AddLayer(l Layer)
-	In(x, y int) bool
 	LayerAt(x, y int) Layer
 	ActiveLayer() Layer
 	GetObjects(x, y int) []EbiObject
@@ -86,7 +90,6 @@ type Layer interface {
 	Manager() GameManager
 	Frame() Frame
 	SetFrame(frame Frame)
-	In(x, y int) bool
 	IsModal() bool
 	Scroll(et enum.EdgeTypeEnum)
 	GetObjects(x, y int) []EbiObject
@@ -102,11 +105,11 @@ type UIControl interface {
 	Positionable
 	Scaleable
 	Anglable
+	Focusable
 	Movable
 	EventOwner
 	Manager() GameManager
 	Layer() Layer
-	In(x, y int) bool
 	SetLayer(l Layer)
 	SetPosition(x, y float64)
 	SetScale(x, y float64)

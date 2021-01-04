@@ -10,6 +10,7 @@ import (
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
+	"github.com/myanagisawa/ebitest/models/event"
 	"github.com/myanagisawa/ebitest/utils"
 )
 
@@ -23,9 +24,7 @@ type Base struct {
 	scale    *ebitest.Scale
 	angle    int
 	moving   *ebitest.Point
-
-	hasHoverAction bool
-	hover          bool
+	hover    bool
 
 	eventHandler interfaces.EventHandler
 }
@@ -141,6 +140,11 @@ func (o *Base) Theta() float64 {
 	return 2 * math.Pi * float64(o.Angle(enum.TypeGlobal)) / 360.0
 }
 
+// SetHover ...
+func (o *Base) SetHover(x int, y int) {
+	o.hover = o.In(x, y)
+}
+
 // SetMoving ...
 func (o *Base) SetMoving(dx, dy float64) {
 	if o.moving == nil {
@@ -165,12 +169,6 @@ func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 
 // Update ...
 func (o *Base) Update() error {
-	if o.hasHoverAction {
-		o.hover = o.In(ebiten.CursorPosition())
-		if o.hover {
-			log.Printf("hover: %s", o.label)
-		}
-	}
 	return nil
 }
 
@@ -208,16 +206,38 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 }
 
 // NewControlBase ...
-func NewControlBase(label string, img image.Image, pos *ebitest.Point, labelColor color.Color) interfaces.UIControl {
+func NewControlBase(label string, eimg *ebiten.Image, pos *ebitest.Point) interfaces.UIControl {
+	o := &Base{
+		label:    label,
+		image:    eimg,
+		position: pos,
+		scale:    ebitest.NewScale(1.0, 1.0),
+	}
+	o.eventHandler = event.NewEventHandler(o)
+
+	return o
+}
+
+// NewSimpleLabel ...
+func NewSimpleLabel(label string, img image.Image, pos *ebitest.Point, labelColor color.Color) interfaces.UIControl {
 	ti := utils.SetTextToCenter(label, img, ebitest.Fonts["btnFont"], labelColor)
 	eimg := ebiten.NewImageFromImage(*ti)
 
 	o := &Base{
-		label:          label,
-		image:          eimg,
-		position:       pos,
-		scale:          ebitest.NewScale(1.0, 1.0),
-		hasHoverAction: true,
+		label:    label,
+		image:    eimg,
+		position: pos,
+		scale:    ebitest.NewScale(1.0, 1.0),
 	}
+	o.eventHandler = event.NewEventHandler(o)
+	o.eventHandler.AddEventListener(enum.EventTypeFocus, func(o interfaces.EventOwner, pos *ebitest.Point) {
+		if t, ok := o.(interfaces.Focusable); ok {
+			t.SetHover(pos.GetInt())
+		}
+		if t, ok := o.(interfaces.EbiObject); ok {
+			log.Printf("Event: focus: %s", t.Label())
+		}
+	})
+
 	return o
 }

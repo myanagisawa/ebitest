@@ -3,10 +3,8 @@ package layer
 import (
 	"image"
 	"image/color"
-	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
@@ -176,23 +174,6 @@ func (o *Base) Update() error {
 
 	if o.frame.ActiveLayer() != nil && o.frame.ActiveLayer() == o {
 		// log.Printf("active layer: %s", l.frame.ActiveLayer().Label())
-
-		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-			x, y := ebiten.CursorPosition()
-			// log.Printf("left button push: x=%d, y=%d", x, y)
-			if o.In(x, y) {
-				// レイヤ内のドラッグ対象のオブジェクトを取得する仕組みが必要
-				// o := l.UIControlAt(x, y)
-				// if o != nil || l.bg.IsDraggable() {
-				// 	l.stroke = stroke
-				// 	log.Printf("drag start")
-				// }
-				if o.draggable {
-					o.Manager().SetStroke(o)
-					log.Printf("%s drag start", o.label)
-				}
-			}
-		}
 
 		for _, c := range o.controls {
 			_ = c.Update()

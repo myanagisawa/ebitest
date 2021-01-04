@@ -5,11 +5,9 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
@@ -211,11 +209,11 @@ func NewUIScrollView(label string, pos *ebitest.Point, size *ebitest.Size) inter
 	eimg := ebiten.NewImage(size.Get())
 
 	cb := Base{
-		label:          label,
-		image:          eimg,
-		position:       pos,
-		scale:          ebitest.NewScale(1.0, 1.0),
-		hasHoverAction: false,
+		label:    label,
+		image:    eimg,
+		position: pos,
+		scale:    ebitest.NewScale(1.0, 1.0),
+		// hasHoverAction: false,
 	}
 
 	o := &UIScrollView{
@@ -270,12 +268,12 @@ func (o *scrollViewParts) In(x, y int) bool {
 
 // Update ...
 func (o *scrollViewParts) Update() error {
-	if o.hasHoverAction {
-		o.hover = o.In(ebiten.CursorPosition())
-		if o.hover {
-			log.Printf("hover: %s", o.label)
-		}
-	}
+	// if o.hasHoverAction {
+	// 	o.hover = o.In(ebiten.CursorPosition())
+	// 	if o.hover {
+	// 		log.Printf("hover: %s", o.label)
+	// 	}
+	// }
 	return nil
 }
 
@@ -287,6 +285,18 @@ func (o *scrollViewParts) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
 
 	screen.DrawImage(o.image, op)
+}
+
+func newScrollViewParts(label string, parent *UIScrollView, eimg *ebiten.Image, pos *ebitest.Point) *scrollViewParts {
+	if eimg == nil {
+		eimg = ebiten.NewImage(0, 0)
+	}
+	cb := NewControlBase(label, eimg, pos).(*Base)
+	o := &scrollViewParts{
+		Base:   *cb,
+		parent: parent,
+	}
+	return o
 }
 
 /*****************************************************************/
@@ -457,22 +467,13 @@ func (o *listView) SetRow(row *listRow) {
 
 func newListView(label string, parent *UIScrollView, pos *ebitest.Point) *listView {
 	// positionは親positionからのdeltaを指定する
-	cb := Base{
-		label: label,
-		// image:          eimg,
-		position:       pos,
-		scale:          ebitest.NewScale(1.0, 1.0),
-		hasHoverAction: false,
-	}
+	sb := newScrollViewParts(label, parent, nil, pos)
 
 	pw, _ := parent.image.Size()
 	o := &listView{
-		scrollViewParts: scrollViewParts{
-			Base:   cb,
-			parent: parent,
-		},
-		scrollingPos: ebitest.NewPoint(0, 0),
-		size:         ebitest.NewSize(pw, -marginY),
+		scrollViewParts: *sb,
+		scrollingPos:    ebitest.NewPoint(0, 0),
+		size:            ebitest.NewSize(pw, -marginY),
 	}
 	return o
 }
@@ -571,19 +572,11 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 		img = utils.StackImage(img, columnImageBase, image.Point{cx, 0})
 		cx += columnImageBase.Bounds().Size().X + marginX
 	}
-	cb := Base{
-		label:          label,
-		position:       pos,
-		scale:          ebitest.NewScale(1.0, 1.0),
-		image:          ebiten.NewImageFromImage(img),
-		hasHoverAction: true,
-	}
+
+	sb := newScrollViewParts(label, parent, ebiten.NewImageFromImage(img), pos)
 	o := &listRow{
-		scrollViewParts: scrollViewParts{
-			Base:   cb,
-			parent: parent,
-		},
-		index: index,
+		scrollViewParts: *sb,
+		index:           index,
 	}
 
 	return o
@@ -601,20 +594,9 @@ func newScrollbarBase(label string, parent *UIScrollView, pos *ebitest.Point) *s
 	scrollbaseimg := ebitest.CreateRectImage(12, ph, &color.RGBA{223, 223, 223, 255})
 	eimg := ebiten.NewImageFromImage(scrollbaseimg)
 
-	// positionは親positionからのdeltaを指定する
-	cb := Base{
-		label:          label,
-		image:          eimg,
-		position:       pos,
-		scale:          ebitest.NewScale(1.0, 1.0),
-		hasHoverAction: false,
-	}
-
+	sb := newScrollViewParts(label, parent, eimg, pos)
 	o := &scrollbarBase{
-		scrollViewParts: scrollViewParts{
-			Base:   cb,
-			parent: parent,
-		},
+		scrollViewParts: *sb,
 	}
 	return o
 }
@@ -679,14 +661,6 @@ func (o *scrollbarBar) In(x, y int) bool {
 // Update ...
 func (o *scrollbarBar) Update() error {
 	o.hover = o.In(ebiten.CursorPosition())
-
-	if o.hover {
-		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-			o.Manager().SetStroke(o)
-			log.Printf("%s drag start", o.label)
-		}
-	}
-
 	return nil
 }
 
@@ -721,20 +695,9 @@ func newScrollbarBar(label string, parent *UIScrollView, pos *ebitest.Point) *sc
 	scrollbarimg := ebitest.CreateRectImage(8, barheight, &color.RGBA{192, 192, 192, 255})
 	eimg := ebiten.NewImageFromImage(scrollbarimg)
 
-	// positionは親positionからのdeltaを指定する
-	cb := Base{
-		label:          label,
-		image:          eimg,
-		position:       pos,
-		scale:          ebitest.NewScale(1.0, 1.0),
-		hasHoverAction: true,
-	}
-
+	sb := newScrollViewParts(label, parent, eimg, pos)
 	o := &scrollbarBar{
-		scrollViewParts: scrollViewParts{
-			Base:   cb,
-			parent: parent,
-		},
+		scrollViewParts: *sb,
 	}
 	return o
 

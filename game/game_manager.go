@@ -24,6 +24,10 @@ import (
 */
 var (
 	ms runtime.MemStats
+
+	cacheGetObjects []interfaces.EbiObject
+
+	hoverdObject interfaces.EbiObject
 )
 
 type (
@@ -32,7 +36,7 @@ type (
 		background   *ebiten.Image
 		currentScene interfaces.Scene
 		scenes       map[enum.SceneEnum]interfaces.Scene
-		stroke       *input.Stroke
+		stroke       *Stroke
 		// master       *MasterData
 	}
 )
@@ -107,30 +111,25 @@ func (g *Manager) SetCurrentScene(s interfaces.Scene) {
 	g.currentScene = s
 }
 
-// SetStroke ...
-func (g *Manager) SetStroke(target interfaces.StrokeTarget) {
-	if g.stroke != nil {
-		log.Printf("別のstrokeがあるため追加できません(target=%#v)", g.stroke.DraggingObject())
-		return
-	}
-	stroke := input.NewStroke(&input.MouseStrokeSource{})
-	stroke.SetDraggingObject(target)
-	g.stroke = stroke
-}
-
 // setStroke ...
-func (g *Manager) setStroke(targets []interfaces.EventOwner) {
+func (g *Manager) setStroke(x, y int) {
 	if g.stroke != nil {
 		log.Printf("別のstrokeがあるため追加できません")
 		return
 	}
-	stroke := input.NewStroke(&input.MouseStrokeSource{})
-	stroke.SetMouseDownTargets(targets)
-	g.stroke = stroke
+	targets := g.GetEventTargetList(x, y, enum.EventTypeClick, enum.EventTypeDragging, enum.EventTypeLongPress)
+	if len(targets) > 0 {
+		stroke := NewStroke(&input.MouseStrokeSource{})
+		stroke.SetMouseDownTargets(targets)
+		g.stroke = stroke
+	}
 }
 
 // GetObjects ...
 func (g *Manager) GetObjects(x, y int) []interfaces.EbiObject {
+	if cacheGetObjects != nil {
+		return cacheGetObjects
+	}
 	return g.currentScene.GetObjects(x, y)
 }
 
@@ -143,6 +142,23 @@ func (g *Manager) GetFocusedObject(x, y int) interfaces.EbiObject {
 	return nil
 }
 
+// GetEventTarget ...
+func (g *Manager) GetEventTarget(x, y int, et enum.EventTypeEnum) (interfaces.EventOwner, bool) {
+	objs := g.GetObjects(x, y)
+	if objs != nil && len(objs) > 0 {
+		for i := range objs {
+			obj := objs[i]
+			if t, ok := obj.(interfaces.EventOwner); ok {
+				// log.Printf("t: %#v", t)
+				if t.EventHandler().Has(et) {
+					return t, true
+				}
+			}
+		}
+	}
+	return nil, false
+}
+
 // GetEventTargetList ...
 func (g *Manager) GetEventTargetList(x, y int, types ...enum.EventTypeEnum) []interfaces.EventOwner {
 	targets := []interfaces.EventOwner{}
@@ -150,6 +166,7 @@ func (g *Manager) GetEventTargetList(x, y int, types ...enum.EventTypeEnum) []in
 	for i := range objs {
 		obj := objs[i]
 		if t, ok := obj.(interfaces.EventOwner); ok {
+			// log.Printf("t: %#v", t)
 			for j := range types {
 				et := types[j]
 				if t.EventHandler().Has(et) {
@@ -163,40 +180,59 @@ func (g *Manager) GetEventTargetList(x, y int, types ...enum.EventTypeEnum) []in
 
 // Update ...
 func (g *Manager) Update() error {
+	// --- キャッシュクリア ---
+	cacheGetObjects = nil
+	// --- キャッシュクリア ---
 	x, y := ebiten.CursorPosition()
+
+	// ホバーイベント
+	if hoverdObject != nil {
+		if !hoverdObject.In(x, y) {
+			// blur
+			if t, ok := hoverdObject.(interfaces.EventOwner); ok {
+				t.EventHandler().Firing(enum.EventTypeFocus, x, y)
+			}
+			hoverdObject = nil
+		}
+	} else if hoverd, ok := g.GetEventTarget(x, y, enum.EventTypeFocus); ok {
+		hoverd.EventHandler().Firing(enum.EventTypeFocus, x, y)
+		hoverdObject = hoverd.(interfaces.EbiObject)
+	}
+
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
 		// マウスタップ
-		targets := g.GetEventTargetList(x, y, enum.EventTypeClick, enum.EventTypeDrag, enum.EventTypeLongPress)
-		g.setStroke(targets)
+		g.setStroke(x, y)
 	}
 
 	if g.stroke != nil {
 		g.stroke.Update()
-		target := g.stroke.DraggingObject()
-		if g.stroke.IsReleased() {
-			if g.stroke.IsDragging() {
-				// drag終了
-				target.UpdatePositionByDelta()
-				log.Printf("drag end")
-			} else {
-				// クリックイベント
-				tname := fmt.Sprintf("%s", reflect.TypeOf(target))
-				log.Printf("click: target: %s", tname)
+
+		eventCompleted := false
+		if target, ok := g.stroke.Target(); ok {
+			switch g.stroke.CurrentEvent() {
+			case enum.EventTypeClick:
+				target.EventHandler().Firing(enum.EventTypeClick, x, y)
+				eventCompleted = true
+			case enum.EventTypeDragging:
+				target.EventHandler().Firing(enum.EventTypeDragging, x, y)
+				// target.UpdateStroke(g.stroke)
+			case enum.EventTypeDragDrop:
+				target.EventHandler().Firing(enum.EventTypeDragDrop, x, y)
+				// target.UpdatePositionByDelta()
+				eventCompleted = true
+			case enum.EventTypeLongPress:
+				target.EventHandler().Firing(enum.EventTypeLongPress, x, y)
+			case enum.EventTypeLongPressReleased:
+				target.EventHandler().Firing(enum.EventTypeLongPressReleased, x, y)
+				eventCompleted = true
 			}
-			g.stroke = nil
+			tname := fmt.Sprintf("%s", reflect.TypeOf(target))
+			log.Printf("EventType(%d): target: %s", g.stroke.CurrentEvent(), tname)
 		}
-		target.UpdateStroke(g.stroke)
-	} else {
-		// click イベントを発火
-		if inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft) {
-			x, y := ebiten.CursorPosition()
-			targets := g.GetEventTargetList(x, y, enum.EventTypeClick)
-			for i := range targets {
-				target := targets[i]
-				tname := fmt.Sprintf("%s", reflect.TypeOf(target))
-				log.Printf("target%d=%s", i, tname)
-			}
-			log.Printf("clicked!")
+
+		if eventCompleted {
+			log.Printf("EventCompleted")
+			g.stroke = nil
 		}
 	}
 

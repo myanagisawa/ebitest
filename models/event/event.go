@@ -20,8 +20,9 @@ func (o *Handler) AddEventListener(t enum.EventTypeEnum, callback func(interface
 
 // Firing イベントの発火を行います
 func (o *Handler) Firing(t enum.EventTypeEnum, x, y int) {
-	event := o.events[t].(*Event)
-	event.callback(event.target, ebitest.NewPoint(float64(x), float64(y)))
+	if e, ok := o.events[t].(*Event); ok {
+		e.callback(e.target, ebitest.NewPoint(float64(x), float64(y)))
+	}
 }
 
 // Has 指定のイベント種別の保持状態を返します

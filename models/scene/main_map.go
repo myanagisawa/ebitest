@@ -41,7 +41,7 @@ func NewMap(m interfaces.GameManager) *Map {
 	l := layer.NewLayerBaseByImage("map", ebitest.Images["world"], ebitest.NewPoint(0, 0), false)
 	f.AddLayer(l)
 
-	c := control.NewControlBase("test", ebitest.Images["btnBase"], ebitest.NewPoint(100, 100), color.Black)
+	c := control.NewSimpleLabel("test", ebitest.Images["btnBase"], ebitest.NewPoint(100, 100), color.Black)
 	l.AddUIControl(c)
 
 	ctrl = c
