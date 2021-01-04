@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/draw"
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -116,7 +115,7 @@ type UIButtonImpl struct {
 }
 
 // NewButton ...
-func NewButton(label string, parent interfaces.Layer, baseImg draw.Image, fontFace font.Face, labelColor color.Color, x, y float64) interfaces.UIButton {
+func NewButton(label string, parent interfaces.Layer, baseImg image.Image, fontFace font.Face, labelColor color.Color, x, y float64) interfaces.UIButton {
 	img := utils.SetTextToCenter(label, baseImg, fontFace, labelColor)
 	eimg := ebiten.NewImageFromImage(*img)
 

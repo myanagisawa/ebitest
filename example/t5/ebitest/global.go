@@ -32,7 +32,7 @@ var (
 	// ScaleFonts ...
 	ScaleFonts map[int]font.Face
 	// Images ...
-	Images map[string]draw.Image
+	Images map[string]image.Image
 
 	// // SpotLightImage ...
 	// SpotLightImage *ebiten.Image
@@ -56,7 +56,7 @@ func init() {
 	ScaleFonts[16] = FontLoad(16)
 	ScaleFonts[24] = FontLoad(24)
 
-	Images = make(map[string]draw.Image)
+	Images = make(map[string]image.Image)
 	Images["bgImage"], _ = utils.GetImageByPath("resources/system_images/bg-2.jpg")
 	Images["btnBase"], _ = utils.GetImageByPath("resources/system_images/button.png")
 	Images["btnBaseHover"], _ = utils.GetImageByPath("resources/system_images/button-hover.png")
