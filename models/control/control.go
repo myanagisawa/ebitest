@@ -3,12 +3,12 @@ package control
 import (
 	"image"
 	"image/color"
-	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
+	"github.com/myanagisawa/ebitest/functions"
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/models/event"
 	"github.com/myanagisawa/ebitest/utils"
@@ -140,9 +140,9 @@ func (o *Base) Theta() float64 {
 	return 2 * math.Pi * float64(o.Angle(enum.TypeGlobal)) / 360.0
 }
 
-// SetHover ...
-func (o *Base) SetHover(x int, y int) {
-	o.hover = o.In(x, y)
+// ToggleHover ...
+func (o *Base) ToggleHover() {
+	o.hover = !o.hover
 }
 
 // SetMoving ...
@@ -208,12 +208,12 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 // NewControlBase ...
 func NewControlBase(label string, eimg *ebiten.Image, pos *ebitest.Point) interfaces.UIControl {
 	o := &Base{
-		label:    label,
-		image:    eimg,
-		position: pos,
-		scale:    ebitest.NewScale(1.0, 1.0),
+		label:        label,
+		image:        eimg,
+		position:     pos,
+		scale:        ebitest.NewScale(1.0, 1.0),
+		eventHandler: event.NewEventHandler(),
 	}
-	o.eventHandler = event.NewEventHandler(o)
 
 	return o
 }
@@ -224,20 +224,13 @@ func NewSimpleLabel(label string, img image.Image, pos *ebitest.Point, labelColo
 	eimg := ebiten.NewImageFromImage(*ti)
 
 	o := &Base{
-		label:    label,
-		image:    eimg,
-		position: pos,
-		scale:    ebitest.NewScale(1.0, 1.0),
+		label:        label,
+		image:        eimg,
+		position:     pos,
+		scale:        ebitest.NewScale(1.0, 1.0),
+		eventHandler: event.NewEventHandler(),
 	}
-	o.eventHandler = event.NewEventHandler(o)
-	o.eventHandler.AddEventListener(enum.EventTypeFocus, func(o interfaces.EventOwner, pos *ebitest.Point) {
-		if t, ok := o.(interfaces.Focusable); ok {
-			t.SetHover(pos.GetInt())
-		}
-		if t, ok := o.(interfaces.EbiObject); ok {
-			log.Printf("Event: focus: %s", t.Label())
-		}
-	})
+	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
 
 	return o
 }

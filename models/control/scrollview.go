@@ -10,6 +10,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
+	"github.com/myanagisawa/ebitest/functions"
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/models/char"
 	"github.com/myanagisawa/ebitest/utils"
@@ -158,6 +159,10 @@ func (o *UIScrollView) GetObjects(x, y int) []interfaces.EbiObject {
 				objs = append(objs, c)
 			}
 		}
+		if o.listView.In(x, y) {
+			objs = append(objs, o.listView)
+		}
+		// log.Printf("UIScrollView::GetObjects: %#v", objs)
 		return objs
 	}
 	return nil
@@ -292,6 +297,8 @@ func newScrollViewParts(label string, parent *UIScrollView, eimg *ebiten.Image, 
 		eimg = ebiten.NewImage(0, 0)
 	}
 	cb := NewControlBase(label, eimg, pos).(*Base)
+	cb.SetLayer(parent.Layer())
+
 	o := &scrollViewParts{
 		Base:   *cb,
 		parent: parent,
@@ -341,16 +348,24 @@ func (o *listView) ScrollingPos() *ebitest.Point {
 	return o.calcScrollingPos(dy)
 }
 
-// Update ...
-func (o *listView) Update() error {
-	o.scrollViewParts.Update()
-	// ホイールイベント
-	_, dy := ebiten.Wheel()
+func (o *listView) DidWheel(dx, dy float64) {
 	if dy != 0 {
 		o.scrollingPos.Set(o.calcScrollingPos(int(dy * 2)).Get())
 		// 表示領域確定
 		o.setDisplayIndex()
 	}
+}
+
+// Update ...
+func (o *listView) Update() error {
+	o.scrollViewParts.Update()
+	// ホイールイベント
+	// _, dy := ebiten.Wheel()
+	// if dy != 0 {
+	// 	o.scrollingPos.Set(o.calcScrollingPos(int(dy * 2)).Get())
+	// 	// 表示領域確定
+	// 	o.setDisplayIndex()
+	// }
 
 	// 表示対象業のアップデート処理
 	for i := o.displayFrom; i <= o.displayTo; i++ {
@@ -466,15 +481,18 @@ func (o *listView) SetRow(row *listRow) {
 }
 
 func newListView(label string, parent *UIScrollView, pos *ebitest.Point) *listView {
-	// positionは親positionからのdeltaを指定する
-	sb := newScrollViewParts(label, parent, nil, pos)
+	pw, ph := parent.image.Size()
 
-	pw, _ := parent.image.Size()
+	eimg := ebiten.NewImage(pw, ph-int(pos.Y()))
+
+	sb := newScrollViewParts(label, parent, eimg, pos)
+
 	o := &listView{
 		scrollViewParts: *sb,
 		scrollingPos:    ebitest.NewPoint(0, 0),
 		size:            ebitest.NewSize(pw, -marginY),
 	}
+	o.eventHandler.AddEventListener(enum.EventTypeWheel, functions.CommonEventCallback)
 	return o
 }
 
@@ -525,7 +543,7 @@ func (o *listRow) In(x, y int) bool {
 
 // Update ...
 func (o *listRow) Update() error {
-	o.hover = o.In(ebiten.CursorPosition())
+	// o.hover = o.In(ebiten.CursorPosition())
 	return nil
 }
 
@@ -578,6 +596,7 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 		scrollViewParts: *sb,
 		index:           index,
 	}
+	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
 
 	return o
 }
@@ -608,17 +627,15 @@ type scrollbarBar struct {
 	scrollViewParts
 }
 
-func (o *scrollbarBar) UpdatePositionByDelta() {
+func (o *scrollbarBar) DidStroke(dx, dy float64) {
+	o.parent.listView.SetMoving(0, dy)
+	o.parent.listView.setDisplayIndex()
+}
+
+func (o *scrollbarBar) FinishStroke() {
 	_, dy := o.parent.listView.moving.GetInt()
 	o.parent.listView.scrollingPos.Set(o.parent.listView.calcScrollingPos(dy).Get())
 	o.parent.listView.moving = nil
-}
-
-func (o *scrollbarBar) UpdateStroke(stroke interfaces.Stroke) {
-	stroke.Update()
-	_, y := stroke.PositionDiff()
-	o.parent.listView.SetMoving(0, y)
-	o.parent.listView.setDisplayIndex()
 }
 
 // Position ...
@@ -640,11 +657,6 @@ func (o *scrollbarBar) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	sx, sy := o.Scale(enum.TypeGlobal).Get()
 	gx += o.position.X() * sx
 	gy += (o.position.Y() + by) * sy
-	// {
-	// 	_, basey := o.parent.scrollbarBase.Position(enum.TypeGlobal).Get()
-	// 	_, bh := o.parent.scrollbarBase.image.Size()
-	// 	log.Printf("scrollbarBar.Position: %0.1f, o.pos=%0.1f, by=%0.1f, base: y=%0.1f, h=%d", gy, o.position.Y(), by, basey, bh)
-	// }
 	return ebitest.NewPoint(gx, gy)
 }
 
@@ -660,7 +672,7 @@ func (o *scrollbarBar) In(x, y int) bool {
 
 // Update ...
 func (o *scrollbarBar) Update() error {
-	o.hover = o.In(ebiten.CursorPosition())
+	// o.hover = o.In(ebiten.CursorPosition())
 	return nil
 }
 
@@ -672,7 +684,6 @@ func (o *scrollbarBar) Draw(screen *ebiten.Image) {
 
 	r, g, b, a := 1.0, 1.0, 1.0, 1.0
 	if o.hover {
-		// log.Printf("ホバー: %s", o.label)
 		r, g, b, a = 0.75, 0.75, 0.75, 1.0
 	}
 	op.ColorM.Scale(r, g, b, a)
@@ -699,6 +710,10 @@ func newScrollbarBar(label string, parent *UIScrollView, pos *ebitest.Point) *sc
 	o := &scrollbarBar{
 		scrollViewParts: *sb,
 	}
+	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
+	o.eventHandler.AddEventListener(enum.EventTypeDragging, functions.CommonEventCallback)
+	o.eventHandler.AddEventListener(enum.EventTypeDragDrop, functions.CommonEventCallback)
+
 	return o
 
 }

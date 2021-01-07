@@ -133,6 +133,7 @@ func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 	if o.In(x, y) {
 		objs = append(objs, o)
 	}
+	// log.Printf("FrameBase::GetObjects: %#v", objs)
 	return objs
 }
 

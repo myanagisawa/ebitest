@@ -8,20 +8,20 @@ import (
 
 // Handler ...
 type Handler struct {
-	owner  interfaces.EventOwner
 	events map[enum.EventTypeEnum]interfaces.Event
 }
 
 // AddEventListener ...
-func (o *Handler) AddEventListener(t enum.EventTypeEnum, callback func(interfaces.EventOwner, *ebitest.Point)) {
-	ev := &Event{o.owner, callback}
+func (o *Handler) AddEventListener(t enum.EventTypeEnum, callback func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{})) {
+	ev := &Event{callback}
 	o.events[t] = ev
 }
 
 // Firing イベントの発火を行います
-func (o *Handler) Firing(t enum.EventTypeEnum, x, y int) {
+func (o *Handler) Firing(t enum.EventTypeEnum, c interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
 	if e, ok := o.events[t].(*Event); ok {
-		e.callback(e.target, ebitest.NewPoint(float64(x), float64(y)))
+		params["event"] = t
+		e.callback(c, pos, params)
 	}
 }
 
@@ -32,9 +32,8 @@ func (o *Handler) Has(t enum.EventTypeEnum) bool {
 }
 
 // NewEventHandler ...
-func NewEventHandler(o interfaces.EventOwner) interfaces.EventHandler {
+func NewEventHandler() interfaces.EventHandler {
 	eh := &Handler{
-		owner:  o,
 		events: map[enum.EventTypeEnum]interfaces.Event{},
 	}
 	return eh
@@ -42,6 +41,5 @@ func NewEventHandler(o interfaces.EventOwner) interfaces.EventHandler {
 
 // Event ...
 type Event struct {
-	target   interfaces.EventOwner
-	callback func(interfaces.EventOwner, *ebitest.Point)
+	callback func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{})
 }

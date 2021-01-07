@@ -133,8 +133,8 @@ func (g *Manager) GetObjects(x, y int) []interfaces.EbiObject {
 	return g.currentScene.GetObjects(x, y)
 }
 
-// GetFocusedObject ...
-func (g *Manager) GetFocusedObject(x, y int) interfaces.EbiObject {
+// GetObject ...
+func (g *Manager) GetObject(x, y int) interfaces.EbiObject {
 	objs := g.GetObjects(x, y)
 	if objs != nil && len(objs) > 0 {
 		return objs[0]
@@ -145,12 +145,13 @@ func (g *Manager) GetFocusedObject(x, y int) interfaces.EbiObject {
 // GetEventTarget ...
 func (g *Manager) GetEventTarget(x, y int, et enum.EventTypeEnum) (interfaces.EventOwner, bool) {
 	objs := g.GetObjects(x, y)
+	// log.Printf("Game::GetEventTarget: %#v", objs)
 	if objs != nil && len(objs) > 0 {
 		for i := range objs {
 			obj := objs[i]
 			if t, ok := obj.(interfaces.EventOwner); ok {
-				// log.Printf("t: %#v", t)
-				if t.EventHandler().Has(et) {
+				// log.Printf("  t: %#v", t)
+				if t.EventHandler() != nil && t.EventHandler().Has(et) {
 					return t, true
 				}
 			}
@@ -183,56 +184,93 @@ func (g *Manager) Update() error {
 	// --- キャッシュクリア ---
 	cacheGetObjects = nil
 	// --- キャッシュクリア ---
-	x, y := ebiten.CursorPosition()
 
-	// ホバーイベント
-	if hoverdObject != nil {
-		if !hoverdObject.In(x, y) {
-			// blur
+	x, y := ebiten.CursorPosition()
+	cursorpos := ebitest.NewPoint(float64(x), float64(y))
+
+	evparams := make(map[string]interface{})
+
+	// カーソル処理
+	{
+		// ホバーイベント
+		if hoverd, ok := g.GetEventTarget(x, y, enum.EventTypeFocus); ok {
+			newHoverdObject := hoverd.(interfaces.EbiObject)
+			if newHoverdObject == hoverdObject {
+				// log.Printf("same target")
+			} else {
+				// フォーカス対象が変わった
+				if t, ok := hoverdObject.(interfaces.EventOwner); ok {
+					// 前のフォーカスを外す処理
+					t.EventHandler().Firing(enum.EventTypeFocus, t, cursorpos, evparams)
+				}
+				// 新しいフォーカス処理
+				hoverd.EventHandler().Firing(enum.EventTypeFocus, hoverd, cursorpos, evparams)
+				hoverdObject = newHoverdObject
+			}
+		} else {
+			// フォーカス対象なし
 			if t, ok := hoverdObject.(interfaces.EventOwner); ok {
-				t.EventHandler().Firing(enum.EventTypeFocus, x, y)
+				t.EventHandler().Firing(enum.EventTypeFocus, t, cursorpos, evparams)
 			}
 			hoverdObject = nil
 		}
-	} else if hoverd, ok := g.GetEventTarget(x, y, enum.EventTypeFocus); ok {
-		hoverd.EventHandler().Firing(enum.EventTypeFocus, x, y)
-		hoverdObject = hoverd.(interfaces.EbiObject)
-	}
 
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		// マウスタップ
-		g.setStroke(x, y)
-	}
-
-	if g.stroke != nil {
-		g.stroke.Update()
-
-		eventCompleted := false
-		if target, ok := g.stroke.Target(); ok {
-			switch g.stroke.CurrentEvent() {
-			case enum.EventTypeClick:
-				target.EventHandler().Firing(enum.EventTypeClick, x, y)
-				eventCompleted = true
-			case enum.EventTypeDragging:
-				target.EventHandler().Firing(enum.EventTypeDragging, x, y)
-				// target.UpdateStroke(g.stroke)
-			case enum.EventTypeDragDrop:
-				target.EventHandler().Firing(enum.EventTypeDragDrop, x, y)
-				// target.UpdatePositionByDelta()
-				eventCompleted = true
-			case enum.EventTypeLongPress:
-				target.EventHandler().Firing(enum.EventTypeLongPress, x, y)
-			case enum.EventTypeLongPressReleased:
-				target.EventHandler().Firing(enum.EventTypeLongPressReleased, x, y)
-				eventCompleted = true
-			}
-			tname := fmt.Sprintf("%s", reflect.TypeOf(target))
-			log.Printf("EventType(%d): target: %s", g.stroke.CurrentEvent(), tname)
+		// タップイベント
+		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+			// マウスタップ
+			g.setStroke(x, y)
 		}
 
-		if eventCompleted {
-			log.Printf("EventCompleted")
-			g.stroke = nil
+		// タップ状態からの状態遷移イベント処理（クリック、D&D、ロングタップ）
+		if g.stroke != nil {
+			g.stroke.Update()
+
+			dx, dy := g.stroke.PositionDiff()
+			evparams["dx"], evparams["dy"] = dx, dy
+
+			eventCompleted := false
+			if target, ok := g.stroke.Target(); ok {
+				switch g.stroke.CurrentEvent() {
+				case enum.EventTypeClick:
+					target.EventHandler().Firing(enum.EventTypeClick, target, cursorpos, evparams)
+					eventCompleted = true
+				case enum.EventTypeDragging:
+					target.EventHandler().Firing(enum.EventTypeDragging, target, cursorpos, evparams)
+					// target.UpdateStroke(g.stroke)
+				case enum.EventTypeDragDrop:
+					target.EventHandler().Firing(enum.EventTypeDragDrop, target, cursorpos, evparams)
+					// target.UpdatePositionByDelta()
+					eventCompleted = true
+				case enum.EventTypeLongPress:
+					target.EventHandler().Firing(enum.EventTypeLongPress, target, cursorpos, evparams)
+				case enum.EventTypeLongPressReleased:
+					target.EventHandler().Firing(enum.EventTypeLongPressReleased, target, cursorpos, evparams)
+					eventCompleted = true
+				}
+				tname := fmt.Sprintf("%s", reflect.TypeOf(target))
+				log.Printf("EventType(%d): target: %s", g.stroke.CurrentEvent(), tname)
+			}
+
+			if eventCompleted {
+				log.Printf("EventCompleted")
+				g.stroke = nil
+			}
+		}
+	}
+
+	// ホイール処理
+	{
+		xoff, yoff := ebiten.Wheel()
+		if xoff != 0 || yoff != 0 {
+			if target, ok := g.GetEventTarget(x, y, enum.EventTypeWheel); ok {
+				evparams := make(map[string]interface{})
+				evparams["xoff"], evparams["yoff"] = xoff, yoff
+
+				target.EventHandler().Firing(enum.EventTypeWheel, target, cursorpos, evparams)
+
+				tname := fmt.Sprintf("%s", reflect.TypeOf(target))
+				log.Printf("EventType(Wheel): target: %s", tname)
+			}
 		}
 	}
 
@@ -254,16 +292,13 @@ func (g *Manager) Draw(screen *ebiten.Image) {
 		g.currentScene.Draw(screen)
 	}
 
-	// カーソル位置に存在するオブジェクトのリスト、操作対象のオブジェクトを返すインターフェースを実装する
-	// GetObjects / GetFocusedObject
-
 	// x, y := ebiten.CursorPosition()
 	// dbg := fmt.Sprintf("%s\nTPS: %0.2f\nFPS: %0.2f\npos: (%d, %d)", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS(), x, y)
 	dbg := fmt.Sprintf("%s / TPS: %0.2f / FPS: %0.2f", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS())
 	if ebitest.DebugText != "" {
 		dbg += fmt.Sprintf("%s", ebitest.DebugText)
 	}
-	focused := g.GetFocusedObject(ebiten.CursorPosition())
+	focused := g.GetObject(ebiten.CursorPosition())
 	if focused != nil {
 		dbg += fmt.Sprintf(" / cursor target: %s", focused.Label())
 	}

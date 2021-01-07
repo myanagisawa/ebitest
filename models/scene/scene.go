@@ -52,6 +52,7 @@ func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 		c := o.frames[i]
 		objs = append(objs, c.GetObjects(x, y)...)
 	}
+	// log.Printf("SceneBase::GetObjects: %#v", objs)
 	return objs
 }
 

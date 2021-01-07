@@ -22,4 +22,32 @@ const (
 	EventTypeLongPress
 	// EventTypeLongPressReleased 長押し完了
 	EventTypeLongPressReleased
+	// EventTypeWheel ホイール
+	EventTypeWheel
 )
+
+// Name EventTypeEnumの区分値表現を返します
+func (e EventTypeEnum) Name() string {
+	switch e {
+	case EventTypeNone:
+		return "イベント未検知"
+	case EventTypeClick:
+		return "クリック"
+	case EventTypeFocus:
+		return "フォーカス"
+	case EventTypeBlur:
+		return "ブラー"
+	case EventTypeDragging:
+		return "ドラッグ中"
+	case EventTypeDragDrop:
+		return "ドラッグ&ドロップ"
+	case EventTypeLongPress:
+		return "長押し"
+	case EventTypeLongPressReleased:
+		return "長押し完了"
+	case EventTypeWheel:
+		return "ホイール"
+	default:
+		return "不明"
+	}
+}

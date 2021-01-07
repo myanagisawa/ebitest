@@ -2,6 +2,7 @@ package scene
 
 import (
 	"image/color"
+	"log"
 
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
@@ -42,6 +43,9 @@ func NewMap(m interfaces.GameManager) *Map {
 	f.AddLayer(l)
 
 	c := control.NewSimpleLabel("test", ebitest.Images["btnBase"], ebitest.NewPoint(100, 100), color.Black)
+	c.EventHandler().AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
+		log.Printf("callback::click")
+	})
 	l.AddUIControl(c)
 
 	ctrl = c

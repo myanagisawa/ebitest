@@ -12,6 +12,22 @@ type EbiObject interface {
 	In(x, y int) bool
 }
 
+// Focusable ...
+type Focusable interface {
+	ToggleHover()
+}
+
+// Draggable ...
+type Draggable interface {
+	DidStroke(dx, dy float64)
+	FinishStroke()
+}
+
+// Wheelable ...
+type Wheelable interface {
+	DidWheel(dx, dy float64)
+}
+
 // Positionable ...
 type Positionable interface {
 	Position(enum.ValueTypeEnum) *ebitest.Point
@@ -27,21 +43,10 @@ type Anglable interface {
 	Angle(enum.ValueTypeEnum) int
 }
 
-// Focusable ...
-type Focusable interface {
-	SetHover(x int, y int)
-}
-
 // Movable ...
 type Movable interface {
 	Moving() *ebitest.Point
 	SetMoving(dx, dy float64)
-}
-
-// StrokeTarget ...
-type StrokeTarget interface {
-	UpdateStroke(stroke Stroke)
-	UpdatePositionByDelta()
 }
 
 // EventOwner ...
@@ -127,8 +132,8 @@ type UIScrollView interface {
 
 // EventHandler ...
 type EventHandler interface {
-	AddEventListener(t enum.EventTypeEnum, callback func(EventOwner, *ebitest.Point))
-	Firing(t enum.EventTypeEnum, x, y int)
+	AddEventListener(t enum.EventTypeEnum, callback func(o EventOwner, pos *ebitest.Point, params map[string]interface{}))
+	Firing(t enum.EventTypeEnum, c EventOwner, pos *ebitest.Point, params map[string]interface{})
 	Has(t enum.EventTypeEnum) bool
 }
 
@@ -136,8 +141,8 @@ type EventHandler interface {
 type Event interface {
 }
 
-// Stroke ...
-type Stroke interface {
-	Update()
-	PositionDiff() (float64, float64)
-}
+// // Stroke ...
+// type Stroke interface {
+// 	Update()
+// 	PositionDiff() (float64, float64)
+// }

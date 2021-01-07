@@ -7,23 +7,22 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
+	"github.com/myanagisawa/ebitest/functions"
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/models/event"
 )
 
 // Base ...
 type Base struct {
-	label    string
-	image    *ebiten.Image
-	frame    interfaces.Frame
-	position *ebitest.Point
-	scale    *ebitest.Scale
-	moving   *ebitest.Point
-
-	modal        bool
-	draggable    bool
+	label        string
+	image        *ebiten.Image
+	frame        interfaces.Frame
+	position     *ebitest.Point
+	scale        *ebitest.Scale
+	moving       *ebitest.Point
 	controls     []interfaces.UIControl
 	eventHandler interfaces.EventHandler
+	modal        bool
 }
 
 // Label ...
@@ -166,6 +165,7 @@ func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 	if o.In(x, y) {
 		objs = append(objs, o)
 	}
+	// log.Printf("LayerBase::GetObjects: %#v", objs)
 	return objs
 }
 
@@ -254,31 +254,29 @@ func NewLayerBase(label string, pos *ebitest.Point, size *ebitest.Size, c *color
 func NewLayerBaseByImage(label string, img image.Image, pos *ebitest.Point, draggable bool) interfaces.Layer {
 	eimg := ebiten.NewImageFromImage(img)
 
-	// draggable, ismodal 未実装
-
 	l := &Base{
-		label:     label,
-		image:     eimg,
-		position:  pos,
-		scale:     ebitest.NewScale(1.0, 1.0),
-		draggable: draggable,
+		label:        label,
+		image:        eimg,
+		position:     pos,
+		scale:        ebitest.NewScale(1.0, 1.0),
+		eventHandler: event.NewEventHandler(),
 	}
-	l.eventHandler = event.NewEventHandler(l)
+	if draggable {
+		l.eventHandler.AddEventListener(enum.EventTypeDragging, functions.CommonEventCallback)
+		l.eventHandler.AddEventListener(enum.EventTypeDragDrop, functions.CommonEventCallback)
+	}
 	return l
 }
 
-// UpdatePositionByDelta ...
-func (o *Base) UpdatePositionByDelta() {
-
+// FinishStroke ...
+func (o *Base) FinishStroke() {
 	o.position.SetDelta(o.moving.Get())
-
 	o.moving = nil
 }
 
-// UpdateStroke ...
-func (o *Base) UpdateStroke(stroke interfaces.Stroke) {
-	stroke.Update()
-	o.SetMoving(stroke.PositionDiff())
+// DidStroke ...
+func (o *Base) DidStroke(dx, dy float64) {
+	o.SetMoving(dx, dy)
 }
 
 func (o *Base) updatePos() {
