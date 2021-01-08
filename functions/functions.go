@@ -1,8 +1,6 @@
 package functions
 
 import (
-	"log"
-
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
@@ -35,8 +33,8 @@ var (
 				t.DidWheel(params["xoff"].(float64), params["yoff"].(float64))
 			}
 		}
-		if t, ok := o.(interfaces.EbiObject); ok {
-			log.Printf("Event: %s: %s", et.Name(), t.Label())
-		}
+		// if t, ok := o.(interfaces.EbiObject); ok {
+		// 	log.Printf("Event: %s: %s", et.Name(), t.Label())
+		// }
 	}
 )

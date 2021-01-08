@@ -3,7 +3,6 @@ package frame
 import (
 	"fmt"
 	"image/color"
-	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/ebitest"
@@ -21,8 +20,6 @@ type Base struct {
 
 	layers      []interfaces.Layer
 	activeLayer interfaces.Layer
-
-	scrollable bool
 
 	eventHandler interfaces.EventHandler
 }
@@ -215,7 +212,6 @@ func NewFrame(label string, pos *ebitest.Point, size *ebitest.Size, c *color.RGB
 		label:        label,
 		image:        img,
 		position:     pos,
-		scrollable:   scrollable,
 		eventHandler: event.NewEventHandler(),
 	}
 	if scrollable {
@@ -223,7 +219,7 @@ func NewFrame(label string, pos *ebitest.Point, size *ebitest.Size, c *color.RGB
 			if t, ok := o.(interfaces.Scrollable); ok {
 				t.DoScroll(pos.GetInt())
 			}
-			log.Printf("callback::scroll")
+			// log.Printf("callback::scroll")
 		})
 	}
 

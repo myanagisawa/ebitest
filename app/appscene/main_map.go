@@ -1,4 +1,4 @@
-package scene
+package appscene
 
 import (
 	"image/color"
@@ -10,12 +10,13 @@ import (
 	"github.com/myanagisawa/ebitest/models/control"
 	"github.com/myanagisawa/ebitest/models/frame"
 	"github.com/myanagisawa/ebitest/models/layer"
+	"github.com/myanagisawa/ebitest/models/scene"
 )
 
 type (
 	// Map ...
 	Map struct {
-		Base
+		scene.Base
 	}
 )
 
@@ -29,10 +30,7 @@ var (
 func NewMap(m interfaces.GameManager) *Map {
 
 	s := &Map{
-		Base: Base{
-			label:   "MainMap",
-			manager: m,
-		},
+		Base: *scene.NewScene("MainMap", m).(*scene.Base),
 	}
 
 	// メインフレーム
@@ -125,13 +123,13 @@ func NewMap(m interfaces.GameManager) *Map {
 // Update ...
 func (o *Map) Update() error {
 
-	if cnt == 10 {
-		a := ctrl.Angle(enum.TypeGlobal)
-		a++
-		ctrl.SetAngle(a)
-		cnt = 0
-	}
-	cnt++
+	// if cnt == 10 {
+	// 	a := ctrl.Angle(enum.TypeGlobal)
+	// 	a++
+	// 	ctrl.SetAngle(a)
+	// 	cnt = 0
+	// }
+	// cnt++
 
 	_ = o.Base.Update()
 	return nil

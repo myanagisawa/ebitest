@@ -4,17 +4,16 @@ import (
 	"fmt"
 	"image/color"
 	"log"
-	"reflect"
 	"runtime"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/myanagisawa/ebitest/app/appscene"
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/models/input"
-	"github.com/myanagisawa/ebitest/models/scene"
 )
 
 /*
@@ -36,8 +35,7 @@ type (
 		background   *ebiten.Image
 		currentScene interfaces.Scene
 		scenes       map[enum.SceneEnum]interfaces.Scene
-		stroke       *Stroke
-		// master       *MasterData
+		stroke       *input.Stroke
 	}
 )
 
@@ -83,7 +81,7 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 	}
 
 	scenes := map[enum.SceneEnum]interfaces.Scene{}
-	scenes[enum.MapEnum] = scene.NewMap(gm)
+	scenes[enum.MapEnum] = appscene.NewMap(gm)
 	gm.scenes = scenes
 
 	// MainMenuを表示
@@ -120,7 +118,7 @@ func (g *Manager) setStroke(x, y int) {
 	}
 	targets := g.GetEventTargetList(x, y, enum.EventTypeClick, enum.EventTypeDragging, enum.EventTypeLongPress)
 	if len(targets) > 0 {
-		stroke := NewStroke(&input.MouseStrokeSource{})
+		stroke := input.NewStroke(&input.MouseStrokeSource{})
 		stroke.SetMouseDownTargets(targets)
 		g.stroke = stroke
 	}
@@ -259,8 +257,8 @@ func (g *Manager) Update() error {
 					target.EventHandler().Firing(enum.EventTypeLongPressReleased, target, cursorpos, evparams)
 					// eventCompleted = true
 				}
-				tname := fmt.Sprintf("%s", reflect.TypeOf(target))
-				log.Printf("EventType(%d): target: %s", g.stroke.CurrentEvent(), tname)
+				// tname := fmt.Sprintf("%s", reflect.TypeOf(target))
+				// log.Printf("EventType(%d): target: %s", g.stroke.CurrentEvent(), tname)
 			}
 
 			if g.stroke.IsReleased() {
@@ -274,9 +272,8 @@ func (g *Manager) Update() error {
 			// スクロールイベント
 			if target, ok := g.GetEventTarget(x, y, enum.EventTypeScroll); ok {
 				target.EventHandler().Firing(enum.EventTypeScroll, target, cursorpos, evparams)
-
-				tname := fmt.Sprintf("%s", reflect.TypeOf(target))
-				log.Printf("EventType(Wheel): target: %s", tname)
+				// tname := fmt.Sprintf("%s", reflect.TypeOf(target))
+				// log.Printf("EventType(Wheel): target: %s", tname)
 			}
 		}
 	}
@@ -289,8 +286,8 @@ func (g *Manager) Update() error {
 				evparams["xoff"], evparams["yoff"] = xoff, yoff
 				target.EventHandler().Firing(enum.EventTypeWheel, target, cursorpos, evparams)
 
-				tname := fmt.Sprintf("%s", reflect.TypeOf(target))
-				log.Printf("EventType(Wheel): target: %s", tname)
+				// tname := fmt.Sprintf("%s", reflect.TypeOf(target))
+				// log.Printf("EventType(Wheel): target: %s", tname)
 			}
 		}
 	}

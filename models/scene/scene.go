@@ -82,10 +82,10 @@ func (o *Base) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 // NewScene ...
-func NewScene(m interfaces.GameManager) interfaces.Scene {
+func NewScene(label string, m interfaces.GameManager) interfaces.Scene {
 
 	s := &Base{
-		label:   "BaseScene",
+		label:   label,
 		manager: m,
 	}
 
