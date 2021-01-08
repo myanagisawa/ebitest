@@ -24,6 +24,8 @@ const (
 	EventTypeLongPressReleased
 	// EventTypeWheel ホイール
 	EventTypeWheel
+	// EventTypeScroll スクロール
+	EventTypeScroll
 )
 
 // Name EventTypeEnumの区分値表現を返します
@@ -47,6 +49,8 @@ func (e EventTypeEnum) Name() string {
 		return "長押し完了"
 	case EventTypeWheel:
 		return "ホイール"
+	case EventTypeScroll:
+		return "スクロール"
 	default:
 		return "不明"
 	}

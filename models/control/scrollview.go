@@ -162,6 +162,7 @@ func (o *UIScrollView) GetObjects(x, y int) []interfaces.EbiObject {
 		if o.listView.In(x, y) {
 			objs = append(objs, o.listView)
 		}
+		objs = append(objs, o)
 		// log.Printf("UIScrollView::GetObjects: %#v", objs)
 		return objs
 	}
@@ -206,25 +207,13 @@ func (o *UIScrollView) listViewSize() (int, int) {
 
 // NewUIScrollView ...
 func NewUIScrollView(label string, pos *ebitest.Point, size *ebitest.Size) interfaces.UIScrollView {
-
-	// スクロールビュー全体のベース画像
-	// img := ebitest.CreateRectImage(size.W(), size.H(), &color.RGBA{64, 64, 64, 64})
-	// eimg := ebiten.NewImageFromImage(img)
-
 	eimg := ebiten.NewImage(size.Get())
-
-	cb := Base{
-		label:    label,
-		image:    eimg,
-		position: pos,
-		scale:    ebitest.NewScale(1.0, 1.0),
-		// hasHoverAction: false,
-	}
-
+	cb := NewControlBase(label, eimg, pos).(*Base)
 	o := &UIScrollView{
-		Base:    cb,
+		Base:    *cb,
 		fontSet: char.Res.Get(12, enum.FontStyleGenShinGothicNormal),
 	}
+	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
 
 	return o
 }

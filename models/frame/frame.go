@@ -3,11 +3,13 @@ package frame
 import (
 	"fmt"
 	"image/color"
+	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
+	"github.com/myanagisawa/ebitest/models/event"
 )
 
 // Base ...
@@ -21,6 +23,8 @@ type Base struct {
 	activeLayer interfaces.Layer
 
 	scrollable bool
+
+	eventHandler interfaces.EventHandler
 }
 
 // Label ...
@@ -122,6 +126,16 @@ func (o *Base) GetEdgeType(x, y int) enum.EdgeTypeEnum {
 	return enum.EdgeTypeNotEdge
 }
 
+// DoScroll ...
+func (o *Base) DoScroll(x, y int) {
+	if len(o.layers) > 0 {
+		et := o.GetEdgeType(x, y)
+		if et != enum.EdgeTypeNotEdge {
+			o.layers[0].Scroll(et)
+		}
+	}
+}
+
 // GetObjects ...
 func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 	objs := []interfaces.EbiObject{}
@@ -130,7 +144,7 @@ func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 		objs = append(objs, c.GetObjects(x, y)...)
 	}
 
-	if o.In(x, y) {
+	if o.In(x, y) || o.GetEdgeType(x, y) != enum.EdgeTypeNotEdge {
 		objs = append(objs, o)
 	}
 	// log.Printf("FrameBase::GetObjects: %#v", objs)
@@ -139,14 +153,14 @@ func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 
 // Update ...
 func (o *Base) Update() error {
-	if o.scrollable {
-		if len(o.layers) > 0 {
-			et := o.GetEdgeType(ebiten.CursorPosition())
-			if et != enum.EdgeTypeNotEdge {
-				o.layers[0].Scroll(et)
-			}
-		}
-	}
+	// if o.scrollable {
+	// 	if len(o.layers) > 0 {
+	// 		et := o.GetEdgeType(ebiten.CursorPosition())
+	// 		if et != enum.EdgeTypeNotEdge {
+	// 			o.layers[0].Scroll(et)
+	// 		}
+	// 	}
+	// }
 
 	o.activeLayer = o.LayerAt(ebiten.CursorPosition())
 
@@ -188,15 +202,29 @@ func (o *Base) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return outsideWidth, outsideHeight
 }
 
+// EventHandler ...
+func (o *Base) EventHandler() interfaces.EventHandler {
+	return o.eventHandler
+}
+
 // NewFrame ...
 func NewFrame(label string, pos *ebitest.Point, size *ebitest.Size, c *color.RGBA, scrollable bool) interfaces.Frame {
 	img := ebiten.NewImageFromImage(ebitest.CreateRectImage(size.W(), size.H(), c))
 
 	s := &Base{
-		label:      label,
-		image:      img,
-		position:   pos,
-		scrollable: scrollable,
+		label:        label,
+		image:        img,
+		position:     pos,
+		scrollable:   scrollable,
+		eventHandler: event.NewEventHandler(),
+	}
+	if scrollable {
+		s.eventHandler.AddEventListener(enum.EventTypeScroll, func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
+			if t, ok := o.(interfaces.Scrollable); ok {
+				t.DoScroll(pos.GetInt())
+			}
+			log.Printf("callback::scroll")
+		})
 	}
 
 	return s

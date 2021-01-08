@@ -114,7 +114,8 @@ func (g *Manager) SetCurrentScene(s interfaces.Scene) {
 // setStroke ...
 func (g *Manager) setStroke(x, y int) {
 	if g.stroke != nil {
-		log.Printf("別のstrokeがあるため追加できません")
+		t := g.stroke.MouseDownTargets()
+		log.Printf("別のstrokeがあるため追加できません: targets=%#v", t)
 		return
 	}
 	targets := g.GetEventTargetList(x, y, enum.EventTypeClick, enum.EventTypeDragging, enum.EventTypeLongPress)
@@ -152,7 +153,20 @@ func (g *Manager) GetEventTarget(x, y int, et enum.EventTypeEnum) (interfaces.Ev
 			if t, ok := obj.(interfaces.EventOwner); ok {
 				// log.Printf("  t: %#v", t)
 				if t.EventHandler() != nil && t.EventHandler().Has(et) {
-					return t, true
+					switch et {
+					case enum.EventTypeScroll:
+						if o, ok := t.(interfaces.Scrollable); ok {
+							if o.GetEdgeType(x, y) != enum.EdgeTypeNotEdge {
+								return o.(interfaces.EventOwner), true
+							}
+						}
+					default:
+						if o, ok := t.(interfaces.EbiObject); ok {
+							if o.In(x, y) {
+								return o.(interfaces.EventOwner), true
+							}
+						}
+					}
 				}
 			}
 		}
@@ -228,32 +242,41 @@ func (g *Manager) Update() error {
 			dx, dy := g.stroke.PositionDiff()
 			evparams["dx"], evparams["dy"] = dx, dy
 
-			eventCompleted := false
+			// eventCompleted := false
 			if target, ok := g.stroke.Target(); ok {
 				switch g.stroke.CurrentEvent() {
 				case enum.EventTypeClick:
 					target.EventHandler().Firing(enum.EventTypeClick, target, cursorpos, evparams)
-					eventCompleted = true
+					// eventCompleted = true
 				case enum.EventTypeDragging:
 					target.EventHandler().Firing(enum.EventTypeDragging, target, cursorpos, evparams)
-					// target.UpdateStroke(g.stroke)
 				case enum.EventTypeDragDrop:
 					target.EventHandler().Firing(enum.EventTypeDragDrop, target, cursorpos, evparams)
-					// target.UpdatePositionByDelta()
-					eventCompleted = true
+					// eventCompleted = true
 				case enum.EventTypeLongPress:
 					target.EventHandler().Firing(enum.EventTypeLongPress, target, cursorpos, evparams)
 				case enum.EventTypeLongPressReleased:
 					target.EventHandler().Firing(enum.EventTypeLongPressReleased, target, cursorpos, evparams)
-					eventCompleted = true
+					// eventCompleted = true
 				}
 				tname := fmt.Sprintf("%s", reflect.TypeOf(target))
 				log.Printf("EventType(%d): target: %s", g.stroke.CurrentEvent(), tname)
 			}
 
-			if eventCompleted {
+			if g.stroke.IsReleased() {
 				log.Printf("EventCompleted")
 				g.stroke = nil
+			}
+		}
+
+		// 他のイベントが発生していない場合
+		if hoverdObject == nil && g.stroke == nil {
+			// スクロールイベント
+			if target, ok := g.GetEventTarget(x, y, enum.EventTypeScroll); ok {
+				target.EventHandler().Firing(enum.EventTypeScroll, target, cursorpos, evparams)
+
+				tname := fmt.Sprintf("%s", reflect.TypeOf(target))
+				log.Printf("EventType(Wheel): target: %s", tname)
 			}
 		}
 	}
@@ -263,9 +286,7 @@ func (g *Manager) Update() error {
 		xoff, yoff := ebiten.Wheel()
 		if xoff != 0 || yoff != 0 {
 			if target, ok := g.GetEventTarget(x, y, enum.EventTypeWheel); ok {
-				evparams := make(map[string]interface{})
 				evparams["xoff"], evparams["yoff"] = xoff, yoff
-
 				target.EventHandler().Firing(enum.EventTypeWheel, target, cursorpos, evparams)
 
 				tname := fmt.Sprintf("%s", reflect.TypeOf(target))

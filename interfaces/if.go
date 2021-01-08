@@ -28,6 +28,12 @@ type Wheelable interface {
 	DidWheel(dx, dy float64)
 }
 
+// Scrollable ...
+type Scrollable interface {
+	GetEdgeType(x, y int) enum.EdgeTypeEnum
+	DoScroll(x, y int)
+}
+
 // Positionable ...
 type Positionable interface {
 	Position(enum.ValueTypeEnum) *ebitest.Point
@@ -73,6 +79,7 @@ type Scene interface {
 type Frame interface {
 	EbiObject
 	Positionable
+	EventOwner
 	Manager() GameManager
 	Size() *ebitest.Size
 	Parent() Scene
