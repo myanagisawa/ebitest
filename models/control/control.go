@@ -3,6 +3,7 @@ package control
 import (
 	"image"
 	"image/color"
+	"image/draw"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -10,6 +11,7 @@ import (
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/functions"
 	"github.com/myanagisawa/ebitest/interfaces"
+	"github.com/myanagisawa/ebitest/models/char"
 	"github.com/myanagisawa/ebitest/models/event"
 	"github.com/myanagisawa/ebitest/utils"
 )
@@ -219,9 +221,31 @@ func NewControlBase(label string, eimg *ebiten.Image, pos *ebitest.Point) interf
 }
 
 // NewSimpleLabel ...
-func NewSimpleLabel(label string, img image.Image, pos *ebitest.Point, labelColor color.Color) interfaces.UIControl {
-	ti := utils.SetTextToCenter(label, img, ebitest.Fonts["btnFont"], labelColor)
-	eimg := ebiten.NewImageFromImage(*ti)
+func NewSimpleLabel(label string, pos *ebitest.Point, pt int, c *color.RGBA, family enum.FontStyleEnum) interfaces.UIControl {
+	fset := char.Res.Get(pt, family)
+	ti := fset.GetStringImage(label)
+	ti2 := utils.TextColorTo(ti.(draw.Image), c)
+	eimg := ebiten.NewImageFromImage(ti2)
+
+	o := &Base{
+		label:        label,
+		image:        eimg,
+		position:     pos,
+		scale:        ebitest.NewScale(1.0, 1.0),
+		eventHandler: event.NewEventHandler(),
+	}
+	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
+
+	return o
+}
+
+// NewSimpleButton ...
+func NewSimpleButton(label string, img image.Image, pos *ebitest.Point, pt int, c *color.RGBA) interfaces.UIControl {
+	fset := char.Res.Get(pt, enum.FontStyleGenShinGothicBold)
+	ti := fset.GetStringImage(label)
+	ti = utils.TextColorTo(ti.(draw.Image), c)
+	ti = utils.ImageOnTextToCenter(img.(draw.Image), ti)
+	eimg := ebiten.NewImageFromImage(ti)
 
 	o := &Base{
 		label:        label,

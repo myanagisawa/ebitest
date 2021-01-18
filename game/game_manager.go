@@ -11,6 +11,7 @@ import (
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
+	"github.com/myanagisawa/ebitest/utils"
 )
 
 /*
@@ -70,7 +71,7 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 	ebitest.Width, ebitest.Height = screenWidth, screenHeight
 
 	gm := &Manager{
-		background: ebiten.NewImageFromImage(ebitest.CreateRectImage(screenWidth, screenHeight, &color.RGBA{0, 0, 0, 255})),
+		background: ebiten.NewImageFromImage(utils.CreateRectImage(screenWidth, screenHeight, &color.RGBA{0, 0, 0, 255})),
 		// master: NewMasterData(),
 	}
 

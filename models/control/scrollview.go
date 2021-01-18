@@ -5,7 +5,9 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"log"
 	"math"
+	"reflect"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/ebitest"
@@ -64,6 +66,7 @@ type UIScrollView struct {
 
 // SetDataSource ...
 func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{}) {
+	// log.Printf("fontSet: %#v", o.fontSet)
 	// カラムデータセットをまずは作ってしまう
 	columns := &columnSet{}
 	for i := range data {
@@ -493,6 +496,16 @@ type listRow struct {
 	index int
 }
 
+// Index ...
+func (o *listRow) Index() int {
+	return o.index
+}
+
+// Parent ...
+func (o *listRow) Parent() interfaces.UIScrollView {
+	return o.parent
+}
+
 // Position ...
 func (o *listRow) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	// スクロールバー位置: x = リスト位置(sy)*スクロール領域サイズ(sh) / リストサイズ(lh)
@@ -538,12 +551,12 @@ func (o *listRow) Update() error {
 
 func newListRow(label string, parent *UIScrollView, columns []*column, index int, pos *ebitest.Point, width, height int) *listRow {
 	// 行画像を作成
-	img := ebitest.CreateRectImage(width, height, &color.RGBA{0, 0, 0, 32}).(draw.Image)
+	img := utils.CreateRectImage(width, height, &color.RGBA{0, 0, 0, 32}).(draw.Image)
 
 	cx := marginX
 	for i := range columns {
 		col := columns[i]
-		columnImageBase := ebitest.CreateRectImage(col.width, height, &color.RGBA{127, 127, 127, 64}).(draw.Image)
+		columnImageBase := utils.CreateRectImage(col.width, height, &color.RGBA{127, 127, 127, 64}).(draw.Image)
 
 		// データタイプごとの描画
 		switch col.ds.(type) {
@@ -586,6 +599,19 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 		index:           index,
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
+	o.eventHandler.AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
+		log.Printf("あ")
+		if row, ok := o.(interfaces.ListRow); ok {
+
+			log.Printf("い")
+			if p, ok := row.Parent().(interfaces.ListRowClickable); ok {
+				p.DidClickRowCallBack(row.Index(), row)
+
+				tname := fmt.Sprintf("%s", reflect.TypeOf(o))
+				log.Printf("スクロールビューのクリック(%d): %s", row.Index(), tname)
+			}
+		}
+	})
 
 	return o
 }
@@ -599,7 +625,7 @@ type scrollbarBase struct {
 
 func newScrollbarBase(label string, parent *UIScrollView, pos *ebitest.Point) *scrollbarBase {
 	_, ph := parent.listViewSize()
-	scrollbaseimg := ebitest.CreateRectImage(12, ph, &color.RGBA{223, 223, 223, 255})
+	scrollbaseimg := utils.CreateRectImage(12, ph, &color.RGBA{223, 223, 223, 255})
 	eimg := ebiten.NewImageFromImage(scrollbaseimg)
 
 	sb := newScrollViewParts(label, parent, eimg, pos)
@@ -692,7 +718,7 @@ func newScrollbarBar(label string, parent *UIScrollView, pos *ebitest.Point) *sc
 	barheight := int(float64(ph*ph) / float64(lh))
 	barheight -= 3
 
-	scrollbarimg := ebitest.CreateRectImage(8, barheight, &color.RGBA{192, 192, 192, 255})
+	scrollbarimg := utils.CreateRectImage(8, barheight, &color.RGBA{192, 192, 192, 255})
 	eimg := ebiten.NewImageFromImage(scrollbarimg)
 
 	sb := newScrollViewParts(label, parent, eimg, pos)

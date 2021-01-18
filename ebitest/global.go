@@ -4,21 +4,18 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"io/ioutil"
 
-	"github.com/golang/freetype/truetype"
 	"github.com/myanagisawa/ebitest/utils"
-	"golang.org/x/image/font"
 )
 
-type (
+// type (
 
-	// LabelFace ...
-	LabelFace struct {
-		uiFont        font.Face
-		uiFontMHeight int
-	}
-)
+// 	// LabelFace ...
+// 	LabelFace struct {
+// 		uiFont        font.Face
+// 		uiFontMHeight int
+// 	}
+// )
 
 var (
 	// DebugText ...
@@ -30,9 +27,8 @@ var (
 	Height int
 
 	// Fonts ...
-	Fonts map[string]font.Face
-	// ScaleFonts ...
-	ScaleFonts map[int]font.Face
+	// Fonts map[string]font.Face
+
 	// Images ...
 	Images map[string]image.Image
 
@@ -40,7 +36,7 @@ var (
 	// SpotLightImage *ebiten.Image
 
 	// fontFile
-	fontFile = "resources/fonts/GenShinGothic-Regular.ttf"
+	// fontFile = "resources/fonts/GenShinGothic-Regular.ttf"
 
 	// EdgeSize 画面の端から何ピクセルを端とするか
 	EdgeSize = 30
@@ -49,21 +45,11 @@ var (
 )
 
 func init() {
-	Fonts = make(map[string]font.Face)
-	Fonts["btnFont"] = FontLoad(16)
-
-	ScaleFonts = make(map[int]font.Face)
-	ScaleFonts[8] = FontLoad(8)
-	ScaleFonts[12] = FontLoad(12)
-	ScaleFonts[16] = FontLoad(16)
-	ScaleFonts[24] = FontLoad(24)
+	// Fonts = make(map[string]font.Face)
+	// Fonts["btnFont"] = FontLoad(16)
 
 	Images = make(map[string]image.Image)
-	Images["bgImage"], _ = utils.GetImageByPath("resources/system_images/bg-2.jpg")
 	Images["btnBase"], _ = utils.GetImageByPath("resources/system_images/button.png")
-	Images["btnBaseHover"], _ = utils.GetImageByPath("resources/system_images/button-hover.png")
-	Images["bgFlower"], _ = utils.GetImageByPath("resources/system_images/bg_flower.jpg")
-	Images["bg-1"], _ = utils.GetImageByPath("resources/system_images/bg-1.jpg")
 	Images["world"], _ = utils.GetImageByPath("resources/system_images/world.jpg")
 
 	Images["site_1"], _ = utils.GetImageByPath("resources/system_images/site_1.png")
@@ -76,64 +62,58 @@ func init() {
 	Images["route_2"], _ = utils.GetImageByPath("resources/system_images/route_2.png")
 	Images["route_3"], _ = utils.GetImageByPath("resources/system_images/route_3.png")
 
-	img := CreateRectImage(1, 1, &color.RGBA{200, 200, 200, 255})
+	img := utils.CreateRectImage(1, 1, &color.RGBA{200, 200, 200, 255})
 	Images["routeLine"] = img.(draw.Image)
-
-	img = CreateRectImage(10, 10, &color.RGBA{0, 0, 0, 255})
-	Images["listBase"] = img.(draw.Image)
-
-	img = CreateRectImage(10, 10, &color.RGBA{128, 128, 128, 128})
-	Images["listScroller"] = img.(draw.Image)
 
 }
 
 // CreateRectImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
-func CreateRectImage(w, h int, color *color.RGBA) image.Image {
-	m := image.NewRGBA(image.Rect(0, 0, w, h))
-	// 横ループ、半径*2＝直径まで
-	for x := 0; x < w; x++ {
-		// 縦ループ、半径*2＝直径まで
-		for y := 0; y < h; y++ {
-			m.Set(x, y, color)
-		}
-	}
-	return m
-}
+// func CreateRectImage(w, h int, color *color.RGBA) image.Image {
+// 	m := image.NewRGBA(image.Rect(0, 0, w, h))
+// 	// 横ループ、半径*2＝直径まで
+// 	for x := 0; x < w; x++ {
+// 		// 縦ループ、半径*2＝直径まで
+// 		for y := 0; y < h; y++ {
+// 			m.Set(x, y, color)
+// 		}
+// 	}
+// 	return m
+// }
 
-// CreateBorderedRectImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
-func CreateBorderedRectImage(w, h int, c *color.RGBA) image.Image {
-	m := image.NewRGBA(image.Rect(0, 0, w, h))
-	// 横ループ、半径*2＝直径まで
-	for x := 0; x < w; x++ {
-		// 縦ループ、半径*2＝直径まで
-		for y := 0; y < h; y++ {
-			if (x == 0 || x == (w-1)) || (y == 0 || y == (h-1)) {
-				m.Set(x, y, color.RGBA{c.R / 2, c.G / 2, c.B / 2, c.A})
-			} else {
-				m.Set(x, y, c)
-			}
-		}
-	}
-	return m
-}
+// // CreateBorderedRectImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
+// func CreateBorderedRectImage(w, h int, c *color.RGBA) image.Image {
+// 	m := image.NewRGBA(image.Rect(0, 0, w, h))
+// 	// 横ループ、半径*2＝直径まで
+// 	for x := 0; x < w; x++ {
+// 		// 縦ループ、半径*2＝直径まで
+// 		for y := 0; y < h; y++ {
+// 			if (x == 0 || x == (w-1)) || (y == 0 || y == (h-1)) {
+// 				m.Set(x, y, color.RGBA{c.R / 2, c.G / 2, c.B / 2, c.A})
+// 			} else {
+// 				m.Set(x, y, c)
+// 			}
+// 		}
+// 	}
+// 	return m
+// }
 
-// FontLoad ...
-func FontLoad(size int) font.Face {
-	// ebitenフォントのテスト
-	ftBinary, err := ioutil.ReadFile(fontFile)
-	if err != nil {
-		panic(err)
-	}
-	tt, err := truetype.Parse(ftBinary)
-	if err != nil {
-		panic(err)
-	}
-	return truetype.NewFace(tt, &truetype.Options{
-		Size:    float64(size),
-		DPI:     72,
-		Hinting: font.HintingFull,
-	})
-}
+// // FontLoad ...
+// func FontLoad(size int) font.Face {
+// 	// ebitenフォントのテスト
+// 	ftBinary, err := ioutil.ReadFile(fontFile)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	tt, err := truetype.Parse(ftBinary)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	return truetype.NewFace(tt, &truetype.Options{
+// 		Size:    float64(size),
+// 		DPI:     72,
+// 		Hinting: font.HintingFull,
+// 	})
+// }
 
 // Point ...
 type Point struct {

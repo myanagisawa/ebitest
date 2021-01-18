@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"io/ioutil"
+	"log"
 
 	"github.com/golang/freetype/truetype"
 	"github.com/myanagisawa/ebitest/enum"
@@ -19,11 +21,13 @@ const (
 var (
 	// Res 文字リソース管理変数
 	Res   *Resources
-	fonts map[enum.FontStyleEnum]font.Face
+	fonts map[enum.FontStyleEnum]*truetype.Font
+	faces map[enum.FontStyleEnum]map[int]font.Face
 )
 
 func init() {
-	fonts = make(map[enum.FontStyleEnum]font.Face)
+	fonts = make(map[enum.FontStyleEnum]*truetype.Font)
+	faces = make(map[enum.FontStyleEnum]map[int]font.Face)
 	Res = &Resources{
 		list: []*Resource{},
 	}
@@ -31,27 +35,37 @@ func init() {
 
 // FontLoad ...
 func FontLoad(style enum.FontStyleEnum, size int) font.Face {
-	// すでにロード済ならそれを返す
-	if face, ok := fonts[style]; ok {
+	if face, ok := faces[style][size]; ok {
+		// すでにロード済ならそれを返す
 		return face
 	}
-	// フォント読み込み
-	ftBinary, err := ioutil.ReadFile(fmt.Sprintf("%s%s", fontFilePath, style.Name()))
-	if err != nil {
-		panic(err)
-	}
+	var fd *truetype.Font
+	if f, ok := fonts[style]; ok {
+		fd = f
+	} else {
+		// フォント読み込み
+		ftBinary, err := ioutil.ReadFile(fmt.Sprintf("%s%s", fontFilePath, style.Name()))
+		if err != nil {
+			panic(err)
+		}
 
-	tt, err := truetype.Parse(ftBinary)
-	if err != nil {
-		panic(err)
+		tt, err := truetype.Parse(ftBinary)
+		if err != nil {
+			panic(err)
+		}
+		fd = tt
 	}
-	face := truetype.NewFace(tt, &truetype.Options{
+	face := truetype.NewFace(fd, &truetype.Options{
 		Size:    float64(size),
 		DPI:     72,
 		Hinting: font.HintingFull,
 	})
-	fonts[style] = face
-	return fonts[style]
+	if _, ok := faces[style]; !ok {
+		faces[style] = make(map[int]font.Face)
+	}
+	faces[style][size] = face
+	log.Printf("faces: %#v", faces)
+	return faces[style][size]
 }
 
 // Resources 文字リソースの管理構造体
@@ -105,31 +119,29 @@ func (o *Resource) GetByString(s string) []image.Image {
 	return ret
 }
 
-// // Resource フォントごとの文字リソース
-// type Resource struct {
-// 	fontSize  int
-// 	fontStyle enum.FontStyleEnum
-// 	font      font.Face
-// 	m         map[rune]*ebiten.Image
-// }
+// GetStringImage 指定文字列の文字画像を返します
+func (o *Resource) GetStringImage(s string) image.Image {
+	images := make([]image.Image, len([]rune(s)))
+	for i, r := range []rune(s) {
+		images[i] = o.GetByRune(r)
+	}
+	// テキスト画像の幅を取得
+	w, h := 0, 0
+	for i := range images {
+		image := images[i]
+		size := image.Bounds().Size()
+		w += size.X
+		if h < size.Y {
+			h = size.Y
+		}
+	}
+	base := utils.CreateRectImage(w, h, &color.RGBA{0, 0, 0, 0}).(draw.Image)
+	tx := 0
+	for i := range images {
+		img := images[i]
+		base = utils.StackImage(base, img, image.Point{tx, 0})
+		tx += img.Bounds().Size().X
+	}
 
-// // GetByRune 指定文字１文字の文字画像を返します
-// func (o *Resource) GetByRune(r rune) *ebiten.Image {
-// 	if i, ok := o.m[r]; ok {
-// 		return i
-// 	}
-// 	// なかったら作って返す
-// 	img := utils.CreateTextImage(string(r), o.font, color.RGBA{255, 255, 255, 255})
-// 	eimg := ebiten.NewImageFromImage(*img)
-// 	o.m[r] = eimg
-// 	return o.m[r]
-// }
-
-// // GetByString 指定文字列の文字画像を返します
-// func (o *Resource) GetByString(s string) []*ebiten.Image {
-// 	ret := make([]*ebiten.Image, len([]rune(s)))
-// 	for i, r := range []rune(s) {
-// 		ret[i] = o.GetByRune(r)
-// 	}
-// 	return ret
-// }
+	return base
+}

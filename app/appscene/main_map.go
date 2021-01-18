@@ -18,13 +18,31 @@ type (
 	Map struct {
 		scene.Base
 	}
+
+	// CustomScrollView ...
+	CustomScrollView struct {
+		control.UIScrollView
+	}
 )
+
+// DidClickRowCallBack ...
+func (o *CustomScrollView) DidClickRowCallBack(idx int, row interface{}) {
+	log.Printf("DidClickRowCallBack: idx=%d, row=%#v", idx, row)
+}
 
 var (
 	ctrl interfaces.UIControl
 
 	cnt int
 )
+
+// NewCustomScrollView ...
+func NewCustomScrollView(label string, pos *ebitest.Point, size *ebitest.Size) interfaces.UIScrollView {
+	base := control.NewUIScrollView(label, pos, size).(*control.UIScrollView)
+	return &CustomScrollView{
+		UIScrollView: *base,
+	}
+}
 
 // NewMap ...
 func NewMap(m interfaces.GameManager) *Map {
@@ -40,7 +58,18 @@ func NewMap(m interfaces.GameManager) *Map {
 	l := layer.NewLayerBaseByImage("map", ebitest.Images["world"], ebitest.NewPoint(0, 0), false)
 	f.AddLayer(l)
 
-	c := control.NewSimpleLabel("test", ebitest.Images["btnBase"], ebitest.NewPoint(100, 100), color.Black)
+	// c := control.NewSimpleLabel("test", ebitest.Images["btnBase"], ebitest.NewPoint(100, 100), color.Black)
+	c := control.NewSimpleLabel("SIMPLE LABEL", ebitest.NewPoint(100, 100), 48, &color.RGBA{0, 0, 255, 255}, enum.FontStyleGenShinGothicMedium)
+	c.EventHandler().AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
+		log.Printf("callback::click")
+	})
+	l.AddUIControl(c)
+	c = control.NewSimpleLabel("シンプルラベル", ebitest.NewPoint(100, 150), 32, &color.RGBA{0, 255, 0, 255}, enum.FontStyleGenShinGothicNormal)
+	l.AddUIControl(c)
+	c = control.NewSimpleLabel("文字列試験", ebitest.NewPoint(100, 200), 24, &color.RGBA{255, 0, 0, 255}, enum.FontStyleGenShinGothicRegular)
+	l.AddUIControl(c)
+
+	c = control.NewSimpleButton("SIMPLE BUTTON", ebitest.Images["btnBase"], ebitest.NewPoint(100, 250), 16, &color.RGBA{0, 0, 255, 255})
 	c.EventHandler().AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
 		log.Printf("callback::click")
 	})
@@ -63,7 +92,8 @@ func NewMap(m interfaces.GameManager) *Map {
 	f.AddLayer(l)
 
 	// スクロールビュー
-	scrollView := control.NewUIScrollView("scrollView1", ebitest.NewPoint(0, 10.0), ebitest.NewSize(f.Size().W(), f.Size().H()/2))
+	// scrollView := control.NewUIScrollView("scrollView1", ebitest.NewPoint(0, 10.0), ebitest.NewSize(f.Size().W(), f.Size().H()/2))
+	scrollView := NewCustomScrollView("scrollView1", ebitest.NewPoint(0, 10.0), ebitest.NewSize(f.Size().W(), f.Size().H()/2))
 	l.AddUIControl(scrollView)
 
 	cols := []interface{}{

@@ -10,6 +10,7 @@ import (
 	"github.com/myanagisawa/ebitest/functions"
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/models/event"
+	"github.com/myanagisawa/ebitest/utils"
 )
 
 // Base ...
@@ -245,7 +246,7 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 
 // NewLayerBase ...
 func NewLayerBase(label string, pos *ebitest.Point, size *ebitest.Size, c *color.RGBA, draggable bool) interfaces.Layer {
-	img := ebitest.CreateRectImage(size.W(), size.H(), c)
+	img := utils.CreateRectImage(size.W(), size.H(), c)
 
 	return NewLayerBaseByImage(label, img, pos, draggable)
 }

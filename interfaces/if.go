@@ -137,6 +137,17 @@ type UIScrollView interface {
 	SetDataSource(colNames []interface{}, data [][]interface{})
 }
 
+// ListRow ...
+type ListRow interface {
+	Index() int
+	Parent() UIScrollView
+}
+
+// ListRowClickable ...
+type ListRowClickable interface {
+	DidClickRowCallBack(idx int, row interface{})
+}
+
 // EventHandler ...
 type EventHandler interface {
 	AddEventListener(t enum.EventTypeEnum, callback func(o EventOwner, pos *ebitest.Point, params map[string]interface{}))

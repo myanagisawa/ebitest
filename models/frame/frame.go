@@ -9,6 +9,7 @@ import (
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/models/event"
+	"github.com/myanagisawa/ebitest/utils"
 )
 
 // Base ...
@@ -206,7 +207,7 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 
 // NewFrame ...
 func NewFrame(label string, pos *ebitest.Point, size *ebitest.Size, c *color.RGBA, scrollable bool) interfaces.Frame {
-	img := ebiten.NewImageFromImage(ebitest.CreateRectImage(size.W(), size.H(), c))
+	img := ebiten.NewImageFromImage(utils.CreateRectImage(size.W(), size.H(), c))
 
 	s := &Base{
 		label:        label,

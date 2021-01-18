@@ -188,6 +188,19 @@ func fontload(fname string) []byte {
 	return bytes
 }
 
+// CreateRectImage 指定サイズのimage.Imageを作成します
+func CreateRectImage(w, h int, color *color.RGBA) image.Image {
+	m := image.NewRGBA(image.Rect(0, 0, w, h))
+	// 横ループ、半径*2＝直径まで
+	for x := 0; x < w; x++ {
+		// 縦ループ、半径*2＝直径まで
+		for y := 0; y < h; y++ {
+			m.Set(x, y, color)
+		}
+	}
+	return m
+}
+
 // SetTextToCenter dstの中心にtextを配置します
 func SetTextToCenter(text string, src image.Image, face font.Face, c color.Color) *draw.Image {
 	out := image.NewRGBA(src.Bounds())
@@ -237,4 +250,22 @@ func StackImage(base draw.Image, img image.Image, pos image.Point) draw.Image {
 	rct := image.Rectangle{pos, base.Bounds().Size()}       // 元画像への描画位置を決める
 	draw.Draw(base, rct, img, image.Point{0, 0}, draw.Over) // 乗せる画像を描画
 	return base
+}
+
+// ImageOnTextToCenter dstの中心にtextを配置します
+func ImageOnTextToCenter(base draw.Image, text image.Image) draw.Image {
+	textsize := text.Bounds().Size()
+	basesize := base.Bounds().Size()
+	// pos := image.Point{(basesize.X - textsize.X) / 2, 0}
+	pos := image.Point{(basesize.X - textsize.X) / 2, (basesize.Y - textsize.Y) / 2}
+
+	return StackImage(base, text, pos)
+}
+
+// TextColorTo 指定色のtext画像を返します
+func TextColorTo(text draw.Image, c *color.RGBA) draw.Image {
+	src := &image.Uniform{c}
+	out := image.NewRGBA(text.Bounds())
+	draw.DrawMask(out, out.Bounds(), src, image.ZP, text, image.ZP, draw.Over)
+	return out
 }
