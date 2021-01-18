@@ -135,10 +135,12 @@ type UIControl interface {
 type UIScrollView interface {
 	UIControl
 	SetDataSource(colNames []interface{}, data [][]interface{})
+	SetRowClickFunc(headerfunc func(row interface{}, pos *ebitest.Point, params map[string]interface{}), rowfunc func(idx int, row interface{}, pos *ebitest.Point, params map[string]interface{}))
 }
 
 // ListRow ...
 type ListRow interface {
+	IsHeader() bool
 	Index() int
 	Parent() UIScrollView
 }

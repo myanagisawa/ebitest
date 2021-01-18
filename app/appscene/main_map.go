@@ -143,6 +143,12 @@ func NewMap(m interfaces.GameManager) *Map {
 	}
 	scrollView.SetDataSource(cols, data)
 
+	scrollView.SetRowClickFunc(func(row interface{}, pos *ebitest.Point, params map[string]interface{}) {
+		log.Printf("かすたむヘッダクリックイベントだよ")
+	}, func(idx int, row interface{}, pos *ebitest.Point, params map[string]interface{}) {
+		log.Printf("かすたむ行クリックイベントだよ(%d)", idx)
+	})
+
 	// サブフレーム3（下）
 	f = frame.NewFrame("bottom frame", ebitest.NewPoint(0, float64(ebitest.Height-200)), ebitest.NewSize(ebitest.Width, 200), &color.RGBA{127, 200, 127, 255}, false)
 	s.AddFrame(f)

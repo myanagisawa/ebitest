@@ -62,6 +62,8 @@ type UIScrollView struct {
 	scrollbarBase *scrollbarBase
 	scrollbarBar  *scrollbarBar
 	fontSet       *char.Resource
+	onHeaderClick func(row interface{}, pos *ebitest.Point, params map[string]interface{})
+	onRowClick    func(index int, row interface{}, pos *ebitest.Point, params map[string]interface{})
 }
 
 // SetDataSource ...
@@ -208,6 +210,29 @@ func (o *UIScrollView) listViewSize() (int, int) {
 	return w, h
 }
 
+// SetRowClickFunc ヘッダクリック、行クリック時の処理を設定します
+func (o *UIScrollView) SetRowClickFunc(headerfunc func(row interface{}, pos *ebitest.Point, params map[string]interface{}), rowfunc func(idx int, row interface{}, pos *ebitest.Point, params map[string]interface{})) {
+	if headerfunc == nil {
+		log.Printf("ヘッダクリック処理の設定をスキップ")
+	} else {
+		if o.header == nil {
+			log.Printf("ヘッダ未定義のためクリック処理の設定をスキップ")
+		} else {
+			o.onHeaderClick = headerfunc
+		}
+	}
+
+	if rowfunc == nil {
+		log.Printf("行クリック処理の設定をスキップ")
+	} else {
+		if o.listView == nil {
+			log.Printf("リスト未定義のためクリック処理の設定をスキップ")
+		} else {
+			o.onRowClick = rowfunc
+		}
+	}
+}
+
 // NewUIScrollView ...
 func NewUIScrollView(label string, pos *ebitest.Point, size *ebitest.Size) interfaces.UIScrollView {
 	eimg := ebiten.NewImage(size.Get())
@@ -215,6 +240,12 @@ func NewUIScrollView(label string, pos *ebitest.Point, size *ebitest.Size) inter
 	o := &UIScrollView{
 		Base:    *cb,
 		fontSet: char.Res.Get(12, enum.FontStyleGenShinGothicNormal),
+	}
+	o.onHeaderClick = func(row interface{}, pos *ebitest.Point, params map[string]interface{}) {
+		log.Printf("デフォルトヘッダクリックイベントだよ")
+	}
+	o.onRowClick = func(index int, row interface{}, pos *ebitest.Point, params map[string]interface{}) {
+		log.Printf("デフォルト行クリックイベントだよ(%d)", index)
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
 
@@ -496,6 +527,11 @@ type listRow struct {
 	index int
 }
 
+// IsHeader ...
+func (o *listRow) IsHeader() bool {
+	return (o.label == "header")
+}
+
 // Index ...
 func (o *listRow) Index() int {
 	return o.index
@@ -510,8 +546,7 @@ func (o *listRow) Parent() interfaces.UIScrollView {
 func (o *listRow) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	// スクロールバー位置: x = リスト位置(sy)*スクロール領域サイズ(sh) / リストサイズ(lh)
 	by := 0.0
-	// FIXME: 分岐条件をちゃんと定義or共通の産出ロジックで実装
-	if o.label != "header" {
+	if !o.IsHeader() {
 		_, sy := o.parent.listView.ScrollingPos().Get()
 		py := o.position.Y()
 		by = py - sy
@@ -522,8 +557,7 @@ func (o *listRow) Position(t enum.ValueTypeEnum) *ebitest.Point {
 		return ebitest.NewPoint(0, by)
 	}
 	gy := 0.0
-	// FIXME: 分岐条件をちゃんと定義or共通の産出ロジックで実装
-	if o.label != "header" {
+	if !o.IsHeader() {
 		_, gy = o.parent.listView.Position(enum.TypeGlobal).Get()
 	} else {
 		_, gy = o.parent.Position(enum.TypeGlobal).Get()
@@ -604,8 +638,13 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 		if row, ok := o.(interfaces.ListRow); ok {
 
 			log.Printf("い")
-			if p, ok := row.Parent().(interfaces.ListRowClickable); ok {
-				p.DidClickRowCallBack(row.Index(), row)
+
+			if p, ok := row.Parent().(*UIScrollView); ok {
+				if row.IsHeader() {
+					p.onHeaderClick(row, pos, params)
+				} else {
+					p.onRowClick(row.Index(), row, pos, params)
+				}
 
 				tname := fmt.Sprintf("%s", reflect.TypeOf(o))
 				log.Printf("スクロールビューのクリック(%d): %s", row.Index(), tname)
