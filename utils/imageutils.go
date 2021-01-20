@@ -201,6 +201,13 @@ func CreateRectImage(w, h int, color *color.RGBA) image.Image {
 	return m
 }
 
+// CopyImage ...
+func CopyImage(src image.Image) draw.Image {
+	out := image.NewRGBA(src.Bounds())
+	draw.Copy(out, image.Point{}, src, src.Bounds(), draw.Src, nil)
+	return out
+}
+
 // SetTextToCenter dstの中心にtextを配置します
 func SetTextToCenter(text string, src image.Image, face font.Face, c color.Color) *draw.Image {
 	out := image.NewRGBA(src.Bounds())

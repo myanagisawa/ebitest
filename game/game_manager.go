@@ -3,11 +3,11 @@ package game
 import (
 	"fmt"
 	"image/color"
+	"log"
 	"runtime"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/myanagisawa/ebitest/app/appscene"
 	"github.com/myanagisawa/ebitest/ebitest"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
@@ -72,15 +72,8 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 
 	gm := &Manager{
 		background: ebiten.NewImageFromImage(utils.CreateRectImage(screenWidth, screenHeight, &color.RGBA{0, 0, 0, 255})),
-		// master: NewMasterData(),
+		scenes:     make(map[enum.SceneEnum]interfaces.Scene),
 	}
-
-	scenes := map[enum.SceneEnum]interfaces.Scene{}
-	scenes[enum.MapEnum] = appscene.NewMap(gm)
-	gm.scenes = scenes
-
-	// MainMenuを表示
-	gm.TransitionTo(enum.MapEnum)
 
 	eventManager = &EventManager{
 		manager: gm,
@@ -89,27 +82,21 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 	return gm
 }
 
-// TransitionTo ...
-func (g *Manager) TransitionTo(t enum.SceneEnum) {
-	// var s interfaces.Scene
-	// switch t {
-	// case enum.MainMenuEnum:
-	// 	s = scene.NewMainMenu(g)
-	// case enum.MapEnum:
-	// 	s = scene.NewMap(g)
-	// default:
-	// 	panic(fmt.Sprintf("invalid SceneEnum: %d", t))
-	// }
-	g.currentScene = g.scenes[t]
+// SetScene ...
+func (g *Manager) SetScene(key enum.SceneEnum, scene interfaces.Scene) {
+	g.scenes[key] = scene
 }
 
-// SetCurrentScene ...
-func (g *Manager) SetCurrentScene(s interfaces.Scene) {
+// TransitionTo ...
+func (g *Manager) TransitionTo(t enum.SceneEnum) {
+	s := g.scenes[t]
 	g.currentScene = s
+	log.Printf("TransitionTo: %#v", g.currentScene)
 }
 
 // Update ...
 func (g *Manager) Update() error {
+	// log.Printf("game.Manager.Update")
 	// イベント処理
 	eventManager.Update()
 

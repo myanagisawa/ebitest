@@ -45,6 +45,10 @@ func (g *EventManager) GetObjects(x, y int) []interfaces.EbiObject {
 	if cacheGetObjects != nil {
 		return cacheGetObjects
 	}
+	if g.manager.currentScene == nil {
+		// log.Printf("EventManager::GetObjects: currentScene is nil")
+		return nil
+	}
 	return g.manager.currentScene.GetObjects(x, y)
 }
 

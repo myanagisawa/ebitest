@@ -143,6 +143,7 @@ type ListRow interface {
 	IsHeader() bool
 	Index() int
 	Parent() UIScrollView
+	Source() []string
 }
 
 // ListRowClickable ...

@@ -524,7 +524,8 @@ func newListView(label string, parent *UIScrollView, pos *ebitest.Point) *listVi
 // listRow ...
 type listRow struct {
 	scrollViewParts
-	index int
+	index  int
+	source []string
 }
 
 // IsHeader ...
@@ -535,6 +536,11 @@ func (o *listRow) IsHeader() bool {
 // Index ...
 func (o *listRow) Index() int {
 	return o.index
+}
+
+// Source ...
+func (o *listRow) Source() []string {
+	return o.source
 }
 
 // Parent ...
@@ -587,6 +593,7 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 	// 行画像を作成
 	img := utils.CreateRectImage(width, height, &color.RGBA{0, 0, 0, 32}).(draw.Image)
 
+	sl := make([]string, len(columns))
 	cx := marginX
 	for i := range columns {
 		col := columns[i]
@@ -596,6 +603,9 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 		switch col.ds.(type) {
 		case image.Image:
 			// 画像
+
+			// ソース文字列
+			sl[i] = fmt.Sprintf("%s", "image column")
 		case int:
 			// テキスト（数値）
 			tx := col.width - col.padding[1]
@@ -610,7 +620,8 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 				columnImageBase = utils.StackImage(columnImageBase, t, image.Point{tx, col.padding[0]})
 				tx += t.Bounds().Size().X
 			}
-
+			// ソース文字列
+			sl[i] = fmt.Sprintf("%d", col.ds)
 		case string:
 			tx := col.padding[3]
 			for j := range col.sources {
@@ -618,6 +629,8 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 				columnImageBase = utils.StackImage(columnImageBase, t, image.Point{tx, col.padding[0]})
 				tx += t.Bounds().Size().X
 			}
+			// ソース文字列
+			sl[i] = fmt.Sprintf("%s", col.ds)
 		default:
 			panic("invalid type")
 		}
@@ -631,14 +644,11 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 	o := &listRow{
 		scrollViewParts: *sb,
 		index:           index,
+		source:          sl,
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
 	o.eventHandler.AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
-		log.Printf("あ")
 		if row, ok := o.(interfaces.ListRow); ok {
-
-			log.Printf("い")
-
 			if p, ok := row.Parent().(*UIScrollView); ok {
 				if row.IsHeader() {
 					p.onHeaderClick(row, pos, params)

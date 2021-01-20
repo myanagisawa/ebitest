@@ -1,4 +1,4 @@
-package appscene
+package wmap
 
 import (
 	"image/color"
@@ -11,11 +11,12 @@ import (
 	"github.com/myanagisawa/ebitest/models/frame"
 	"github.com/myanagisawa/ebitest/models/layer"
 	"github.com/myanagisawa/ebitest/models/scene"
+	"github.com/myanagisawa/ebitest/utils"
 )
 
 type (
-	// Map ...
-	Map struct {
+	// Scene ...
+	Scene struct {
 		scene.Base
 	}
 
@@ -24,11 +25,6 @@ type (
 		control.UIScrollView
 	}
 )
-
-// DidClickRowCallBack ...
-func (o *CustomScrollView) DidClickRowCallBack(idx int, row interface{}) {
-	log.Printf("DidClickRowCallBack: idx=%d, row=%#v", idx, row)
-}
 
 var (
 	ctrl interfaces.UIControl
@@ -44,19 +40,19 @@ func NewCustomScrollView(label string, pos *ebitest.Point, size *ebitest.Size) i
 	}
 }
 
-// NewMap ...
-func NewMap(m interfaces.GameManager) *Map {
+// NewScene ...
+func NewScene(m interfaces.GameManager) *Scene {
 
-	s := &Map{
+	s := &Scene{
 		Base: *scene.NewScene("MainMap", m).(*scene.Base),
 	}
 
 	// メインフレーム
-	f := frame.NewFrame("main frame", ebitest.NewPoint(200, 20), ebitest.NewSize(ebitest.Width-200, ebitest.Height-220), &color.RGBA{200, 200, 200, 255}, true)
-	s.AddFrame(f)
+	mainf := frame.NewFrame("main frame", ebitest.NewPoint(200, 20), ebitest.NewSize(ebitest.Width-200, ebitest.Height-220), &color.RGBA{200, 200, 200, 255}, true)
+	s.AddFrame(mainf)
 
 	l := layer.NewLayerBaseByImage("map", ebitest.Images["world"], ebitest.NewPoint(0, 0), false)
-	f.AddLayer(l)
+	mainf.AddLayer(l)
 
 	// c := control.NewSimpleLabel("test", ebitest.Images["btnBase"], ebitest.NewPoint(100, 100), color.Black)
 	c := control.NewSimpleLabel("SIMPLE LABEL", ebitest.NewPoint(100, 100), 48, &color.RGBA{0, 0, 255, 255}, enum.FontStyleGenShinGothicMedium)
@@ -69,7 +65,7 @@ func NewMap(m interfaces.GameManager) *Map {
 	c = control.NewSimpleLabel("文字列試験", ebitest.NewPoint(100, 200), 24, &color.RGBA{255, 0, 0, 255}, enum.FontStyleGenShinGothicRegular)
 	l.AddUIControl(c)
 
-	c = control.NewSimpleButton("SIMPLE BUTTON", ebitest.Images["btnBase"], ebitest.NewPoint(100, 250), 16, &color.RGBA{0, 0, 255, 255})
+	c = control.NewSimpleButton("SIMPLE BUTTON", utils.CopyImage(ebitest.Images["btnBase"]), ebitest.NewPoint(100, 350), 16, &color.RGBA{0, 0, 255, 255})
 	c.EventHandler().AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
 		log.Printf("callback::click")
 	})
@@ -80,20 +76,20 @@ func NewMap(m interfaces.GameManager) *Map {
 	cnt = 0
 
 	// サブフレーム1（上）
-	f = frame.NewFrame("top frame", ebitest.NewPoint(0, 0), ebitest.NewSize(ebitest.Width, 20), &color.RGBA{0, 0, 0, 255}, false)
-	s.AddFrame(f)
+	topf := frame.NewFrame("top frame", ebitest.NewPoint(0, 0), ebitest.NewSize(ebitest.Width, 20), &color.RGBA{0, 0, 0, 255}, false)
+	s.AddFrame(topf)
 
 	// サブフレーム2（横）
 	fs := ebitest.NewSize(200, ebitest.Height-220)
-	f = frame.NewFrame("side frame", ebitest.NewPoint(0, 20), fs, &color.RGBA{127, 127, 200, 255}, false)
-	s.AddFrame(f)
+	sidef := frame.NewFrame("side frame", ebitest.NewPoint(0, 20), fs, &color.RGBA{127, 127, 200, 255}, false)
+	s.AddFrame(sidef)
 
 	l = layer.NewLayerBase("Layer1", ebitest.NewPoint(0, 0), fs, &color.RGBA{0, 0, 0, 128}, false)
-	f.AddLayer(l)
+	sidef.AddLayer(l)
 
 	// スクロールビュー
 	// scrollView := control.NewUIScrollView("scrollView1", ebitest.NewPoint(0, 10.0), ebitest.NewSize(f.Size().W(), f.Size().H()/2))
-	scrollView := NewCustomScrollView("scrollView1", ebitest.NewPoint(0, 10.0), ebitest.NewSize(f.Size().W(), f.Size().H()/2))
+	scrollView := NewCustomScrollView("scrollView1", ebitest.NewPoint(0, 10.0), ebitest.NewSize(sidef.Size().W(), sidef.Size().H()/2))
 	l.AddUIControl(scrollView)
 
 	cols := []interface{}{
@@ -147,17 +143,21 @@ func NewMap(m interfaces.GameManager) *Map {
 		log.Printf("かすたむヘッダクリックイベントだよ")
 	}, func(idx int, row interface{}, pos *ebitest.Point, params map[string]interface{}) {
 		log.Printf("かすたむ行クリックイベントだよ(%d)", idx)
+		if r, ok := row.(interfaces.ListRow); ok {
+			log.Printf("  %#v", r.Source())
+			log.Printf("  別フレーム参照: %s", mainf.Label())
+		}
 	})
 
 	// サブフレーム3（下）
-	f = frame.NewFrame("bottom frame", ebitest.NewPoint(0, float64(ebitest.Height-200)), ebitest.NewSize(ebitest.Width, 200), &color.RGBA{127, 200, 127, 255}, false)
-	s.AddFrame(f)
+	bottomf := frame.NewFrame("bottom frame", ebitest.NewPoint(0, float64(ebitest.Height-200)), ebitest.NewSize(ebitest.Width, 200), &color.RGBA{127, 200, 127, 255}, false)
+	s.AddFrame(bottomf)
 
 	return s
 }
 
 // Update ...
-func (o *Map) Update() error {
+func (o *Scene) Update() error {
 
 	// if cnt == 10 {
 	// 	a := ctrl.Angle(enum.TypeGlobal)

@@ -6,8 +6,8 @@ type (
 )
 
 const (
-	// MainMenuEnum メインメニュー
-	MainMenuEnum SceneEnum = iota
+	// MenuEnum メニュー
+	MenuEnum SceneEnum = iota
 	// MapEnum マップ
 	MapEnum
 )

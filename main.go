@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 
+	"github.com/myanagisawa/ebitest/app"
 	"github.com/pkg/profile"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/myanagisawa/ebitest/game"
 )
 
 const (
@@ -24,7 +24,7 @@ func main() {
 	ebiten.SetWindowPosition(3360-(screenWidth+100), 100)
 	// ebiten.SetMaxTPS(30)
 
-	manager := game.NewManager(screenWidth, screenHeight)
+	manager := app.NewGameManager(screenWidth, screenHeight)
 
 	if err := ebiten.RunGame(manager); err != nil {
 		log.Fatal(err)
