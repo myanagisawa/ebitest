@@ -2,7 +2,7 @@ package interfaces
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/myanagisawa/ebitest/ebitest"
+	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 )
 
@@ -36,12 +36,12 @@ type Scrollable interface {
 
 // Positionable ...
 type Positionable interface {
-	Position(enum.ValueTypeEnum) *ebitest.Point
+	Position(enum.ValueTypeEnum) *g.Point
 }
 
 // Scaleable ...
 type Scaleable interface {
-	Scale(enum.ValueTypeEnum) *ebitest.Scale
+	Scale(enum.ValueTypeEnum) *g.Scale
 }
 
 // Anglable ...
@@ -51,7 +51,7 @@ type Anglable interface {
 
 // Movable ...
 type Movable interface {
-	Moving() *ebitest.Point
+	Moving() *g.Point
 	SetMoving(dx, dy float64)
 }
 
@@ -81,7 +81,7 @@ type Frame interface {
 	Positionable
 	EventOwner
 	Manager() GameManager
-	Size() *ebitest.Size
+	Size() *g.Size
 	Parent() Scene
 	SetParent(parent Scene)
 	AddLayer(l Layer)
@@ -135,7 +135,7 @@ type UIControl interface {
 type UIScrollView interface {
 	UIControl
 	SetDataSource(colNames []interface{}, data [][]interface{})
-	SetRowClickFunc(headerfunc func(row interface{}, pos *ebitest.Point, params map[string]interface{}), rowfunc func(idx int, row interface{}, pos *ebitest.Point, params map[string]interface{}))
+	SetRowClickFunc(headerfunc func(row interface{}, pos *g.Point, params map[string]interface{}), rowfunc func(idx int, row interface{}, pos *g.Point, params map[string]interface{}))
 }
 
 // ListRow ...
@@ -153,8 +153,8 @@ type ListRowClickable interface {
 
 // EventHandler ...
 type EventHandler interface {
-	AddEventListener(t enum.EventTypeEnum, callback func(o EventOwner, pos *ebitest.Point, params map[string]interface{}))
-	Firing(t enum.EventTypeEnum, c EventOwner, pos *ebitest.Point, params map[string]interface{})
+	AddEventListener(t enum.EventTypeEnum, callback func(o EventOwner, pos *g.Point, params map[string]interface{}))
+	Firing(t enum.EventTypeEnum, c EventOwner, pos *g.Point, params map[string]interface{})
 	Has(t enum.EventTypeEnum) bool
 }
 

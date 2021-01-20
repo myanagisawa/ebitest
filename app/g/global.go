@@ -1,4 +1,4 @@
-package _ebitest
+package g
 
 import (
 	"image"
@@ -7,15 +7,6 @@ import (
 
 	"github.com/myanagisawa/ebitest/utils"
 )
-
-// type (
-
-// 	// LabelFace ...
-// 	LabelFace struct {
-// 		uiFont        font.Face
-// 		uiFontMHeight int
-// 	}
-// )
 
 var (
 	// DebugText ...
@@ -26,17 +17,8 @@ var (
 	// Height ...
 	Height int
 
-	// Fonts ...
-	// Fonts map[string]font.Face
-
 	// Images ...
 	Images map[string]image.Image
-
-	// // SpotLightImage ...
-	// SpotLightImage *ebiten.Image
-
-	// fontFile
-	// fontFile = "resources/fonts/GenShinGothic-Regular.ttf"
 
 	// EdgeSize 画面の端から何ピクセルを端とするか
 	EdgeSize = 30
@@ -45,9 +27,6 @@ var (
 )
 
 func init() {
-	// Fonts = make(map[string]font.Face)
-	// Fonts["btnFont"] = FontLoad(16)
-
 	Images = make(map[string]image.Image)
 	Images["btnBase"], _ = utils.GetImageByPath("resources/system_images/button.png")
 	Images["world"], _ = utils.GetImageByPath("resources/system_images/world.jpg")
@@ -66,54 +45,6 @@ func init() {
 	Images["routeLine"] = img.(draw.Image)
 
 }
-
-// CreateRectImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
-// func CreateRectImage(w, h int, color *color.RGBA) image.Image {
-// 	m := image.NewRGBA(image.Rect(0, 0, w, h))
-// 	// 横ループ、半径*2＝直径まで
-// 	for x := 0; x < w; x++ {
-// 		// 縦ループ、半径*2＝直径まで
-// 		for y := 0; y < h; y++ {
-// 			m.Set(x, y, color)
-// 		}
-// 	}
-// 	return m
-// }
-
-// // CreateBorderedRectImage 半径rの円の画像イメージを作成します。color1は円の色、color2は円の向きを表す線の色です
-// func CreateBorderedRectImage(w, h int, c *color.RGBA) image.Image {
-// 	m := image.NewRGBA(image.Rect(0, 0, w, h))
-// 	// 横ループ、半径*2＝直径まで
-// 	for x := 0; x < w; x++ {
-// 		// 縦ループ、半径*2＝直径まで
-// 		for y := 0; y < h; y++ {
-// 			if (x == 0 || x == (w-1)) || (y == 0 || y == (h-1)) {
-// 				m.Set(x, y, color.RGBA{c.R / 2, c.G / 2, c.B / 2, c.A})
-// 			} else {
-// 				m.Set(x, y, c)
-// 			}
-// 		}
-// 	}
-// 	return m
-// }
-
-// // FontLoad ...
-// func FontLoad(size int) font.Face {
-// 	// ebitenフォントのテスト
-// 	ftBinary, err := ioutil.ReadFile(fontFile)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	tt, err := truetype.Parse(ftBinary)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	return truetype.NewFace(tt, &truetype.Options{
-// 		Size:    float64(size),
-// 		DPI:     72,
-// 		Hinting: font.HintingFull,
-// 	})
-// }
 
 // Point ...
 type Point struct {

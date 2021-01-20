@@ -5,7 +5,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/myanagisawa/ebitest/ebitest"
+	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/functions"
 	"github.com/myanagisawa/ebitest/interfaces"
@@ -18,9 +18,9 @@ type Base struct {
 	label        string
 	image        *ebiten.Image
 	frame        interfaces.Frame
-	position     *ebitest.Point
-	scale        *ebitest.Scale
-	moving       *ebitest.Point
+	position     *g.Point
+	scale        *g.Scale
+	moving       *g.Point
 	controls     []interfaces.UIControl
 	eventHandler interfaces.EventHandler
 	modal        bool
@@ -47,13 +47,13 @@ func (o *Base) SetFrame(frame interfaces.Frame) {
 }
 
 // Position ...
-func (o *Base) Position(t enum.ValueTypeEnum) *ebitest.Point {
+func (o *Base) Position(t enum.ValueTypeEnum) *g.Point {
 	dx, dy := 0.0, 0.0
 	if o.moving != nil {
 		dx, dy = o.moving.Get()
 	}
 	if t == enum.TypeLocal {
-		return ebitest.NewPoint(o.position.X()+dx, o.position.Y()+dy)
+		return g.NewPoint(o.position.X()+dx, o.position.Y()+dy)
 	}
 	gx, gy := 0.0, 0.0
 	if o.frame != nil {
@@ -62,25 +62,25 @@ func (o *Base) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	sx, sy := o.Scale(enum.TypeGlobal).Get()
 	gx += (o.position.X() + dx) * sx
 	gy += (o.position.Y() + dy) * sy
-	return ebitest.NewPoint(gx, gy)
+	return g.NewPoint(gx, gy)
 }
 
 // Scale ...
-func (o *Base) Scale(t enum.ValueTypeEnum) *ebitest.Scale {
+func (o *Base) Scale(t enum.ValueTypeEnum) *g.Scale {
 	return o.scale
 }
 
 // SetMoving ...
 func (o *Base) SetMoving(dx, dy float64) {
 	if o.moving == nil {
-		o.moving = ebitest.NewPoint(dx, dy)
+		o.moving = g.NewPoint(dx, dy)
 	} else {
 		o.moving.Set(dx, dy)
 	}
 }
 
 // Moving ...
-func (o *Base) Moving() *ebitest.Point {
+func (o *Base) Moving() *g.Point {
 	return o.moving
 }
 
@@ -136,7 +136,7 @@ func (o *Base) Scroll(et enum.EdgeTypeEnum) {
 	}
 
 	posX, posY := o.Position(enum.TypeLocal).GetInt()
-	layerSize := ebitest.NewSize(o.image.Size())
+	layerSize := g.NewSize(o.image.Size())
 	frameSize := o.frame.Size()
 
 	if posX > 0 {
@@ -245,21 +245,21 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 }
 
 // NewLayerBase ...
-func NewLayerBase(label string, pos *ebitest.Point, size *ebitest.Size, c *color.RGBA, draggable bool) interfaces.Layer {
+func NewLayerBase(label string, pos *g.Point, size *g.Size, c *color.RGBA, draggable bool) interfaces.Layer {
 	img := utils.CreateRectImage(size.W(), size.H(), c)
 
 	return NewLayerBaseByImage(label, img, pos, draggable)
 }
 
 // NewLayerBaseByImage ...
-func NewLayerBaseByImage(label string, img image.Image, pos *ebitest.Point, draggable bool) interfaces.Layer {
+func NewLayerBaseByImage(label string, img image.Image, pos *g.Point, draggable bool) interfaces.Layer {
 	eimg := ebiten.NewImageFromImage(img)
 
 	l := &Base{
 		label:        label,
 		image:        eimg,
 		position:     pos,
-		scale:        ebitest.NewScale(1.0, 1.0),
+		scale:        g.NewScale(1.0, 1.0),
 		eventHandler: event.NewEventHandler(),
 	}
 	if draggable {

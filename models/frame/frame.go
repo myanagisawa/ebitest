@@ -5,7 +5,7 @@ import (
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/myanagisawa/ebitest/ebitest"
+	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/models/event"
@@ -17,7 +17,7 @@ type Base struct {
 	label    string
 	image    *ebiten.Image
 	parent   interfaces.Scene
-	position *ebitest.Point
+	position *g.Point
 
 	layers      []interfaces.Layer
 	activeLayer interfaces.Layer
@@ -78,14 +78,14 @@ func (o *Base) In(x, y int) bool {
 }
 
 // Position ...
-func (o *Base) Position(t enum.ValueTypeEnum) *ebitest.Point {
+func (o *Base) Position(t enum.ValueTypeEnum) *g.Point {
 	// 親（scene）は位置を持たないので、常に自分のPositionを返せばOK
 	return o.position
 }
 
 // Size ...
-func (o *Base) Size() *ebitest.Size {
-	return ebitest.NewSize(o.image.Size())
+func (o *Base) Size() *g.Size {
+	return g.NewSize(o.image.Size())
 }
 
 // GetEdgeType ...
@@ -93,13 +93,13 @@ func (o *Base) GetEdgeType(x, y int) enum.EdgeTypeEnum {
 	posX, posY := o.position.GetInt()
 	frameW, frameH := o.image.Size()
 
-	minX, maxX := posX+ebitest.EdgeSize, posX+frameW-ebitest.EdgeSize
-	minY, maxY := posY+ebitest.EdgeSize, posY+frameH-ebitest.EdgeSize
+	minX, maxX := posX+g.EdgeSize, posX+frameW-g.EdgeSize
+	minY, maxY := posY+g.EdgeSize, posY+frameH-g.EdgeSize
 
 	// 範囲外判定
-	if x < posX-ebitest.EdgeSizeOuter || x > posX+frameW+ebitest.EdgeSizeOuter {
+	if x < posX-g.EdgeSizeOuter || x > posX+frameW+g.EdgeSizeOuter {
 		return enum.EdgeTypeNotEdge
-	} else if y < posY-ebitest.EdgeSizeOuter || y > posY+frameH+ebitest.EdgeSizeOuter {
+	} else if y < posY-g.EdgeSizeOuter || y > posY+frameH+g.EdgeSizeOuter {
 		return enum.EdgeTypeNotEdge
 	}
 
@@ -191,7 +191,7 @@ func (o *Base) Draw(screen *ebiten.Image) {
 				ac = fmt.Sprintf("%s(%d, %d)", c.Label(), x, y)
 			}
 		}
-		ebitest.DebugText += fmt.Sprintf("\n%s / %s / %s", o.label, n, ac)
+		g.DebugText += fmt.Sprintf("\n%s / %s / %s", o.label, n, ac)
 	}
 }
 
@@ -206,7 +206,7 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 }
 
 // NewFrame ...
-func NewFrame(label string, pos *ebitest.Point, size *ebitest.Size, c *color.RGBA, scrollable bool) interfaces.Frame {
+func NewFrame(label string, pos *g.Point, size *g.Size, c *color.RGBA, scrollable bool) interfaces.Frame {
 	img := ebiten.NewImageFromImage(utils.CreateRectImage(size.W(), size.H(), c))
 
 	s := &Base{
@@ -216,7 +216,7 @@ func NewFrame(label string, pos *ebitest.Point, size *ebitest.Size, c *color.RGB
 		eventHandler: event.NewEventHandler(),
 	}
 	if scrollable {
-		s.eventHandler.AddEventListener(enum.EventTypeScroll, func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
+		s.eventHandler.AddEventListener(enum.EventTypeScroll, func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 			if t, ok := o.(interfaces.Scrollable); ok {
 				t.DoScroll(pos.GetInt())
 			}

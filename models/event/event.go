@@ -1,7 +1,7 @@
 package event
 
 import (
-	"github.com/myanagisawa/ebitest/ebitest"
+	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
 )
@@ -12,13 +12,13 @@ type Handler struct {
 }
 
 // AddEventListener ...
-func (o *Handler) AddEventListener(t enum.EventTypeEnum, callback func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{})) {
+func (o *Handler) AddEventListener(t enum.EventTypeEnum, callback func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{})) {
 	ev := &Event{callback}
 	o.events[t] = ev
 }
 
 // Firing イベントの発火を行います
-func (o *Handler) Firing(t enum.EventTypeEnum, c interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
+func (o *Handler) Firing(t enum.EventTypeEnum, c interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 	if e, ok := o.events[t].(*Event); ok {
 		params["event"] = t
 		e.callback(c, pos, params)
@@ -41,5 +41,5 @@ func NewEventHandler() interfaces.EventHandler {
 
 // Event ...
 type Event struct {
-	callback func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{})
+	callback func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{})
 }

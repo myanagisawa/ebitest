@@ -1,7 +1,7 @@
 package functions
 
 import (
-	"github.com/myanagisawa/ebitest/ebitest"
+	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
 )
@@ -9,7 +9,7 @@ import (
 var (
 
 	// CommonEventCallback 共通イベントコールバック
-	CommonEventCallback = func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
+	CommonEventCallback = func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 		et := params["event"].(enum.EventTypeEnum)
 		switch et {
 		case enum.EventTypeClick:

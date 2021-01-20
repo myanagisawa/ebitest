@@ -1,24 +1,24 @@
 package base
 
-import "github.com/myanagisawa/ebitest/ebitest"
+import "github.com/myanagisawa/ebitest/app/g"
 
 // PositionImpl ...
 type PositionImpl struct {
-	position *ebitest.Point
+	position *g.Point
 }
 
 // Position ...
-func (o *PositionImpl) Position() *ebitest.Point {
+func (o *PositionImpl) Position() *g.Point {
 	return o.position
 }
 
 // ScaleImpl ...
 type ScaleImpl struct {
-	scale *ebitest.Scale
+	scale *g.Scale
 }
 
 // Scale ...
-func (o *ScaleImpl) Scale() *ebitest.Scale {
+func (o *ScaleImpl) Scale() *g.Scale {
 	return o.scale
 }
 

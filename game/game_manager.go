@@ -8,7 +8,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/myanagisawa/ebitest/ebitest"
+	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/utils"
@@ -68,7 +68,7 @@ type (
 
 // NewManager ...
 func NewManager(screenWidth, screenHeight int) *Manager {
-	ebitest.Width, ebitest.Height = screenWidth, screenHeight
+	g.Width, g.Height = screenWidth, screenHeight
 
 	gm := &Manager{
 		background: ebiten.NewImageFromImage(utils.CreateRectImage(screenWidth, screenHeight, &color.RGBA{0, 0, 0, 255})),
@@ -83,46 +83,46 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 }
 
 // SetScene ...
-func (g *Manager) SetScene(key enum.SceneEnum, scene interfaces.Scene) {
-	g.scenes[key] = scene
+func (o *Manager) SetScene(key enum.SceneEnum, scene interfaces.Scene) {
+	o.scenes[key] = scene
 }
 
 // TransitionTo ...
-func (g *Manager) TransitionTo(t enum.SceneEnum) {
-	s := g.scenes[t]
-	g.currentScene = s
-	log.Printf("TransitionTo: %#v", g.currentScene)
+func (o *Manager) TransitionTo(t enum.SceneEnum) {
+	s := o.scenes[t]
+	o.currentScene = s
+	log.Printf("TransitionTo: %#v", o.currentScene)
 }
 
 // Update ...
-func (g *Manager) Update() error {
+func (o *Manager) Update() error {
 	// log.Printf("game.Manager.Update")
 	// イベント処理
 	eventManager.Update()
 
-	if g.currentScene != nil {
-		return g.currentScene.Update()
+	if o.currentScene != nil {
+		return o.currentScene.Update()
 	}
 	return nil
 }
 
 // Draw ...
-func (g *Manager) Draw(screen *ebiten.Image) {
-	ebitest.DebugText = ""
+func (o *Manager) Draw(screen *ebiten.Image) {
+	g.DebugText = ""
 	var op *ebiten.DrawImageOptions
 
 	op = &ebiten.DrawImageOptions{}
-	screen.DrawImage(g.background, op)
+	screen.DrawImage(o.background, op)
 
-	if g.currentScene != nil {
-		g.currentScene.Draw(screen)
+	if o.currentScene != nil {
+		o.currentScene.Draw(screen)
 	}
 
 	// x, y := ebiten.CursorPosition()
 	// dbg := fmt.Sprintf("%s\nTPS: %0.2f\nFPS: %0.2f\npos: (%d, %d)", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS(), x, y)
 	dbg := fmt.Sprintf("%s / TPS: %0.2f / FPS: %0.2f", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS())
-	if ebitest.DebugText != "" {
-		dbg += fmt.Sprintf("%s", ebitest.DebugText)
+	if g.DebugText != "" {
+		dbg += fmt.Sprintf("%s", g.DebugText)
 	}
 	focused := eventManager.GetObject(ebiten.CursorPosition())
 	if focused != nil {
@@ -132,8 +132,8 @@ func (g *Manager) Draw(screen *ebiten.Image) {
 }
 
 // Layout ...
-func (g *Manager) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return ebitest.Width, ebitest.Height
+func (o *Manager) Layout(outsideWidth, outsideHeight int) (int, int) {
+	return g.Width, g.Height
 }
 
 func printMemoryStats() string {

@@ -10,7 +10,7 @@ import (
 	"reflect"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/myanagisawa/ebitest/ebitest"
+	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/functions"
 	"github.com/myanagisawa/ebitest/interfaces"
@@ -62,8 +62,8 @@ type UIScrollView struct {
 	scrollbarBase *scrollbarBase
 	scrollbarBar  *scrollbarBar
 	fontSet       *char.Resource
-	onHeaderClick func(row interface{}, pos *ebitest.Point, params map[string]interface{})
-	onRowClick    func(index int, row interface{}, pos *ebitest.Point, params map[string]interface{})
+	onHeaderClick func(row interface{}, pos *g.Point, params map[string]interface{})
+	onRowClick    func(index int, row interface{}, pos *g.Point, params map[string]interface{})
 }
 
 // SetDataSource ...
@@ -105,12 +105,12 @@ func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{
 			headerheight = s.H()
 		}
 	}
-	row := newListRow("header", o, headers, 0, ebitest.NewPoint(0, 0), listWidth, headerheight)
+	row := newListRow("header", o, headers, 0, g.NewPoint(0, 0), listWidth, headerheight)
 	o.header = row
 
 	headerheight += marginY
 	// スクロール部分の初期化
-	list := newListView(fmt.Sprintf("%s.list", o.label), o, ebitest.NewPoint(0, float64(headerheight)))
+	list := newListView(fmt.Sprintf("%s.list", o.label), o, g.NewPoint(0, float64(headerheight)))
 	o.listView = list
 
 	// 行オブジェクト作成
@@ -128,7 +128,7 @@ func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{
 			}
 		}
 		// 行を作成
-		row := newListRow(fmt.Sprintf("row-%d", i), o, cols, i, ebitest.NewPoint(0, float64(totalHeight)), listWidth, rowheight)
+		row := newListRow(fmt.Sprintf("row-%d", i), o, cols, i, g.NewPoint(0, float64(totalHeight)), listWidth, rowheight)
 		o.listView.SetRow(row)
 		// height更新
 		totalHeight += rowheight + marginY
@@ -137,11 +137,11 @@ func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{
 	o.listView.setDisplayIndex()
 
 	// スクロールバー部分の初期化
-	barBase := newScrollbarBase(fmt.Sprintf("%s.scrollbar.base", o.label), o, ebitest.NewPoint(float64(listWidth-12), float64(headerheight)))
+	barBase := newScrollbarBase(fmt.Sprintf("%s.scrollbar.base", o.label), o, g.NewPoint(float64(listWidth-12), float64(headerheight)))
 	o.scrollbarBase = barBase
 
 	basePos := barBase.position
-	bar := newScrollbarBar(fmt.Sprintf("%s.scrollbar.bar", o.label), o, ebitest.NewPoint(basePos.X()+2, basePos.Y()+3))
+	bar := newScrollbarBar(fmt.Sprintf("%s.scrollbar.bar", o.label), o, g.NewPoint(basePos.X()+2, basePos.Y()+3))
 	o.scrollbarBar = bar
 }
 
@@ -211,7 +211,7 @@ func (o *UIScrollView) listViewSize() (int, int) {
 }
 
 // SetRowClickFunc ヘッダクリック、行クリック時の処理を設定します
-func (o *UIScrollView) SetRowClickFunc(headerfunc func(row interface{}, pos *ebitest.Point, params map[string]interface{}), rowfunc func(idx int, row interface{}, pos *ebitest.Point, params map[string]interface{})) {
+func (o *UIScrollView) SetRowClickFunc(headerfunc func(row interface{}, pos *g.Point, params map[string]interface{}), rowfunc func(idx int, row interface{}, pos *g.Point, params map[string]interface{})) {
 	if headerfunc == nil {
 		log.Printf("ヘッダクリック処理の設定をスキップ")
 	} else {
@@ -234,17 +234,17 @@ func (o *UIScrollView) SetRowClickFunc(headerfunc func(row interface{}, pos *ebi
 }
 
 // NewUIScrollView ...
-func NewUIScrollView(label string, pos *ebitest.Point, size *ebitest.Size) interfaces.UIScrollView {
+func NewUIScrollView(label string, pos *g.Point, size *g.Size) interfaces.UIScrollView {
 	eimg := ebiten.NewImage(size.Get())
 	cb := NewControlBase(label, eimg, pos).(*Base)
 	o := &UIScrollView{
 		Base:    *cb,
 		fontSet: char.Res.Get(12, enum.FontStyleGenShinGothicNormal),
 	}
-	o.onHeaderClick = func(row interface{}, pos *ebitest.Point, params map[string]interface{}) {
+	o.onHeaderClick = func(row interface{}, pos *g.Point, params map[string]interface{}) {
 		log.Printf("デフォルトヘッダクリックイベントだよ")
 	}
-	o.onRowClick = func(index int, row interface{}, pos *ebitest.Point, params map[string]interface{}) {
+	o.onRowClick = func(index int, row interface{}, pos *g.Point, params map[string]interface{}) {
 		log.Printf("デフォルト行クリックイベントだよ(%d)", index)
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
@@ -270,7 +270,7 @@ func (o *scrollViewParts) Layer() interfaces.Layer {
 }
 
 // Position ...
-func (o *scrollViewParts) Position(t enum.ValueTypeEnum) *ebitest.Point {
+func (o *scrollViewParts) Position(t enum.ValueTypeEnum) *g.Point {
 	if t == enum.TypeLocal {
 		return o.position
 	}
@@ -281,14 +281,14 @@ func (o *scrollViewParts) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	sx, sy := o.Scale(enum.TypeGlobal).Get()
 	gx += o.position.X() * sx
 	gy += o.position.Y() * sy
-	return ebitest.NewPoint(gx, gy)
+	return g.NewPoint(gx, gy)
 }
 
 // In ...
 func (o *scrollViewParts) In(x, y int) bool {
 	return controlIn(x, y,
 		o.Position(enum.TypeGlobal),
-		ebitest.NewSize(o.image.Size()),
+		g.NewSize(o.image.Size()),
 		o.Scale(enum.TypeGlobal),
 		o.Layer().Frame().Position(enum.TypeGlobal),
 		o.Layer().Frame().Size())
@@ -315,7 +315,7 @@ func (o *scrollViewParts) Draw(screen *ebiten.Image) {
 	screen.DrawImage(o.image, op)
 }
 
-func newScrollViewParts(label string, parent *UIScrollView, eimg *ebiten.Image, pos *ebitest.Point) *scrollViewParts {
+func newScrollViewParts(label string, parent *UIScrollView, eimg *ebiten.Image, pos *g.Point) *scrollViewParts {
 	if eimg == nil {
 		eimg = ebiten.NewImage(0, 0)
 	}
@@ -334,14 +334,14 @@ func newScrollViewParts(label string, parent *UIScrollView, eimg *ebiten.Image, 
 // listView ...
 type listView struct {
 	scrollViewParts
-	scrollingPos *ebitest.Point
+	scrollingPos *g.Point
 	rows         []*listRow
-	size         *ebitest.Size
+	size         *g.Size
 	displayFrom  int
 	displayTo    int
 }
 
-func (o *listView) calcScrollingPos(dy int) *ebitest.Point {
+func (o *listView) calcScrollingPos(dy int) *g.Point {
 	sx, sy := o.scrollingPos.GetInt()
 	if dy != 0 {
 		sy += dy
@@ -358,11 +358,11 @@ func (o *listView) calcScrollingPos(dy int) *ebitest.Point {
 		}
 	}
 	// log.Printf("calcScrollingPos: %d", sy)
-	return ebitest.NewPoint(float64(sx), float64(sy))
+	return g.NewPoint(float64(sx), float64(sy))
 }
 
 // ScrollingPos ...
-func (o *listView) ScrollingPos() *ebitest.Point {
+func (o *listView) ScrollingPos() *g.Point {
 	if o.moving == nil {
 		return o.scrollingPos
 	}
@@ -500,10 +500,10 @@ func (o *listView) Draw(screen *ebiten.Image) {
 func (o *listView) SetRow(row *listRow) {
 	_, rh := row.image.Size()
 	o.rows = append(o.rows, row)
-	o.size = ebitest.NewSize(o.size.W(), o.size.H()+rh+marginY)
+	o.size = g.NewSize(o.size.W(), o.size.H()+rh+marginY)
 }
 
-func newListView(label string, parent *UIScrollView, pos *ebitest.Point) *listView {
+func newListView(label string, parent *UIScrollView, pos *g.Point) *listView {
 	pw, ph := parent.image.Size()
 
 	eimg := ebiten.NewImage(pw, ph-int(pos.Y()))
@@ -512,8 +512,8 @@ func newListView(label string, parent *UIScrollView, pos *ebitest.Point) *listVi
 
 	o := &listView{
 		scrollViewParts: *sb,
-		scrollingPos:    ebitest.NewPoint(0, 0),
-		size:            ebitest.NewSize(pw, -marginY),
+		scrollingPos:    g.NewPoint(0, 0),
+		size:            g.NewSize(pw, -marginY),
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeWheel, functions.CommonEventCallback)
 	return o
@@ -549,7 +549,7 @@ func (o *listRow) Parent() interfaces.UIScrollView {
 }
 
 // Position ...
-func (o *listRow) Position(t enum.ValueTypeEnum) *ebitest.Point {
+func (o *listRow) Position(t enum.ValueTypeEnum) *g.Point {
 	// スクロールバー位置: x = リスト位置(sy)*スクロール領域サイズ(sh) / リストサイズ(lh)
 	by := 0.0
 	if !o.IsHeader() {
@@ -560,7 +560,7 @@ func (o *listRow) Position(t enum.ValueTypeEnum) *ebitest.Point {
 		by = o.position.Y()
 	}
 	if t == enum.TypeLocal {
-		return ebitest.NewPoint(0, by)
+		return g.NewPoint(0, by)
 	}
 	gy := 0.0
 	if !o.IsHeader() {
@@ -570,14 +570,14 @@ func (o *listRow) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	}
 	_, sy := o.Scale(enum.TypeGlobal).Get()
 	gy += by * sy
-	return ebitest.NewPoint(0, gy)
+	return g.NewPoint(0, gy)
 }
 
 // In ...
 func (o *listRow) In(x, y int) bool {
 	return controlIn(x, y,
 		o.Position(enum.TypeGlobal),
-		ebitest.NewSize(o.image.Size()),
+		g.NewSize(o.image.Size()),
 		o.Scale(enum.TypeGlobal),
 		o.Layer().Frame().Position(enum.TypeGlobal),
 		o.Layer().Frame().Size())
@@ -589,7 +589,7 @@ func (o *listRow) Update() error {
 	return nil
 }
 
-func newListRow(label string, parent *UIScrollView, columns []*column, index int, pos *ebitest.Point, width, height int) *listRow {
+func newListRow(label string, parent *UIScrollView, columns []*column, index int, pos *g.Point, width, height int) *listRow {
 	// 行画像を作成
 	img := utils.CreateRectImage(width, height, &color.RGBA{0, 0, 0, 32}).(draw.Image)
 
@@ -647,7 +647,7 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 		source:          sl,
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
-	o.eventHandler.AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *ebitest.Point, params map[string]interface{}) {
+	o.eventHandler.AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 		if row, ok := o.(interfaces.ListRow); ok {
 			if p, ok := row.Parent().(*UIScrollView); ok {
 				if row.IsHeader() {
@@ -672,7 +672,7 @@ type scrollbarBase struct {
 	scrollViewParts
 }
 
-func newScrollbarBase(label string, parent *UIScrollView, pos *ebitest.Point) *scrollbarBase {
+func newScrollbarBase(label string, parent *UIScrollView, pos *g.Point) *scrollbarBase {
 	_, ph := parent.listViewSize()
 	scrollbaseimg := utils.CreateRectImage(12, ph, &color.RGBA{223, 223, 223, 255})
 	eimg := ebiten.NewImageFromImage(scrollbaseimg)
@@ -703,7 +703,7 @@ func (o *scrollbarBar) FinishStroke() {
 }
 
 // Position ...
-func (o *scrollbarBar) Position(t enum.ValueTypeEnum) *ebitest.Point {
+func (o *scrollbarBar) Position(t enum.ValueTypeEnum) *g.Point {
 	// スクロールバー位置: x = リスト位置(sy)*スクロール領域サイズ(sh) / リストサイズ(lh)
 	by := 0.0
 	{
@@ -715,20 +715,20 @@ func (o *scrollbarBar) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	}
 
 	if t == enum.TypeLocal {
-		return ebitest.NewPoint(o.position.X(), o.position.Y()+by)
+		return g.NewPoint(o.position.X(), o.position.Y()+by)
 	}
 	gx, gy := o.parent.Position(enum.TypeGlobal).Get()
 	sx, sy := o.Scale(enum.TypeGlobal).Get()
 	gx += o.position.X() * sx
 	gy += (o.position.Y() + by) * sy
-	return ebitest.NewPoint(gx, gy)
+	return g.NewPoint(gx, gy)
 }
 
 // In ...
 func (o *scrollbarBar) In(x, y int) bool {
 	return controlIn(x, y,
 		o.Position(enum.TypeGlobal),
-		ebitest.NewSize(o.image.Size()),
+		g.NewSize(o.image.Size()),
 		o.Scale(enum.TypeGlobal),
 		o.Layer().Frame().Position(enum.TypeGlobal),
 		o.Layer().Frame().Size())
@@ -757,7 +757,7 @@ func (o *scrollbarBar) Draw(screen *ebiten.Image) {
 	screen.DrawImage(o.image, op)
 }
 
-func newScrollbarBar(label string, parent *UIScrollView, pos *ebitest.Point) *scrollbarBar {
+func newScrollbarBar(label string, parent *UIScrollView, pos *g.Point) *scrollbarBar {
 	// リスト表示領域高さ
 	_, ph := parent.listViewSize()
 	// リスト全体の高さ
@@ -847,7 +847,7 @@ type column struct {
 }
 
 // GetSourcesSize sourcesのサイズを返します
-func (o *column) GetSourcesSize() *ebitest.Size {
+func (o *column) GetSourcesSize() *g.Size {
 	w, h := 0, 0
 	for i := range o.sources {
 		s := o.sources[i]
@@ -857,7 +857,7 @@ func (o *column) GetSourcesSize() *ebitest.Size {
 			h = sp.Y
 		}
 	}
-	return ebitest.NewSize(w, h+o.padding[0]+o.padding[2])
+	return g.NewSize(w, h+o.padding[0]+o.padding[2])
 }
 
 // newColumn columデータを作成します

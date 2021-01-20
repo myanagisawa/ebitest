@@ -7,7 +7,7 @@ import (
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/myanagisawa/ebitest/ebitest"
+	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/functions"
 	"github.com/myanagisawa/ebitest/interfaces"
@@ -22,10 +22,10 @@ type Base struct {
 
 	image    *ebiten.Image
 	layer    interfaces.Layer
-	position *ebitest.Point
-	scale    *ebitest.Scale
+	position *g.Point
+	scale    *g.Scale
 	angle    int
-	moving   *ebitest.Point
+	moving   *g.Point
 	hover    bool
 
 	eventHandler interfaces.EventHandler
@@ -50,14 +50,14 @@ func (o *Base) Layer() interfaces.Layer {
 func (o *Base) In(x, y int) bool {
 	return controlIn(x, y,
 		o.Position(enum.TypeGlobal),
-		ebitest.NewSize(o.image.Size()),
+		g.NewSize(o.image.Size()),
 		o.Scale(enum.TypeGlobal),
 		o.Layer().Frame().Position(enum.TypeGlobal),
 		o.Layer().Frame().Size())
 }
 
 // controlIn
-func controlIn(x, y int, pos *ebitest.Point, size *ebitest.Size, scale *ebitest.Scale, framePos *ebitest.Point, frameSize *ebitest.Size) bool {
+func controlIn(x, y int, pos *g.Point, size *g.Size, scale *g.Scale, framePos *g.Point, frameSize *g.Size) bool {
 	// パーツ位置（左上座標）
 	minX, minY := pos.GetInt()
 
@@ -93,14 +93,14 @@ func (o *Base) SetLayer(l interfaces.Layer) {
 }
 
 // Position ...
-func (o *Base) Position(t enum.ValueTypeEnum) *ebitest.Point {
+func (o *Base) Position(t enum.ValueTypeEnum) *g.Point {
 	// log.Printf("UIControlBase: Position: %s", o.label)
 	dx, dy := 0.0, 0.0
 	if o.moving != nil {
 		dx, dy = o.moving.Get()
 	}
 	if t == enum.TypeLocal {
-		return ebitest.NewPoint(o.position.X()+dx, o.position.Y()+dy)
+		return g.NewPoint(o.position.X()+dx, o.position.Y()+dy)
 	}
 	gx, gy := 0.0, 0.0
 	if o.Layer() != nil {
@@ -109,22 +109,22 @@ func (o *Base) Position(t enum.ValueTypeEnum) *ebitest.Point {
 	sx, sy := o.Scale(enum.TypeGlobal).Get()
 	gx += (o.position.X() + dx) * sx
 	gy += (o.position.Y() + dy) * sy
-	return ebitest.NewPoint(gx, gy)
+	return g.NewPoint(gx, gy)
 }
 
 // SetPosition ...
 func (o *Base) SetPosition(x, y float64) {
-	o.position = ebitest.NewPoint(x, y)
+	o.position = g.NewPoint(x, y)
 }
 
 // Scale ...
-func (o *Base) Scale(t enum.ValueTypeEnum) *ebitest.Scale {
+func (o *Base) Scale(t enum.ValueTypeEnum) *g.Scale {
 	return o.scale
 }
 
 // SetScale ...
 func (o *Base) SetScale(x, y float64) {
-	o.scale = ebitest.NewScale(x, y)
+	o.scale = g.NewScale(x, y)
 }
 
 // Angle ...
@@ -150,14 +150,14 @@ func (o *Base) ToggleHover() {
 // SetMoving ...
 func (o *Base) SetMoving(dx, dy float64) {
 	if o.moving == nil {
-		o.moving = ebitest.NewPoint(dx, dy)
+		o.moving = g.NewPoint(dx, dy)
 	} else {
 		o.moving.Set(dx, dy)
 	}
 }
 
 // Moving ...
-func (o *Base) Moving() *ebitest.Point {
+func (o *Base) Moving() *g.Point {
 	return o.moving
 }
 
@@ -182,7 +182,7 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	op.GeoM.Reset()
 	op.GeoM.Scale(o.Scale(enum.TypeGlobal).Get())
 
-	bgSize := ebitest.NewSize(o.image.Size())
+	bgSize := g.NewSize(o.image.Size())
 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
 	op.GeoM.Translate(-float64(bgSize.W())/2, -float64(bgSize.H())/2)
 	// 中心を軸に回転
@@ -208,12 +208,12 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 }
 
 // NewControlBase ...
-func NewControlBase(label string, eimg *ebiten.Image, pos *ebitest.Point) interfaces.UIControl {
+func NewControlBase(label string, eimg *ebiten.Image, pos *g.Point) interfaces.UIControl {
 	o := &Base{
 		label:        label,
 		image:        eimg,
 		position:     pos,
-		scale:        ebitest.NewScale(1.0, 1.0),
+		scale:        g.NewScale(1.0, 1.0),
 		eventHandler: event.NewEventHandler(),
 	}
 
@@ -221,7 +221,7 @@ func NewControlBase(label string, eimg *ebiten.Image, pos *ebitest.Point) interf
 }
 
 // NewSimpleLabel ...
-func NewSimpleLabel(label string, pos *ebitest.Point, pt int, c *color.RGBA, family enum.FontStyleEnum) interfaces.UIControl {
+func NewSimpleLabel(label string, pos *g.Point, pt int, c *color.RGBA, family enum.FontStyleEnum) interfaces.UIControl {
 	fset := char.Res.Get(pt, family)
 	ti := fset.GetStringImage(label)
 	ti2 := utils.TextColorTo(ti.(draw.Image), c)
@@ -231,7 +231,7 @@ func NewSimpleLabel(label string, pos *ebitest.Point, pt int, c *color.RGBA, fam
 		label:        label,
 		image:        eimg,
 		position:     pos,
-		scale:        ebitest.NewScale(1.0, 1.0),
+		scale:        g.NewScale(1.0, 1.0),
 		eventHandler: event.NewEventHandler(),
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
@@ -240,7 +240,7 @@ func NewSimpleLabel(label string, pos *ebitest.Point, pt int, c *color.RGBA, fam
 }
 
 // NewSimpleButton ...
-func NewSimpleButton(label string, img image.Image, pos *ebitest.Point, pt int, c *color.RGBA) interfaces.UIControl {
+func NewSimpleButton(label string, img image.Image, pos *g.Point, pt int, c *color.RGBA) interfaces.UIControl {
 	fset := char.Res.Get(pt, enum.FontStyleGenShinGothicBold)
 	ti := fset.GetStringImage(label)
 	ti = utils.TextColorTo(ti.(draw.Image), c)
@@ -251,7 +251,7 @@ func NewSimpleButton(label string, img image.Image, pos *ebitest.Point, pt int, 
 		label:        label,
 		image:        eimg,
 		position:     pos,
-		scale:        ebitest.NewScale(1.0, 1.0),
+		scale:        g.NewScale(1.0, 1.0),
 		eventHandler: event.NewEventHandler(),
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
