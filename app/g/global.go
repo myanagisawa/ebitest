@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"log"
 
 	"github.com/myanagisawa/ebitest/utils"
 )
@@ -17,6 +18,9 @@ var (
 	// Height ...
 	Height int
 
+	// Master マスタデータ
+	Master *MasterData
+
 	// Images ...
 	Images map[string]image.Image
 
@@ -27,22 +31,34 @@ var (
 )
 
 func init() {
-	Images = make(map[string]image.Image)
-	Images["btnBase"], _ = utils.GetImageByPath("resources/system_images/button.png")
-	Images["world"], _ = utils.GetImageByPath("resources/system_images/world.jpg")
+	// masterロード
+	{
+		log.Printf("MASTERデータ読み込み...")
+		Master = LoadMaster()
+		log.Printf("MASTERデータ読み込み...done")
+	}
 
-	Images["site_1"], _ = utils.GetImageByPath("resources/system_images/site_1.png")
-	Images["site_2"], _ = utils.GetImageByPath("resources/system_images/site_2.png")
-	Images["site_3"], _ = utils.GetImageByPath("resources/system_images/site_3.png")
-	Images["site_4"], _ = utils.GetImageByPath("resources/system_images/site_4.png")
-	Images["site_5"], _ = utils.GetImageByPath("resources/system_images/site_5.png")
+	// 画像リソース読み込み
+	{
+		log.Printf("Resource読み込み...")
+		Images = make(map[string]image.Image)
+		Images["btnBase"], _ = utils.GetImageByPath("resources/system_images/button.png")
+		Images["world"], _ = utils.GetImageByPath("resources/system_images/world.jpg")
 
-	Images["route_1"], _ = utils.GetImageByPath("resources/system_images/route_1.png")
-	Images["route_2"], _ = utils.GetImageByPath("resources/system_images/route_2.png")
-	Images["route_3"], _ = utils.GetImageByPath("resources/system_images/route_3.png")
+		Images["site_1"], _ = utils.GetImageByPath("resources/system_images/site_1.png")
+		Images["site_2"], _ = utils.GetImageByPath("resources/system_images/site_2.png")
+		Images["site_3"], _ = utils.GetImageByPath("resources/system_images/site_3.png")
+		Images["site_4"], _ = utils.GetImageByPath("resources/system_images/site_4.png")
+		Images["site_5"], _ = utils.GetImageByPath("resources/system_images/site_5.png")
 
-	img := utils.CreateRectImage(1, 1, &color.RGBA{200, 200, 200, 255})
-	Images["routeLine"] = img.(draw.Image)
+		Images["route_1"], _ = utils.GetImageByPath("resources/system_images/route_1.png")
+		Images["route_2"], _ = utils.GetImageByPath("resources/system_images/route_2.png")
+		Images["route_3"], _ = utils.GetImageByPath("resources/system_images/route_3.png")
+
+		img := utils.CreateRectImage(1, 1, &color.RGBA{200, 200, 200, 255})
+		Images["routeLine"] = img.(draw.Image)
+		log.Printf("Resource読み込み...done")
+	}
 
 }
 

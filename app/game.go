@@ -10,6 +10,7 @@ import (
 // NewGameManager ...
 func NewGameManager(screenWidth, screenHeight int) *game.Manager {
 	gm := game.NewManager(screenWidth, screenHeight)
+
 	// メニュー画面ロード
 	gm.SetScene(enum.MenuEnum, menu.NewScene(gm))
 	// MAP画面ロード
