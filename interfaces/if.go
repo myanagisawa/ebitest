@@ -63,6 +63,7 @@ type EventOwner interface {
 // GameManager ...
 type GameManager interface {
 	TransitionTo(enum.SceneEnum)
+	DataSet(key enum.DataTypeEnum) DataSet
 }
 
 // Scene ...

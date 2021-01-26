@@ -9,27 +9,27 @@ import (
 var (
 
 	// CommonEventCallback 共通イベントコールバック
-	CommonEventCallback = func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
+	CommonEventCallback = func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 		et := params["event"].(enum.EventTypeEnum)
 		switch et {
 		case enum.EventTypeClick:
 		case enum.EventTypeFocus:
-			if t, ok := o.(interfaces.Focusable); ok {
+			if t, ok := ev.(interfaces.Focusable); ok {
 				t.ToggleHover()
 			}
 		case enum.EventTypeBlur:
 		case enum.EventTypeDragging:
-			if t, ok := o.(interfaces.Draggable); ok {
+			if t, ok := ev.(interfaces.Draggable); ok {
 				t.DidStroke(params["dx"].(float64), params["dy"].(float64))
 			}
 		case enum.EventTypeDragDrop:
-			if t, ok := o.(interfaces.Draggable); ok {
+			if t, ok := ev.(interfaces.Draggable); ok {
 				t.FinishStroke()
 			}
 		case enum.EventTypeLongPress:
 		case enum.EventTypeLongPressReleased:
 		case enum.EventTypeWheel:
-			if t, ok := o.(interfaces.Wheelable); ok {
+			if t, ok := ev.(interfaces.Wheelable); ok {
 				t.DidWheel(params["xoff"].(float64), params["yoff"].(float64))
 			}
 		}

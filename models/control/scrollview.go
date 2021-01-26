@@ -647,8 +647,8 @@ func newListRow(label string, parent *UIScrollView, columns []*column, index int
 		source:          sl,
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
-	o.eventHandler.AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
-		if row, ok := o.(interfaces.ListRow); ok {
+	o.eventHandler.AddEventListener(enum.EventTypeClick, func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
+		if row, ok := ev.(interfaces.ListRow); ok {
 			if p, ok := row.Parent().(*UIScrollView); ok {
 				if row.IsHeader() {
 					p.onHeaderClick(row, pos, params)
