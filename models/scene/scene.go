@@ -2,6 +2,7 @@ package scene
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
 )
 
@@ -11,6 +12,9 @@ type Base struct {
 	manager     interfaces.GameManager
 	frames      []interfaces.Frame
 	activeFrame interfaces.Frame
+
+	customFuncDidLoad   func()
+	customFuncDidActive func()
 }
 
 // Label ...
@@ -79,6 +83,34 @@ func (o *Base) Draw(screen *ebiten.Image) {
 // Layout ...
 func (o *Base) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return outsideWidth, outsideHeight
+}
+
+// SetCustomFunc ...
+func (o *Base) SetCustomFunc(t enum.FuncTypeEnum, f interface{}) {
+	switch t {
+	case enum.FuncTypeDidLoad:
+		if v, ok := f.(func()); ok {
+			o.customFuncDidLoad = v
+		}
+	case enum.FuncTypeDidActive:
+		if v, ok := f.(func()); ok {
+			o.customFuncDidActive = v
+		}
+	}
+}
+
+// ExecDidLoad ...
+func (o *Base) ExecDidLoad() {
+	if o.customFuncDidLoad != nil {
+		o.customFuncDidLoad()
+	}
+}
+
+// ExecDidActive ...
+func (o *Base) ExecDidActive() {
+	if o.customFuncDidActive != nil {
+		o.customFuncDidActive()
+	}
 }
 
 // NewScene ...

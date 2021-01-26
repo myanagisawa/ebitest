@@ -73,6 +73,9 @@ type Scene interface {
 	Label() string
 	Manager() GameManager
 	GetObjects(x, y int) []EbiObject
+	SetCustomFunc(t enum.FuncTypeEnum, f interface{})
+	ExecDidLoad()
+	ExecDidActive()
 }
 
 // Frame ...
@@ -167,3 +170,12 @@ type Event interface {
 // 	Update()
 // 	PositionDiff() (float64, float64)
 // }
+
+// DataSet ...
+type DataSet interface {
+	GetByCode(code string) AppData
+}
+
+// AppData ...
+type AppData interface {
+}

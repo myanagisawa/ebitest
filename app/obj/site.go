@@ -6,6 +6,7 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
+	"github.com/myanagisawa/ebitest/interfaces"
 )
 
 // Site マップ上の拠点情報
@@ -42,21 +43,21 @@ func NewSite(code string, t enum.SiteTypeEnum, name string, loc *g.Point) *Site 
 // Sites ...
 type Sites []Site
 
-// GetSiteByCode ...
-func (o *Sites) GetSiteByCode(code string) *Site {
-	for _, site := range *o {
-		if site.Code == code {
-			return &site
+// GetByCode ...
+func (o *Sites) GetByCode(code string) interfaces.AppData {
+	for _, r := range *o {
+		if r.Code == code {
+			return &r
 		}
 	}
 	return nil
 }
 
 // CreateSites ...
-func CreateSites(siteMaster []g.MSite) Sites {
+func CreateSites(siteMaster []g.MSite) interfaces.DataSet {
 	sites := Sites{}
 	for _, site := range siteMaster {
 		sites = append(sites, *NewSite(site.Code, site.Type, site.Name, site.Location))
 	}
-	return sites
+	return &sites
 }

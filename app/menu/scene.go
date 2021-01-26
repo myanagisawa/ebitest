@@ -27,20 +27,35 @@ func NewScene(m interfaces.GameManager) *Scene {
 	s := &Scene{
 		Base: *scene.NewScene("menu scene", m).(*scene.Base),
 	}
-
-	// メインフレーム
-	mainf := frame.NewFrame("main frame", g.NewPoint(0, 0), g.NewSize(g.Width, g.Height), &color.RGBA{65, 105, 225, 255}, false)
-	s.AddFrame(mainf)
-
-	l := layer.NewLayerBase("menu group", g.NewPoint(30, 100), g.NewSize(500, 700), &color.RGBA{0, 0, 0, 127}, true)
-	mainf.AddLayer(l)
-
-	c := control.NewSimpleButton("mapへ", utils.CopyImage(g.Images["btnBase"]), g.NewPoint(100, 250), 16, &color.RGBA{0, 0, 255, 255})
-	c.EventHandler().AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
-		log.Printf("callback::click")
-		m.TransitionTo(enum.MapEnum)
-	})
-	l.AddUIControl(c)
+	s.SetCustomFunc(enum.FuncTypeDidLoad, s.didLoad())
+	s.SetCustomFunc(enum.FuncTypeDidActive, s.didActive())
 
 	return s
+}
+
+// didLoad ...
+func (o *Scene) didLoad() func() {
+	return func() {
+		// メインフレーム
+		mainf := frame.NewFrame("main frame", g.NewPoint(0, 0), g.NewSize(g.Width, g.Height), &color.RGBA{65, 105, 225, 255}, false)
+		o.AddFrame(mainf)
+
+		l := layer.NewLayerBase("menu group", g.NewPoint(30, 100), g.NewSize(500, 700), &color.RGBA{0, 0, 0, 127}, true)
+		mainf.AddLayer(l)
+
+		c := control.NewSimpleButton("mapへ", utils.CopyImage(g.Images["btnBase"]), g.NewPoint(100, 250), 16, &color.RGBA{0, 0, 255, 255})
+		c.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
+			log.Printf("callback::click")
+			o.Manager().TransitionTo(enum.MapEnum)
+		})
+		l.AddUIControl(c)
+		log.Printf("menu.DidLoad")
+	}
+}
+
+// didActive ...
+func (o *Scene) didActive() func() {
+	return func() {
+		log.Printf("menu.DidActive")
+	}
 }

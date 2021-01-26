@@ -31,40 +31,9 @@ type (
 		background   *ebiten.Image
 		currentScene interfaces.Scene
 		scenes       map[enum.SceneEnum]interfaces.Scene
+		data         map[enum.DataTypeEnum]interfaces.DataSet
 	}
 )
-
-// func getSiteByCode(code string, sites []*parts.Site) *parts.Site {
-// 	for _, site := range sites {
-// 		if site.Code == code {
-// 			return site
-// 		}
-// 	}
-// 	return nil
-// }
-
-// // GetSites master.MSiteからSiteを作成します
-// func (g *Manager) GetSites() []*parts.Site {
-// 	sites := make([]*parts.Site, len(g.master.Sites))
-// 	for i, site := range g.master.Sites {
-// 		sites[i] = parts.NewSite(site.Code, site.Type, site.Name, site.Location)
-// 	}
-// 	return sites
-// }
-
-// // GetRoutes master.MSiteからSiteを作成します
-// func (g *Manager) GetRoutes(sites []*parts.Site) []*parts.Route {
-// 	routes := make([]*parts.Route, len(g.master.Routes))
-// 	for i, route := range g.master.Routes {
-// 		routes[i] = parts.NewRoute(
-// 			route.Code,
-// 			route.Type,
-// 			route.Name,
-// 			getSiteByCode(route.Site1, sites),
-// 			getSiteByCode(route.Site2, sites))
-// 	}
-// 	return routes
-// }
 
 // NewManager ...
 func NewManager(screenWidth, screenHeight int) *Manager {
@@ -73,6 +42,7 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 	gm := &Manager{
 		background: ebiten.NewImageFromImage(utils.CreateRectImage(screenWidth, screenHeight, &color.RGBA{0, 0, 0, 255})),
 		scenes:     make(map[enum.SceneEnum]interfaces.Scene),
+		data:       make(map[enum.DataTypeEnum]interfaces.DataSet),
 	}
 
 	eventManager = &EventManager{
@@ -82,15 +52,27 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 	return gm
 }
 
+// AddDataSet ...
+func (o *Manager) AddDataSet(key enum.DataTypeEnum, set interfaces.DataSet) {
+	o.data[key] = set
+}
+
+// DataSet ...
+func (o *Manager) DataSet(key enum.DataTypeEnum) interfaces.DataSet {
+	return o.data[key]
+}
+
 // SetScene ...
 func (o *Manager) SetScene(key enum.SceneEnum, scene interfaces.Scene) {
 	o.scenes[key] = scene
+	scene.ExecDidLoad()
 }
 
 // TransitionTo ...
 func (o *Manager) TransitionTo(t enum.SceneEnum) {
 	s := o.scenes[t]
 	o.currentScene = s
+	s.ExecDidActive()
 	log.Printf("TransitionTo: %#v", o.currentScene)
 }
 
