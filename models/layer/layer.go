@@ -31,6 +31,11 @@ func (o *Base) Label() string {
 	return o.label
 }
 
+// Size ...
+func (o *Base) Size() *g.Size {
+	return g.NewSize(o.image.Size())
+}
+
 // Manager ...
 func (o *Base) Manager() interfaces.GameManager {
 	return o.frame.Manager()

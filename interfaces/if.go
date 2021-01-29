@@ -103,6 +103,7 @@ type Layer interface {
 	Scaleable
 	Movable
 	EventOwner
+	Size() *g.Size
 	Manager() GameManager
 	Frame() Frame
 	SetFrame(frame Frame)

@@ -2,11 +2,15 @@ package obj
 
 import (
 	"fmt"
+	"image/color"
+	"image/draw"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
+	"github.com/myanagisawa/ebitest/models/char"
+	"github.com/myanagisawa/ebitest/utils"
 )
 
 // Site マップ上の拠点情報
@@ -29,6 +33,10 @@ func NewSite(code string, t enum.SiteTypeEnum, name string, loc *g.Point) *Site 
 
 	// ti := utils.CreateTextImage(name, g.ScaleFonts[12], color.RGBA{32, 32, 32, 255})
 	// timg := ebiten.NewImageFromImage(*ti)
+	fset := char.Res.Get(12, enum.FontStyleGenShinGothicRegular)
+	ti := fset.GetStringImage(name)
+	ti = utils.TextColorTo(ti.(draw.Image), &color.RGBA{32, 32, 32, 255})
+	timg := ebiten.NewImageFromImage(ti)
 
 	return &Site{
 		Code:     code,
@@ -36,7 +44,7 @@ func NewSite(code string, t enum.SiteTypeEnum, name string, loc *g.Point) *Site 
 		Name:     name,
 		Location: loc,
 		Image:    img,
-		// Text:     timg,
+		Text:     timg,
 	}
 }
 

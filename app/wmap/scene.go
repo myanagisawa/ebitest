@@ -29,6 +29,7 @@ type (
 )
 
 var (
+	gm          interfaces.GameManager
 	scrollView1 interfaces.UIScrollView
 )
 
@@ -42,7 +43,7 @@ func NewCustomScrollView(label string, pos *g.Point, size *g.Size) interfaces.UI
 
 // NewScene ...
 func NewScene(m interfaces.GameManager) *Scene {
-
+	gm = m
 	s := &Scene{
 		Base: *scene.NewScene("MainMap", m).(*scene.Base),
 	}
@@ -56,44 +57,44 @@ func NewScene(m interfaces.GameManager) *Scene {
 func (o *Scene) didLoad() func() {
 	return func() {
 		// メインフレーム
-		mainf := frame.NewFrame("main frame", g.NewPoint(200, 20), g.NewSize(g.Width-200, g.Height-220), &color.RGBA{200, 200, 200, 255}, true)
+		mainf := frame.NewFrame("main frame", g.NewPoint(300, 20), g.NewSize(g.Width-300, g.Height-220), &color.RGBA{200, 200, 200, 255}, true)
 		o.AddFrame(mainf)
 
-		l := layer.NewLayerBaseByImage("map", g.Images["world"], g.NewPoint(0, 0), false)
-		mainf.AddLayer(l)
+		// l := layer.NewLayerBaseByImage("map", g.Images["world"], g.NewPoint(0, 0), false)
+		maplayer := NewMapLayer()
+		mainf.AddLayer(maplayer)
 
 		// c := control.NewSimpleLabel("test", g.Images["btnBase"], g.NewPoint(100, 100), color.Black)
 		c := control.NewSimpleLabel("SIMPLE LABEL", g.NewPoint(100, 100), 48, &color.RGBA{0, 0, 255, 255}, enum.FontStyleGenShinGothicMedium)
 		c.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 			log.Printf("callback::click")
 		})
-		l.AddUIControl(c)
+		maplayer.AddUIControl(c)
 		c = control.NewSimpleLabel("シンプルラベル", g.NewPoint(100, 150), 32, &color.RGBA{0, 255, 0, 255}, enum.FontStyleGenShinGothicNormal)
-		l.AddUIControl(c)
+		maplayer.AddUIControl(c)
 		c = control.NewSimpleLabel("文字列試験", g.NewPoint(100, 200), 24, &color.RGBA{255, 0, 0, 255}, enum.FontStyleGenShinGothicRegular)
-		l.AddUIControl(c)
+		maplayer.AddUIControl(c)
 
 		c = control.NewSimpleButton("SIMPLE BUTTON", utils.CopyImage(g.Images["btnBase"]), g.NewPoint(100, 350), 16, &color.RGBA{0, 0, 255, 255})
 		c.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 			log.Printf("callback::click")
 			o.Manager().TransitionTo(enum.MenuEnum)
 		})
-		l.AddUIControl(c)
+		maplayer.AddUIControl(c)
 
 		// サブフレーム1（上）
 		topf := frame.NewFrame("top frame", g.NewPoint(0, 0), g.NewSize(g.Width, 20), &color.RGBA{0, 0, 0, 255}, false)
 		o.AddFrame(topf)
 
 		// サブフレーム2（横）
-		fs := g.NewSize(200, g.Height-220)
+		fs := g.NewSize(300, g.Height-220)
 		sidef := frame.NewFrame("side frame", g.NewPoint(0, 20), fs, &color.RGBA{127, 127, 200, 255}, false)
 		o.AddFrame(sidef)
 
-		l = layer.NewLayerBase("Layer1", g.NewPoint(0, 0), fs, &color.RGBA{0, 0, 0, 128}, false)
+		l := layer.NewLayerBase("Layer1", g.NewPoint(0, 0), fs, &color.RGBA{0, 0, 0, 128}, false)
 		sidef.AddLayer(l)
 
 		// スクロールビュー
-		// scrollView := control.NewUIScrollView("scrollView1", g.NewPoint(0, 10.0), g.NewSize(f.Size().W(), f.Size().H()/2))
 		scrollView1 = NewCustomScrollView("scrollView1", g.NewPoint(0, 10.0), g.NewSize(sidef.Size().W(), sidef.Size().H()/2))
 		l.AddUIControl(scrollView1)
 
@@ -119,7 +120,7 @@ func (o *Scene) didLoad() func() {
 func (o *Scene) didActive() func() {
 	return func() {
 
-		if sites, ok := o.Manager().DataSet(enum.DataTypeSite).(*obj.Sites); ok {
+		if sites, ok := gm.DataSet(enum.DataTypeSite).(*obj.Sites); ok {
 			cols := []interface{}{
 				"ID", "種類", "名前", "位置",
 			}
