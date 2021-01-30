@@ -24,7 +24,7 @@ type Base struct {
 	layer    interfaces.Layer
 	position *g.Point
 	scale    *g.Scale
-	angle    int
+	angle    float64
 	moving   *g.Point
 	hover    bool
 
@@ -128,13 +128,13 @@ func (o *Base) SetScale(x, y float64) {
 }
 
 // Angle ...
-func (o *Base) Angle(t enum.ValueTypeEnum) int {
+func (o *Base) Angle(t enum.ValueTypeEnum) float64 {
 	return o.angle
 }
 
 // SetAngle ...
-func (o *Base) SetAngle(a int) {
-	o.angle = a
+func (o *Base) SetAngle(theta float64) {
+	o.angle = theta
 }
 
 // Theta ...
@@ -174,6 +174,36 @@ func (o *Base) Update() error {
 	return nil
 }
 
+// // Draw draws the sprite.
+// func (o *Base) Draw(screen *ebiten.Image) *ebiten.DrawImageOptions {
+// 	op := &ebiten.DrawImageOptions{}
+
+// 	// 描画位置指定
+// 	op.GeoM.Reset()
+// 	op.GeoM.Scale(o.Scale(enum.TypeGlobal).Get())
+
+// 	bgSize := g.NewSize(o.image.Size())
+// 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
+// 	op.GeoM.Translate(-float64(bgSize.W())/2, -float64(bgSize.H())/2)
+// 	// 中心を軸に回転
+// 	op.GeoM.Rotate(o.Theta())
+// 	// ユニットの座標に移動
+// 	op.GeoM.Translate(float64(bgSize.W())/2, float64(bgSize.H())/2)
+
+// 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
+
+// 	// log.Printf("%s: pos: %d, %d, fr: %d, %d, %d, %d", o.label, lx, ly, x0, y0, x1, y1)
+// 	// screen.DrawImage(o.image.SubImage(fr).(*ebiten.Image), op)
+// 	r, g, b, a := 1.0, 1.0, 1.0, 1.0
+// 	if o.hover {
+// 		r, g, b, a = 0.5, 0.5, 0.5, 1.0
+// 	}
+// 	op.ColorM.Scale(r, g, b, a)
+// 	screen.DrawImage(o.image, op)
+
+// 	return op
+// }
+
 // Draw draws the sprite.
 func (o *Base) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
@@ -186,7 +216,7 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
 	op.GeoM.Translate(-float64(bgSize.W())/2, -float64(bgSize.H())/2)
 	// 中心を軸に回転
-	op.GeoM.Rotate(o.Theta())
+	op.GeoM.Rotate(o.Angle(enum.TypeGlobal))
 	// ユニットの座標に移動
 	op.GeoM.Translate(float64(bgSize.W())/2, float64(bgSize.H())/2)
 

@@ -46,7 +46,7 @@ type Scaleable interface {
 
 // Anglable ...
 type Anglable interface {
-	Angle(enum.ValueTypeEnum) int
+	Angle(enum.ValueTypeEnum) float64
 }
 
 // Movable ...
@@ -130,7 +130,7 @@ type UIControl interface {
 	SetLayer(l Layer)
 	SetPosition(x, y float64)
 	SetScale(x, y float64)
-	SetAngle(a int)
+	SetAngle(theta float64)
 	GetObjects(x, y int) []EbiObject
 	Update() error
 	Draw(screen *ebiten.Image)
