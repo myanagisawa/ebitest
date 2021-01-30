@@ -229,6 +229,7 @@ func (o *Base) Draw(screen *ebiten.Image) {
 		r, g, b, a = 0.5, 0.5, 0.5, 1.0
 	}
 	op.ColorM.Scale(r, g, b, a)
+	// log.Printf("Draw: %s: %#v", o.label, o)
 	screen.DrawImage(o.image, op)
 }
 

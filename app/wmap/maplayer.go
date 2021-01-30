@@ -18,7 +18,9 @@ type site struct {
 }
 
 func createSite(obj *obj.Site, parent *MapLayer) *site {
-	base := control.NewControlBase(obj.Code, obj.Image, obj.Location).(*control.Base)
+	pos := parent.getLocation(obj.Location)
+	base := control.NewControlBase(obj.Code, obj.Image, pos).(*control.Base)
+	base.SetLayer(parent)
 	o := &site{
 		Base:   *base,
 		parent: parent,
@@ -80,6 +82,7 @@ func createRoute(obj *obj.Route, parent *MapLayer) *route {
 	rad := math.Atan2(y2-y1, x2-x1)
 
 	base := control.NewControlBase(obj.Code, obj.Image, g.NewPoint(x1, y1)).(*control.Base)
+	base.SetLayer(parent)
 	base.SetScale(distance/float64(routeSize.W()), 1.0)
 	base.SetAngle(rad)
 	o := &route{
