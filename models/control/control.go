@@ -105,10 +105,11 @@ func (o *Base) Position(t enum.ValueTypeEnum) *g.Point {
 	gx, gy := 0.0, 0.0
 	if o.Layer() != nil {
 		gx, gy = o.Layer().Position(enum.TypeGlobal).Get()
+
+		sx, sy := o.Layer().Scale(enum.TypeGlobal).Get()
+		gx += (o.position.X() + dx) * sx
+		gy += (o.position.Y() + dy) * sy
 	}
-	sx, sy := o.Scale(enum.TypeGlobal).Get()
-	gx += (o.position.X() + dx) * sx
-	gy += (o.position.Y() + dy) * sy
 	return g.NewPoint(gx, gy)
 }
 
@@ -229,7 +230,9 @@ func (o *Base) Draw(screen *ebiten.Image) {
 		r, g, b, a = 0.5, 0.5, 0.5, 1.0
 	}
 	op.ColorM.Scale(r, g, b, a)
-	// log.Printf("Draw: %s: %#v", o.label, o)
+	// if strings.HasPrefix(o.label, "route") {
+	// 	log.Printf("Draw: %s: pos=%#v scale=%#v angle=%#v", o.label, o.Position(enum.TypeGlobal), o.Scale(enum.TypeGlobal), o.Angle(enum.TypeGlobal))
+	// }
 	screen.DrawImage(o.image, op)
 }
 

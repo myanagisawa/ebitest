@@ -94,35 +94,6 @@ func createRoute(obj *obj.Route, parent *MapLayer) *route {
 }
 
 func (o *route) draw(screen *ebiten.Image) {
-	// pos1 := o.parent.getLocation(o.obj.Site1.Location)
-	// pos2 := o.parent.getLocation(o.obj.Site2.Location)
-
-	// size1 := g.NewSize(o.obj.Site1.Image.Size())
-	// size2 := g.NewSize(o.obj.Site2.Image.Size())
-
-	// // 2点の座標
-	// x1, y1 := pos1.X()+float64(size1.W())/2, pos1.Y()+float64(size1.H())/2
-	// x2, y2 := pos2.X()+float64(size2.W())/2, pos2.Y()+float64(size2.H())/2
-
-	// // 距離を算出
-	// distance := math.Sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1))
-
-	// // 角度を算出
-	// rad := math.Atan2(y2-y1, x2-x1)
-
-	// op := &ebiten.DrawImageOptions{}
-
-	// routeSize := g.NewSize(o.obj.Image.Size())
-	// // 描画位置指定
-	// op.GeoM.Reset()
-	// op.GeoM.Scale(distance/float64(routeSize.W()), 1.0)
-
-	// op.GeoM.Rotate(rad)
-	// op.GeoM.Translate(x1, y1)
-
-	// // log.Printf("route: %s, (%0.2f, %0.2f)", o.obj.Code, x1, y1)
-	// screen.DrawImage(o.obj.Image, op)
-
 	o.Base.Draw(screen)
 }
 
