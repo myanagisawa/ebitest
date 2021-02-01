@@ -207,7 +207,14 @@ func (o *Base) Update() error {
 
 // Draw draws the sprite.
 func (o *Base) Draw(screen *ebiten.Image) {
-	op := &ebiten.DrawImageOptions{}
+	_ = o.DrawWithOptions(screen, nil)
+}
+
+// DrawWithOptions draws the sprite.
+func (o *Base) DrawWithOptions(screen *ebiten.Image, op *ebiten.DrawImageOptions) *ebiten.DrawImageOptions {
+	if op == nil {
+		op = &ebiten.DrawImageOptions{}
+	}
 
 	// 描画位置指定
 	op.GeoM.Reset()
@@ -234,6 +241,8 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	// 	log.Printf("Draw: %s: pos=%#v scale=%#v angle=%#v", o.label, o.Position(enum.TypeGlobal), o.Scale(enum.TypeGlobal), o.Angle(enum.TypeGlobal))
 	// }
 	screen.DrawImage(o.image, op)
+
+	return op
 }
 
 // EventHandler ...

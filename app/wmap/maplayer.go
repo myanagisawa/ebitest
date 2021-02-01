@@ -32,26 +32,10 @@ func createSite(obj *obj.Site, parent *MapLayer) *site {
 func (o *site) draw(screen *ebiten.Image) {
 
 	op := &ebiten.DrawImageOptions{}
-
-	// // 描画位置指定
-	// op.GeoM.Reset()
-	// op.GeoM.Scale(1.0, 1.0)
-
-	size := g.NewSize(o.obj.Image.Size())
-	// // 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
-	// op.GeoM.Translate(-float64(size.W())/2, -float64(size.H())/2)
-	// // ユニットの座標に移動
-	// op.GeoM.Translate(float64(size.W())/2, float64(size.H())/2)
-
-	// // Site描画座標を計算
-	// sitePos := o.parent.getLocation(o.obj.Location)
-	// op.GeoM.Translate(sitePos.X(), sitePos.Y())
-
-	// // log.Printf("site: %s, (%0.2f, %0.2f)", o.obj.Code, sitePos.X(), sitePos.Y())
-	// screen.DrawImage(o.obj.Image, op)
-	o.Base.Draw(screen)
+	op = o.Base.DrawWithOptions(screen, op)
 
 	// site名を描画
+	size := g.NewSize(o.obj.Image.Size())
 	textSize := g.NewSize(o.obj.Text.Size())
 	op.GeoM.Translate(-float64(textSize.W()-size.W())/2, float64(size.H()))
 	screen.DrawImage(o.obj.Text, op)
