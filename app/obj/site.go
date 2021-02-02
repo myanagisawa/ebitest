@@ -61,6 +61,16 @@ func (o *Sites) GetByCode(code string) interfaces.AppData {
 	return nil
 }
 
+// GetByName ...
+func (o *Sites) GetByName(name string) interfaces.AppData {
+	for _, r := range *o {
+		if r.Name == name {
+			return &r
+		}
+	}
+	return nil
+}
+
 // CreateSites ...
 func CreateSites(siteMaster []g.MSite) interfaces.DataSet {
 	sites := Sites{}

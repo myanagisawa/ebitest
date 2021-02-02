@@ -30,6 +30,7 @@ type (
 
 var (
 	gm          interfaces.GameManager
+	maplayer    *MapLayer
 	scrollView1 interfaces.UIScrollView
 )
 
@@ -61,8 +62,10 @@ func (o *Scene) didLoad() func() {
 		o.AddFrame(mainf)
 
 		// l := layer.NewLayerBaseByImage("map", g.Images["world"], g.NewPoint(0, 0), false)
-		maplayer := NewMapLayer()
+		maplayer = NewMapLayer()
 		mainf.AddLayer(maplayer)
+
+		maplayer.MoveTo("site-1")
 
 		// c := control.NewSimpleLabel("test", g.Images["btnBase"], g.NewPoint(100, 100), color.Black)
 		c := control.NewSimpleLabel("SIMPLE LABEL", g.NewPoint(100, 100), 48, &color.RGBA{0, 0, 255, 255}, enum.FontStyleGenShinGothicMedium)
@@ -98,16 +101,6 @@ func (o *Scene) didLoad() func() {
 		scrollView1 = NewCustomScrollView("scrollView1", g.NewPoint(0, 10.0), g.NewSize(sidef.Size().W(), sidef.Size().H()/2))
 		l.AddUIControl(scrollView1)
 
-		scrollView1.SetRowClickFunc(func(row interface{}, pos *g.Point, params map[string]interface{}) {
-			log.Printf("かすたむヘッダクリックイベントだよ")
-		}, func(idx int, row interface{}, pos *g.Point, params map[string]interface{}) {
-			log.Printf("かすたむ行クリックイベントだよ(%d)", idx)
-			if r, ok := row.(interfaces.ListRow); ok {
-				log.Printf("  %#v", r.Source())
-				log.Printf("  別フレーム参照: %s", mainf.Label())
-			}
-		})
-
 		// サブフレーム3（下）
 		bottomf := frame.NewFrame("bottom frame", g.NewPoint(0, float64(g.Height-200)), g.NewSize(g.Width, 200), &color.RGBA{127, 200, 127, 255}, false)
 		o.AddFrame(bottomf)
@@ -133,9 +126,28 @@ func (o *Scene) didActive() func() {
 				row[2] = site.Name
 				x, y := site.Location.Get()
 				row[3] = fmt.Sprintf("x=%0.2f, y=%0.2f", x, y)
+				// row[4] = site.Code
 				data[i] = row
 			}
 			scrollView1.SetDataSource(cols, data)
+
+			scrollView1.SetRowClickFunc(func(row interface{}, pos *g.Point, params map[string]interface{}) {
+				log.Printf("かすたむヘッダクリックイベントだよ")
+			}, func(idx int, row interface{}, pos *g.Point, params map[string]interface{}) {
+				log.Printf("かすたむ行クリックイベントだよ(%d)", idx)
+				if r, ok := row.(interfaces.ListRow); ok {
+					log.Printf("  %#v", r.Source())
+					// log.Printf("  別フレーム参照: %s", mainf.Label())
+					name := r.Source()[2]
+					if sites, ok := gm.DataSet(enum.DataTypeSite).(*obj.Sites); ok {
+						site := sites.GetByName(name)
+						if s, ok := site.(*obj.Site); ok {
+							maplayer.MoveTo(s.Code)
+							log.Printf("  MoveTo: %s", s.Name)
+						}
+					}
+				}
+			})
 		}
 		// cols := []interface{}{
 		// 	"ID", "カラム名", "3番目",

@@ -107,6 +107,7 @@ type Layer interface {
 	Manager() GameManager
 	Frame() Frame
 	SetFrame(frame Frame)
+	SetPosition(x, y float64)
 	IsModal() bool
 	Scroll(et enum.EdgeTypeEnum)
 	GetObjects(x, y int) []EbiObject

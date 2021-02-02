@@ -51,6 +51,11 @@ func (o *Base) SetFrame(frame interfaces.Frame) {
 	o.frame = frame
 }
 
+// SetPosition ...
+func (o *Base) SetPosition(x, y float64) {
+	o.position = g.NewPoint(x, y)
+}
+
 // Position ...
 func (o *Base) Position(t enum.ValueTypeEnum) *g.Point {
 	dx, dy := 0.0, 0.0

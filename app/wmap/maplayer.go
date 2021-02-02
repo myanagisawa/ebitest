@@ -133,6 +133,62 @@ func (o *MapLayer) getLocation(loc *g.Point) *g.Point {
 	return g.NewPoint(x, y)
 }
 
+// getSiteByCode ...
+func (o *MapLayer) getSiteByCode(code string) *site {
+	if o.sites == nil || len(o.sites) == 0 {
+		return nil
+	}
+	for i := range o.sites {
+		site := o.sites[i]
+		if site.obj.Code == code {
+			return &site
+		}
+	}
+	return nil
+}
+
+// MoveTo ...
+func (o *MapLayer) MoveTo(code string) {
+	site := o.getSiteByCode(code)
+	if site == nil {
+		return
+	}
+	// MAP表示フレーム
+	frame := o.Frame()
+	// 表示領域サイズ
+	wsize := frame.Size()
+
+	// 表示対象
+	pos := site.Position(enum.TypeLocal)
+	// Mapサイズ
+	mapsize := o.Size()
+
+	// 表示対象を中央に表示した場合のposを計算
+	ax := pos.X() - (float64(wsize.W()) / 2)
+	if ax < 0 {
+		// 対象を中央に配置すると左領域が空く場合
+		ax = 0
+	} else if (ax + float64(wsize.W())) > float64(mapsize.W()) {
+		// 対象を中央に配置すると右領域が空く場合
+		ax = float64(mapsize.W()) - float64(wsize.W())
+	}
+
+	ay := pos.Y() - (float64(wsize.H()) / 2)
+	if ay < 0 {
+		// 対象を中央に配置すると上領域が空く場合
+		ay = 0
+	} else if (ay + float64(wsize.H())) > float64(mapsize.H()) {
+		// 対象を中央に配置すると下領域が空く場合
+		ax = float64(mapsize.H()) - float64(wsize.H())
+	}
+
+	// 現在の表示位置
+	//before := o.Position(enum.TypeLocal)
+
+	// 表示位置変更
+	o.SetPosition(-ax, -ay)
+}
+
 // Draw ...
 func (o *MapLayer) Draw(screen *ebiten.Image) {
 	// 共通Draw処理
