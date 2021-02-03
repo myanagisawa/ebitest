@@ -113,6 +113,7 @@ func (o *EventManager) GetEventTargetList(x, y int, types ...enum.EventTypeEnum)
 
 // Update ...
 func (o *EventManager) Update() error {
+	// log.Printf("------アプデ-------")
 	// --- キャッシュクリア ---
 	cacheGetObjects = nil
 	// --- キャッシュクリア ---
@@ -127,6 +128,7 @@ func (o *EventManager) Update() error {
 		// ホバーイベント
 		if hoverd, ok := o.GetEventTarget(x, y, enum.EventTypeFocus); ok {
 			newHoverdObject := hoverd.(interfaces.EbiObject)
+			// log.Printf("0: new=%p, current=%p", newHoverdObject, hoverdObject)
 			if newHoverdObject == hoverdObject {
 				// log.Printf("same target")
 			} else {
@@ -138,6 +140,7 @@ func (o *EventManager) Update() error {
 				// 新しいフォーカス処理
 				hoverd.EventHandler().Firing(enum.EventTypeFocus, hoverd, cursorpos, evparams)
 				hoverdObject = newHoverdObject
+				// log.Printf("1: hoverdObject=%p", hoverdObject)
 			}
 		} else {
 			// フォーカス対象なし

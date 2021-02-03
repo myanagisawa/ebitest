@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	screenWidth  = 800
+	screenWidth  = 1200
 	screenHeight = 1200
 )
 
@@ -22,7 +22,7 @@ func main() {
 	ebiten.SetWindowFloating(true)
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowPosition(3360-(screenWidth+100), 100)
-	// ebiten.SetMaxTPS(30)
+	ebiten.SetMaxTPS(30)
 
 	manager := app.NewGameManager(screenWidth, screenHeight)
 

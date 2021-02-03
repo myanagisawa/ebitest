@@ -65,8 +65,6 @@ func (o *Scene) didLoad() func() {
 		maplayer = NewMapLayer()
 		mainf.AddLayer(maplayer)
 
-		maplayer.MoveTo("site-1")
-
 		// c := control.NewSimpleLabel("test", g.Images["btnBase"], g.NewPoint(100, 100), color.Black)
 		c := control.NewSimpleLabel("SIMPLE LABEL", g.NewPoint(100, 100), 48, &color.RGBA{0, 0, 255, 255}, enum.FontStyleGenShinGothicMedium)
 		c.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
@@ -148,6 +146,9 @@ func (o *Scene) didActive() func() {
 					}
 				}
 			})
+
+			// 初期表示
+			maplayer.MoveTo("site-1")
 		}
 		// cols := []interface{}{
 		// 	"ID", "カラム名", "3番目",
