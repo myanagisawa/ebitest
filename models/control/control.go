@@ -36,6 +36,21 @@ func (o *Base) Label() string {
 	return o.label
 }
 
+// Size ...
+func (o *Base) Size(t enum.SizeTypeEnum) *g.Size {
+	switch t {
+	case enum.TypeOriginal:
+		return g.NewSize(o.image.Size())
+	case enum.TypeScaled:
+		bx, by := o.image.Size()
+		sx := float64(bx) * o.scale.X()
+		sy := float64(by) * o.scale.Y()
+		return g.NewSize(int(sx), int(sy))
+	default:
+		return nil
+	}
+}
+
 // Manager ...
 func (o *Base) Manager() interfaces.GameManager {
 	return o.Layer().Manager()

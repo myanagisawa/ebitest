@@ -2,12 +2,16 @@ package obj
 
 import (
 	"fmt"
+	"image/color"
+	"image/draw"
 	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
+	"github.com/myanagisawa/ebitest/models/char"
+	"github.com/myanagisawa/ebitest/utils"
 )
 
 // Route マップ上の経路情報
@@ -18,6 +22,7 @@ type Route struct {
 	Site1 *Site
 	Site2 *Site
 	Image *ebiten.Image
+	Text  *ebiten.Image
 }
 
 // NewRoute ...
@@ -28,6 +33,11 @@ func NewRoute(code string, t enum.RouteTypeEnum, name string, site1, site2 *Site
 
 	img := ebiten.NewImageFromImage(g.Images[fmt.Sprintf("route_%d", t)])
 
+	fset := char.Res.Get(12, enum.FontStyleGenShinGothicRegular)
+	ti := fset.GetStringImage(name)
+	ti = utils.TextColorTo(ti.(draw.Image), &color.RGBA{32, 32, 32, 255})
+	timg := ebiten.NewImageFromImage(ti)
+
 	return &Route{
 		Code:  code,
 		Type:  t,
@@ -35,6 +45,7 @@ func NewRoute(code string, t enum.RouteTypeEnum, name string, site1, site2 *Site
 		Site1: site1,
 		Site2: site2,
 		Image: img,
+		Text:  timg,
 	}
 }
 

@@ -126,6 +126,7 @@ type UIControl interface {
 	Focusable
 	Movable
 	EventOwner
+	Size(t enum.SizeTypeEnum) *g.Size
 	Manager() GameManager
 	Layer() Layer
 	SetLayer(l Layer)

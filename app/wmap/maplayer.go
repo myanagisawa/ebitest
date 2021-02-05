@@ -2,6 +2,7 @@ package wmap
 
 import (
 	"fmt"
+	"image/color"
 	"log"
 	"math"
 	"time"
@@ -18,6 +19,8 @@ import (
 
 var (
 	scrollProg *scroller
+
+	routeInfo interfaces.UIControl
 )
 
 type scroller struct {
@@ -140,11 +143,130 @@ func createRoute(obj *obj.Route, parent *MapLayer) *route {
 		parent: parent,
 		obj:    obj,
 	}
+	o.EventHandler().AddEventListener(enum.EventTypeFocus, func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
+		log.Printf("callback::focus")
+		if t, ok := ev.(interfaces.Focusable); ok {
+			t.ToggleHover()
+		}
+		if t, ok := ev.(*route); ok {
+			name := t.Label()
+			routeInfo.SetPosition(t.Position(enum.TypeLocal).Get())
+			log.Printf("name: %s", name)
+		}
+	})
 	return o
 }
 
+func (o *route) In(x, y int) bool {
+	// オブジェクトの位置を取得する
+	pos := o.Base.Position(enum.TypeGlobal)
+
+	// 無回転当たり判定オブジェクトを取得
+	bsize := o.Base.Size(enum.TypeScaled)
+	bsize = g.NewSize(bsize.W(), bsize.H()*3)
+
+	// あたり判定objの原点を取得(だいたい中心を原点としているが描画時の回転軸に合わせてlefttopを原点にする)
+	// height側を実線より太くしている関係で、Y側の原点は
+	rectCenter := g.NewPoint(pos.X(), pos.Y()+float64(bsize.H())/2)
+
+	// ポインタ座標を当たり判定objとの相対座標に変換
+	relativeX := float64(x) - rectCenter.X()
+	relativeY := float64(y) - rectCenter.Y()
+
+	// ポインタ座標を座標変換する（回転を打ち消す）
+	rad := o.Angle(enum.TypeLocal)
+	transformPos := g.NewPoint(
+		math.Cos(rad)*relativeX+math.Sin(rad)*relativeY,
+		-math.Sin(rad)*relativeX+math.Cos(rad)*relativeY)
+
+	// 当たり判定objと変換したポインタ座標で当たり判定を行う
+	objWidth := float64(bsize.W())
+	objHeight := float64(bsize.H())
+	if 0 <= transformPos.X() && objWidth >= transformPos.X() &&
+		-objHeight/2 <= transformPos.Y() && objHeight/2 >= transformPos.Y() {
+		// log.Printf("%s にフォーカス！", o.Label())
+		return true
+	}
+
+	// // オブジェクトの位置を取得する
+	// pos := o.Base.Position(enum.TypeGlobal)
+
+	// // オブジェクトの見た目サイズを取得する
+	// bsize := o.Base.Size(enum.TypeScaled)
+	// bsize = g.NewSize(bsize.W(), bsize.H()*2)
+	// // log.Printf("%s サイズ: %#v", o.Label(), bsize)
+
+	// // 見た目サイズの原点を取得する
+	// rectCenter := g.NewPoint(pos.X()+float64(bsize.W())/2, pos.Y()+float64(bsize.H())/2)
+	// // rectCenter := pos
+
+	// // ポインタ座標を矩形との相対座標に変換する
+	// relativeX := float64(x) - rectCenter.X()
+	// relativeY := float64(y) - rectCenter.Y()
+
+	// // ポインタ座標を座標変換する
+	// /*
+	// 	// 相対座標に対して矩形の回転を打ち消す逆行列を掛ける
+	// 	Vec2 transform_pos = Vec2(
+	// 		cosf(rad) * relative_position.X + sinf(rad) * relative_position.Y,
+	// 		-sinf(rad) * relative_position.X + cosf(rad) * relative_position.Y
+	// 	);
+	// */
+	// rad := o.Angle(enum.TypeLocal)
+	// transformPos := g.NewPoint(
+	// 	math.Cos(rad)*relativeX+math.Sin(rad)*relativeY,
+	// 	-math.Sin(rad)*relativeX+math.Cos(rad)*relativeY)
+
+	// // transformPos = g.NewPoint(transformPos.X()-float64(bsize.W())/2, transformPos.Y()-float64(bsize.H())/2)
+
+	// // ポインタ座標と矩形の当たり判定を行う
+	// /*
+	// 	// 矩形と点の当たり判定を行う
+	// 	if (-rect.Width / 2.0f <= transform_pos.X && rect.Width / 2.0f >= transform_pos.X &&
+	// 		-rect.Height / 2.0f <= transform_pos.Y && rect.Height / 2.0f >= transform_pos.Y)
+	// 	{
+	// */
+	// objWidth := float64(bsize.W())
+	// objHeight := float64(bsize.H())
+	// if o.Label() == "route-1" {
+	// 	log.Printf("%s: ポインタ: x=%d, y=%d", o.Label(), x, y)
+	// 	log.Printf("  オブジェクト位置: x=%0.1f, y=%0.1f", pos.X(), pos.Y())
+	// 	log.Printf("  オブジェクトのサイズ: w=%d, h=%d", bsize.W(), bsize.H())
+	// 	log.Printf("  ポインタの相対座標: x=%0.1f, y=%0.1f", relativeX, relativeY)
+	// 	log.Printf("  角度: rad=%0.1f (%0.1f)", rad, rad*(180/math.Pi))
+	// 	log.Printf("  座標変換: x=%0.1f, y=%0.1f", transformPos.X(), transformPos.Y())
+	// 	log.Printf("    判定: left=%0.1f, right=%0.1f, top=%0.1f, bottom=%0.1f  -> %v", -objWidth/2, objWidth/2, -objHeight/2, objHeight/2, -objWidth/2 <= transformPos.X() && objWidth/2 >= transformPos.X() &&
+	// 		-objHeight/2 <= transformPos.Y() && objHeight/2 >= transformPos.Y())
+	// }
+	// if -objWidth/2 <= transformPos.X() && objWidth/2 >= transformPos.X() &&
+	// 	-objHeight/2 <= transformPos.Y() && objHeight/2 >= transformPos.Y() {
+	// 	log.Printf("%s にフォーカス！", o.Label())
+	// 	return true
+	// }
+
+	return false
+}
+
+// GetObjects ...
+func (o *route) GetObjects(x, y int) []interfaces.EbiObject {
+	if o.In(x, y) {
+		return []interfaces.EbiObject{o}
+	}
+	return nil
+}
+
 func (o *route) draw(screen *ebiten.Image) {
-	o.Base.Draw(screen)
+	// o.Base.Draw(screen)
+
+	op := &ebiten.DrawImageOptions{}
+	_ = o.Base.DrawWithOptions(screen, op)
+
+	// site名を描画
+	// op.GeoM.Scale(1.0, 1.0)
+	// size := g.NewSize(o.obj.Image.Size())
+	// textSize := g.NewSize(o.obj.Text.Size())
+	// op.GeoM.Translate(-float64(textSize.W()-size.W())/2, float64(size.H()))
+	// screen.DrawImage(o.obj.Text, op)
 }
 
 // MapLayer ...
@@ -189,6 +311,9 @@ func NewMapLayer() *MapLayer {
 		ml.routes = routes
 	}
 
+	routeInfo = control.NewSimpleLabel("route info", g.NewPoint(0, 0), 14, &color.RGBA{0, 0, 0, 255}, enum.FontStyleGenShinGothicRegular)
+	ml.AddUIControl(routeInfo)
+
 	return ml
 }
 
@@ -197,6 +322,10 @@ func (o *MapLayer) GetObjects(x, y int) []interfaces.EbiObject {
 	objs := []interfaces.EbiObject{}
 	for i := len(o.sites) - 1; i >= 0; i-- {
 		c := &o.sites[i]
+		objs = append(objs, c.GetObjects(x, y)...)
+	}
+	for i := len(o.routes) - 1; i >= 0; i-- {
+		c := &o.routes[i]
 		objs = append(objs, c.GetObjects(x, y)...)
 	}
 
