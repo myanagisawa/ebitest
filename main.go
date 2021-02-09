@@ -23,6 +23,7 @@ func main() {
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowPosition(3360-(screenWidth+100), 100)
 	ebiten.SetMaxTPS(15)
+	ebiten.SetRunnableOnUnfocused(true)
 
 	manager := app.NewGameManager(screenWidth, screenHeight)
 

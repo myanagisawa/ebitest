@@ -2,7 +2,6 @@ package wmap
 
 import (
 	"fmt"
-	"image/color"
 	"log"
 	"math"
 	"time"
@@ -20,7 +19,7 @@ import (
 var (
 	scrollProg *scroller
 
-	routeInfo interfaces.UIControl
+	routeInfo interfaces.UIDialog
 )
 
 type scroller struct {
@@ -150,8 +149,30 @@ func createRoute(obj *obj.Route, parent *MapLayer) *route {
 		}
 		if t, ok := ev.(*route); ok {
 			name := t.Label()
-			routeInfo.SetPosition(t.Position(enum.TypeLocal).Get())
-			log.Printf("name: %s", name)
+			lpos := t.Layer().Position(enum.TypeGlobal)
+			// log.Printf("---------------------")
+			// log.Printf("pos: x=%0.1f, y=%0.1f", pos.X(), pos.Y())
+			// log.Printf("lpos: x=%0.1f, y=%0.1f", lpos.X(), lpos.Y())
+			// log.Printf("tpos: x=%0.1f, y=%0.1f", t.Position(enum.TypeLocal).X(), t.Position(enum.TypeLocal).Y())
+			infopos := g.NewPoint(pos.X()-lpos.X()+5, pos.Y()-lpos.Y()-25)
+			routeInfo.SetPosition(infopos.Get())
+
+			if et, ok := params["event_type"]; ok {
+				switch et.(enum.EventTypeEnum) {
+				case enum.EventTypeFocus:
+					text := t.obj.Text
+					ts := text.Bounds().Size()
+					ds := routeInfo.Size(enum.TypeScaled)
+					p := g.NewPoint(float64((ds.W()-ts.X)/2), float64((ds.H()-ts.Y)/2))
+					label := control.NewControlBase("", text, p)
+					routeInfo.SetItems([]interfaces.UIControl{label})
+					routeInfo.SetVisible(true)
+				case enum.EventTypeBlur:
+					routeInfo.SetItems([]interfaces.UIControl{})
+					routeInfo.SetVisible(false)
+				}
+				log.Printf("name: %s, event_type: %t", name, et)
+			}
 		}
 	})
 	return o
@@ -311,10 +332,18 @@ func NewMapLayer() *MapLayer {
 		ml.routes = routes
 	}
 
-	routeInfo = control.NewSimpleLabel("route info", g.NewPoint(0, 0), 14, &color.RGBA{0, 0, 0, 255}, enum.FontStyleGenShinGothicRegular)
-	ml.AddUIControl(routeInfo)
+	// d := control.NewDialog("route info", g.NewSize(120, 40), true)
+	// d.SetPosition(500, 1400)
+	// ml.AddUIControl(d)
+
+	newRouteInfo(ml)
 
 	return ml
+}
+
+func newRouteInfo(parent *MapLayer) {
+	routeInfo = control.NewDialog("route info", g.NewSize(70, 25), false)
+	routeInfo.SetLayer(parent)
 }
 
 // GetObjects ...
@@ -434,5 +463,8 @@ func (o *MapLayer) Draw(screen *ebiten.Image) {
 	for _, site := range o.sites {
 		site.draw(screen)
 	}
+
+	// Dialog
+	routeInfo.Draw(screen)
 
 }

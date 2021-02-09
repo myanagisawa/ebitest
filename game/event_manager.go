@@ -135,9 +135,11 @@ func (o *EventManager) Update() error {
 				// フォーカス対象が変わった
 				if t, ok := hoverdObject.(interfaces.EventOwner); ok {
 					// 前のフォーカスを外す処理
+					evparams["event_type"] = enum.EventTypeBlur
 					t.EventHandler().Firing(enum.EventTypeFocus, t, cursorpos, evparams)
 				}
 				// 新しいフォーカス処理
+				evparams["event_type"] = enum.EventTypeFocus
 				hoverd.EventHandler().Firing(enum.EventTypeFocus, hoverd, cursorpos, evparams)
 				hoverdObject = newHoverdObject
 				// log.Printf("1: hoverdObject=%p", hoverdObject)
@@ -145,6 +147,7 @@ func (o *EventManager) Update() error {
 		} else {
 			// フォーカス対象なし
 			if t, ok := hoverdObject.(interfaces.EventOwner); ok {
+				evparams["event_type"] = enum.EventTypeBlur
 				t.EventHandler().Firing(enum.EventTypeFocus, t, cursorpos, evparams)
 			}
 			hoverdObject = nil

@@ -132,10 +132,13 @@ type UIControl interface {
 	SetLayer(l Layer)
 	SetPosition(x, y float64)
 	SetScale(x, y float64)
+	Visible() bool
+	SetVisible(b bool)
 	SetAngle(theta float64)
 	GetObjects(x, y int) []EbiObject
 	Update() error
 	Draw(screen *ebiten.Image)
+	DrawWithOptions(screen *ebiten.Image, op *ebiten.DrawImageOptions) *ebiten.DrawImageOptions
 }
 
 // UIScrollView ...
@@ -143,6 +146,13 @@ type UIScrollView interface {
 	UIControl
 	SetDataSource(colNames []interface{}, data [][]interface{})
 	SetRowClickFunc(headerfunc func(row interface{}, pos *g.Point, params map[string]interface{}), rowfunc func(idx int, row interface{}, pos *g.Point, params map[string]interface{}))
+}
+
+// UIDialog ...
+type UIDialog interface {
+	UIControl
+	Items() []UIControl
+	SetItems(items []UIControl)
 }
 
 // ListRow ...

@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -27,6 +28,7 @@ type Base struct {
 	angle    float64
 	moving   *g.Point
 	hover    bool
+	visible  bool
 
 	eventHandler interfaces.EventHandler
 }
@@ -124,6 +126,9 @@ func (o *Base) Position(t enum.ValueTypeEnum) *g.Point {
 		sx, sy := o.Layer().Scale(enum.TypeGlobal).Get()
 		gx += (o.position.X() + dx) * sx
 		gy += (o.position.Y() + dy) * sy
+	} else {
+		gx = o.position.X() + dx
+		gy = o.position.Y() + dy
 	}
 	return g.NewPoint(gx, gy)
 }
@@ -156,6 +161,16 @@ func (o *Base) SetAngle(theta float64) {
 // Theta ...
 func (o *Base) Theta() float64 {
 	return 2 * math.Pi * float64(o.Angle(enum.TypeGlobal)) / 360.0
+}
+
+// Visible ...
+func (o *Base) Visible() bool {
+	return o.visible
+}
+
+// SetVisible ...
+func (o *Base) SetVisible(b bool) {
+	o.visible = b
 }
 
 // ToggleHover ...
@@ -227,12 +242,16 @@ func (o *Base) Draw(screen *ebiten.Image) {
 
 // DrawWithOptions draws the sprite.
 func (o *Base) DrawWithOptions(screen *ebiten.Image, op *ebiten.DrawImageOptions) *ebiten.DrawImageOptions {
+	if !o.visible {
+		log.Printf("%sは不可視です。", o.label)
+		return op
+	}
 	if op == nil {
 		op = &ebiten.DrawImageOptions{}
 	}
 
 	// 描画位置指定
-	op.GeoM.Reset()
+	// op.GeoM.Reset()
 	op.GeoM.Scale(o.Scale(enum.TypeGlobal).Get())
 
 	bgSize := g.NewSize(o.image.Size())
@@ -272,6 +291,7 @@ func NewControlBase(label string, eimg *ebiten.Image, pos *g.Point) interfaces.U
 		image:        eimg,
 		position:     pos,
 		scale:        g.NewScale(1.0, 1.0),
+		visible:      true,
 		eventHandler: event.NewEventHandler(),
 	}
 
@@ -290,6 +310,7 @@ func NewSimpleLabel(label string, pos *g.Point, pt int, c *color.RGBA, family en
 		image:        eimg,
 		position:     pos,
 		scale:        g.NewScale(1.0, 1.0),
+		visible:      true,
 		eventHandler: event.NewEventHandler(),
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
@@ -310,6 +331,7 @@ func NewSimpleButton(label string, img image.Image, pos *g.Point, pt int, c *col
 		image:        eimg,
 		position:     pos,
 		scale:        g.NewScale(1.0, 1.0),
+		visible:      true,
 		eventHandler: event.NewEventHandler(),
 	}
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
