@@ -4,7 +4,6 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -173,6 +172,16 @@ func (o *Base) SetVisible(b bool) {
 	o.visible = b
 }
 
+// Hover ...
+func (o *Base) Hover() bool {
+	return o.hover
+}
+
+// SetHover ...
+func (o *Base) SetHover(b bool) {
+	o.hover = b
+}
+
 // ToggleHover ...
 func (o *Base) ToggleHover() {
 	o.hover = !o.hover
@@ -243,7 +252,7 @@ func (o *Base) Draw(screen *ebiten.Image) {
 // DrawWithOptions draws the sprite.
 func (o *Base) DrawWithOptions(screen *ebiten.Image, op *ebiten.DrawImageOptions) *ebiten.DrawImageOptions {
 	if !o.visible {
-		log.Printf("%sは不可視です。", o.label)
+		// log.Printf("%sは不可視です。", o.label)
 		return op
 	}
 	if op == nil {

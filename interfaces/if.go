@@ -14,6 +14,8 @@ type EbiObject interface {
 
 // Focusable ...
 type Focusable interface {
+	Hover() bool
+	SetHover(b bool)
 	ToggleHover()
 }
 

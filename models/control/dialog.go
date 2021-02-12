@@ -2,7 +2,6 @@ package control
 
 import (
 	"image/color"
-	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/app/g"
@@ -69,7 +68,7 @@ func (o *Dialog) Draw(screen *ebiten.Image) {
 // DrawWithOptions draws the sprite.
 func (o *Dialog) DrawWithOptions(screen *ebiten.Image, op *ebiten.DrawImageOptions) *ebiten.DrawImageOptions {
 	if !o.visible {
-		log.Printf("%sは不可視です。", o.label)
+		// log.Printf("%sは不可視です。", o.label)
 		return op
 	}
 	if op == nil {

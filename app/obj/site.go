@@ -35,7 +35,7 @@ func NewSite(code string, t enum.SiteTypeEnum, name string, loc *g.Point) *Site 
 	// timg := ebiten.NewImageFromImage(*ti)
 	fset := char.Res.Get(12, enum.FontStyleGenShinGothicRegular)
 	ti := fset.GetStringImage(name)
-	ti = utils.TextColorTo(ti.(draw.Image), &color.RGBA{32, 32, 32, 255})
+	ti = utils.TextColorTo(ti.(draw.Image), &color.RGBA{255, 255, 255, 255})
 	timg := ebiten.NewImageFromImage(ti)
 
 	return &Site{

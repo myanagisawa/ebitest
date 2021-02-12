@@ -34,6 +34,7 @@ func (o *EventManager) setStroke(x, y int) {
 	}
 	targets := o.GetEventTargetList(x, y, enum.EventTypeClick, enum.EventTypeDragging, enum.EventTypeLongPress)
 	if len(targets) > 0 {
+		// log.Printf("targets: %#v", targets)
 		stroke := input.NewStroke(&input.MouseStrokeSource{})
 		stroke.SetMouseDownTargets(targets)
 		o.stroke = stroke

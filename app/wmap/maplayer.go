@@ -19,6 +19,7 @@ import (
 var (
 	scrollProg *scroller
 
+	siteInfo  interfaces.UIDialog
 	routeInfo interfaces.UIDialog
 )
 
@@ -91,10 +92,25 @@ func createSite(obj *obj.Site, parent *MapLayer) *site {
 	}
 	o.EventHandler().AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
 	o.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
-		log.Printf("callback::click")
+		log.Printf("callback::click!! %T", ev)
+		if t, ok := ev.(*site); ok {
+			log.Printf("hoge")
+			lpos := t.Layer().Position(enum.TypeGlobal)
+			infopos := g.NewPoint(pos.X()-lpos.X(), pos.Y()-lpos.Y())
+			siteInfo.SetPosition(infopos.Get())
+			siteInfo.SetVisible(true)
+		}
 	})
 
 	return o
+}
+
+// GetObjects ...
+func (o *site) GetObjects(x, y int) []interfaces.EbiObject {
+	if o.In(x, y) {
+		return []interfaces.EbiObject{o}
+	}
+	return nil
 }
 
 func (o *site) draw(screen *ebiten.Image) {
@@ -106,6 +122,19 @@ func (o *site) draw(screen *ebiten.Image) {
 	size := g.NewSize(o.obj.Image.Size())
 	textSize := g.NewSize(o.obj.Text.Size())
 	op.GeoM.Translate(-float64(textSize.W()-size.W())/2, float64(size.H()))
+
+	// text shadow
+	op.ColorM.Scale(0.1, 0.1, 0.1, 1.0)
+	screen.DrawImage(o.obj.Text, op)
+
+	op.ColorM.Scale(10.0, 10.0, 10.0, 1.0)
+	op.GeoM.Translate(1, 1)
+
+	r, g, b, a := 1.0, 1.0, 1.0, 1.0
+	if o.Hover() {
+		r, g, b, a = 0.5, 0.5, 0.5, 1.0
+	}
+	op.ColorM.Scale(r, g, b, a)
 	screen.DrawImage(o.obj.Text, op)
 }
 
@@ -178,6 +207,7 @@ func createRoute(obj *obj.Route, parent *MapLayer) *route {
 	return o
 }
 
+// In ...
 func (o *route) In(x, y int) bool {
 	// オブジェクトの位置を取得する
 	pos := o.Base.Position(enum.TypeGlobal)
@@ -336,9 +366,15 @@ func NewMapLayer() *MapLayer {
 	// d.SetPosition(500, 1400)
 	// ml.AddUIControl(d)
 
+	newSiteInfo(ml)
 	newRouteInfo(ml)
 
 	return ml
+}
+
+func newSiteInfo(parent *MapLayer) {
+	siteInfo = control.NewDialog("site info", g.NewSize(300, 500), false)
+	siteInfo.SetLayer(parent)
 }
 
 func newRouteInfo(parent *MapLayer) {
