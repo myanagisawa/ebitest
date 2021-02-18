@@ -31,6 +31,7 @@ type (
 var (
 	gm          interfaces.GameManager
 	maplayer    *MapLayer
+	il          *infoLayer
 	scrollView1 interfaces.UIScrollView
 )
 
@@ -61,7 +62,7 @@ func (o *Scene) didLoad() func() {
 		mainf := frame.NewFrame("main frame", g.NewPoint(300, 20), g.NewSize(g.Width-300, g.Height-220), &color.RGBA{200, 200, 200, 255}, true)
 		o.AddFrame(mainf)
 
-		// l := layer.NewLayerBaseByImage("map", g.Images["world"], g.NewPoint(0, 0), false)
+		// マップレイヤ
 		maplayer = NewMapLayer()
 		mainf.AddLayer(maplayer)
 
@@ -82,6 +83,10 @@ func (o *Scene) didLoad() func() {
 			o.Manager().TransitionTo(enum.MenuEnum)
 		})
 		maplayer.AddUIControl(c)
+
+		// 情報表示レイヤ
+		il = newInfoLayer(mainf.Size().Get())
+		mainf.AddLayer(il)
 
 		// サブフレーム1（上）
 		topf := frame.NewFrame("top frame", g.NewPoint(0, 0), g.NewSize(g.Width, 20), &color.RGBA{0, 0, 0, 255}, false)

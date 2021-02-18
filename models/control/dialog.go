@@ -2,6 +2,7 @@ package control
 
 import (
 	"image/color"
+	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/app/g"
@@ -50,9 +51,28 @@ func NewDialog(label string, size *g.Size, visible bool) interfaces.UIDialog {
 	return o
 }
 
+// GetObjects ...
+func (o *Dialog) GetObjects(x, y int) []interfaces.EbiObject {
+	objs := []interfaces.EbiObject{}
+	for i := len(o.items) - 1; i >= 0; i-- {
+		c := o.items[i]
+		objs = append(objs, c.GetObjects(x, y)...)
+	}
+
+	if o.In(x, y) {
+		objs = append(objs, o)
+	}
+	return objs
+}
+
 // Items ...
 func (o *Dialog) Items() []interfaces.UIControl {
 	return o.items
+}
+
+// AddItem ...
+func (o *Dialog) AddItem(item interfaces.UIControl) {
+	o.items = append(o.items, item)
 }
 
 // SetItems ...
@@ -62,34 +82,36 @@ func (o *Dialog) SetItems(items []interfaces.UIControl) {
 
 // Draw draws the sprite.
 func (o *Dialog) Draw(screen *ebiten.Image) {
-	_ = o.DrawWithOptions(screen, nil)
+	o.DrawWithOptions(screen, nil)
 }
 
 // DrawWithOptions draws the sprite.
-func (o *Dialog) DrawWithOptions(screen *ebiten.Image, op *ebiten.DrawImageOptions) *ebiten.DrawImageOptions {
+func (o *Dialog) DrawWithOptions(screen *ebiten.Image, in *ebiten.DrawImageOptions) *ebiten.DrawImageOptions {
 	if !o.visible {
 		// log.Printf("%sは不可視です。", o.label)
-		return op
+		return in
 	}
-	if op == nil {
-		op = &ebiten.DrawImageOptions{}
-		op.GeoM.Reset()
-	}
+	op := &ebiten.DrawImageOptions{}
 
 	// 描画位置指定
 	op.GeoM.Scale(o.Scale(enum.TypeGlobal).Get())
 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
 
+	if in != nil {
+		op.GeoM.Concat(in.GeoM)
+		op.ColorM.Concat(in.ColorM)
+	}
 	screen.DrawImage(o.image, op)
 
 	// items 描画
 	for i := range o.items {
 		item := o.items[i]
-		op.GeoM.Reset()
-		op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
-		op.ColorM.Reset()
-		op.ColorM.Scale(0.7, 0.7, 0.7, 1.0)
-		op = item.DrawWithOptions(screen, op)
+
+		op2 := &ebiten.DrawImageOptions{}
+		op2.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
+		item.DrawWithOptions(screen, op2)
+
+		log.Printf("item: %s", item.Label())
 	}
 
 	// 枠の描画

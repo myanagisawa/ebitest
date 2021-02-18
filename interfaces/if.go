@@ -140,7 +140,7 @@ type UIControl interface {
 	GetObjects(x, y int) []EbiObject
 	Update() error
 	Draw(screen *ebiten.Image)
-	DrawWithOptions(screen *ebiten.Image, op *ebiten.DrawImageOptions) *ebiten.DrawImageOptions
+	DrawWithOptions(screen *ebiten.Image, in *ebiten.DrawImageOptions) *ebiten.DrawImageOptions
 }
 
 // UIScrollView ...
@@ -154,7 +154,13 @@ type UIScrollView interface {
 type UIDialog interface {
 	UIControl
 	Items() []UIControl
+	AddItem(item UIControl)
 	SetItems(items []UIControl)
+}
+
+// UIHeaderBar ...
+type UIHeaderBar interface {
+	UIControl
 }
 
 // ListRow ...

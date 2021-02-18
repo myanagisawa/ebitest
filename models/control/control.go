@@ -64,6 +64,9 @@ func (o *Base) Layer() interfaces.Layer {
 
 // In ...
 func (o *Base) In(x, y int) bool {
+	if !o.visible {
+		return false
+	}
 	return controlIn(x, y,
 		o.Position(enum.TypeGlobal),
 		g.NewSize(o.image.Size()),
@@ -246,18 +249,16 @@ func (o *Base) Update() error {
 
 // Draw draws the sprite.
 func (o *Base) Draw(screen *ebiten.Image) {
-	_ = o.DrawWithOptions(screen, nil)
+	o.DrawWithOptions(screen, nil)
 }
 
 // DrawWithOptions draws the sprite.
-func (o *Base) DrawWithOptions(screen *ebiten.Image, op *ebiten.DrawImageOptions) *ebiten.DrawImageOptions {
+func (o *Base) DrawWithOptions(screen *ebiten.Image, in *ebiten.DrawImageOptions) *ebiten.DrawImageOptions {
 	if !o.visible {
 		// log.Printf("%sは不可視です。", o.label)
-		return op
+		return in
 	}
-	if op == nil {
-		op = &ebiten.DrawImageOptions{}
-	}
+	op := &ebiten.DrawImageOptions{}
 
 	// 描画位置指定
 	// op.GeoM.Reset()
@@ -283,6 +284,10 @@ func (o *Base) DrawWithOptions(screen *ebiten.Image, op *ebiten.DrawImageOptions
 	// if strings.HasPrefix(o.label, "route") {
 	// 	log.Printf("Draw: %s: pos=%#v scale=%#v angle=%#v", o.label, o.Position(enum.TypeGlobal), o.Scale(enum.TypeGlobal), o.Angle(enum.TypeGlobal))
 	// }
+	if in != nil {
+		op.GeoM.Concat(in.GeoM)
+		op.ColorM.Concat(in.ColorM)
+	}
 	screen.DrawImage(o.image, op)
 
 	return op

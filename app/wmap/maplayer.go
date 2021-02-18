@@ -19,7 +19,6 @@ import (
 var (
 	scrollProg *scroller
 
-	siteInfo  interfaces.UIDialog
 	routeInfo interfaces.UIDialog
 )
 
@@ -94,11 +93,21 @@ func createSite(obj *obj.Site, parent *MapLayer) *site {
 	o.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 		log.Printf("callback::click!! %T", ev)
 		if t, ok := ev.(*site); ok {
-			log.Printf("hoge")
-			lpos := t.Layer().Position(enum.TypeGlobal)
-			infopos := g.NewPoint(pos.X()-lpos.X(), pos.Y()-lpos.Y())
-			siteInfo.SetPosition(infopos.Get())
-			siteInfo.SetVisible(true)
+			log.Printf("hoge: %v", t)
+			// lpos := t.Layer().Position(enum.TypeGlobal)
+			// infopos := g.NewPoint(pos.X(), pos.Y())
+
+			// lw := t.Layer().Frame().Size()
+			// sitepos := t.Position(enum.TypeLocal)
+			// if lw/2 < int(sitepos.X()) {
+			// 	// site表示位置が左側
+			// 	siteInfo.SetPosition(0.0, 0.0)
+			// } else {
+			// 	// site表示位置が右側
+			// 	siteInfo.SetPosition(float64(lw-siteInfo.Size(enum.TypeScaled).W()), 0.0)
+			// }
+			// siteInfo.SetVisible(true)
+			il.ShowSiteInfo(t.obj)
 		}
 	})
 
@@ -115,8 +124,7 @@ func (o *site) GetObjects(x, y int) []interfaces.EbiObject {
 
 func (o *site) draw(screen *ebiten.Image) {
 
-	op := &ebiten.DrawImageOptions{}
-	op = o.Base.DrawWithOptions(screen, op)
+	op := o.Base.DrawWithOptions(screen, nil)
 
 	// site名を描画
 	size := g.NewSize(o.obj.Image.Size())
@@ -366,15 +374,9 @@ func NewMapLayer() *MapLayer {
 	// d.SetPosition(500, 1400)
 	// ml.AddUIControl(d)
 
-	newSiteInfo(ml)
 	newRouteInfo(ml)
 
 	return ml
-}
-
-func newSiteInfo(parent *MapLayer) {
-	siteInfo = control.NewDialog("site info", g.NewSize(300, 500), false)
-	siteInfo.SetLayer(parent)
 }
 
 func newRouteInfo(parent *MapLayer) {
@@ -502,5 +504,6 @@ func (o *MapLayer) Draw(screen *ebiten.Image) {
 
 	// Dialog
 	routeInfo.Draw(screen)
+	siteInfo.Draw(screen)
 
 }
