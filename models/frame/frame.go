@@ -14,6 +14,7 @@ import (
 
 // Base ...
 type Base struct {
+	scene    interfaces.Scene
 	label    string
 	image    *ebiten.Image
 	parent   interfaces.Scene
@@ -47,7 +48,7 @@ func (o *Base) SetParent(parent interfaces.Scene) {
 
 // AddLayer ...
 func (o *Base) AddLayer(l interfaces.Layer) {
-	l.SetFrame(o)
+	// l.SetFrame(o)
 	o.layers = append(o.layers, l)
 }
 
@@ -151,15 +152,6 @@ func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 
 // Update ...
 func (o *Base) Update() error {
-	// if o.scrollable {
-	// 	if len(o.layers) > 0 {
-	// 		et := o.GetEdgeType(ebiten.CursorPosition())
-	// 		if et != enum.EdgeTypeNotEdge {
-	// 			o.layers[0].Scroll(et)
-	// 		}
-	// 	}
-	// }
-
 	o.activeLayer = o.LayerAt(ebiten.CursorPosition())
 
 	for _, layer := range o.layers {
@@ -206,17 +198,18 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 }
 
 // NewFrame ...
-func NewFrame(label string, pos *g.Point, size *g.Size, c *color.RGBA, scrollable bool) interfaces.Frame {
+func NewFrame(s interfaces.Scene, label string, pos *g.Point, size *g.Size, c *color.RGBA, scrollable bool) interfaces.Frame {
 	img := ebiten.NewImageFromImage(utils.CreateRectImage(size.W(), size.H(), c))
 
-	s := &Base{
+	o := &Base{
+		scene:        s,
 		label:        label,
 		image:        img,
 		position:     pos,
 		eventHandler: event.NewEventHandler(),
 	}
 	if scrollable {
-		s.eventHandler.AddEventListener(enum.EventTypeScroll, func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
+		o.eventHandler.AddEventListener(enum.EventTypeScroll, func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 			if t, ok := o.(interfaces.Scrollable); ok {
 				t.DoScroll(pos.GetInt())
 			}
@@ -224,5 +217,6 @@ func NewFrame(label string, pos *g.Point, size *g.Size, c *color.RGBA, scrollabl
 		})
 	}
 
-	return s
+	s.AddFrame(o)
+	return o
 }

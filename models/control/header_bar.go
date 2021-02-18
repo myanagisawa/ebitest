@@ -8,7 +8,6 @@ import (
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/functions"
 	"github.com/myanagisawa/ebitest/interfaces"
-	"github.com/myanagisawa/ebitest/models/event"
 	"github.com/myanagisawa/ebitest/utils"
 )
 
@@ -21,7 +20,7 @@ type HeaderBar struct {
 }
 
 // NewHeaderBar ...
-func NewHeaderBar(label string, parent interfaces.UIControl, draggable bool, hasCloseButton bool) interfaces.UIHeaderBar {
+func NewHeaderBar(l interfaces.Layer, label string, parent interfaces.UIControl, draggable bool, hasCloseButton bool) interfaces.UIHeaderBar {
 	f := make([]*ebiten.Image, 4)
 	// フレームイメージを作成
 	f[0] = ebiten.NewImageFromImage(utils.CreateRectImage(2, 2, &color.RGBA{220, 220, 220, 255}))
@@ -31,14 +30,7 @@ func NewHeaderBar(label string, parent interfaces.UIControl, draggable bool, has
 
 	img := utils.CreateRectImage(1, 1, &color.RGBA{0, 0, 0, 192})
 
-	b := &Base{
-		label:        label,
-		image:        ebiten.NewImageFromImage(img),
-		position:     g.NewPoint(0, 0),
-		scale:        g.NewScale(float64(parent.Size(enum.TypeScaled).W()), 20),
-		visible:      true,
-		eventHandler: event.NewEventHandler(),
-	}
+	b := NewControlBase(l, label, ebiten.NewImageFromImage(img), g.DefPoint(), g.NewScale(float64(parent.Size(enum.TypeScaled).W()), 20), true).(*Base)
 	o := &HeaderBar{
 		Base:     *b,
 		parent:   parent,
@@ -50,7 +42,7 @@ func NewHeaderBar(label string, parent interfaces.UIControl, draggable bool, has
 	}
 
 	if hasCloseButton {
-		closeBtn := NewSimpleLabel("×", g.NewPoint(0, 0), 14, &color.RGBA{255, 255, 255, 255}, enum.FontStyleGenShinGothicBold)
+		closeBtn := NewSimpleLabel(l, "×", g.NewPoint(0, 0), 14, &color.RGBA{255, 255, 255, 255}, enum.FontStyleGenShinGothicBold)
 		closeBtn.EventHandler().AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
 		closeBtn.EventHandler().AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 			// 閉じる
@@ -59,6 +51,7 @@ func NewHeaderBar(label string, parent interfaces.UIControl, draggable bool, has
 		o.closeBtn = closeBtn
 	}
 
+	l.AddUIControl(o)
 	return o
 }
 

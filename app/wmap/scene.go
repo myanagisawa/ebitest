@@ -36,11 +36,13 @@ var (
 )
 
 // NewCustomScrollView ...
-func NewCustomScrollView(label string, pos *g.Point, size *g.Size) interfaces.UIScrollView {
-	base := control.NewUIScrollView(label, pos, size).(*control.UIScrollView)
-	return &CustomScrollView{
+func NewCustomScrollView(l interfaces.Layer, label string, pos *g.Point, size *g.Size) interfaces.UIScrollView {
+	base := control.NewUIScrollView(l, label, pos, size).(*control.UIScrollView)
+	o := &CustomScrollView{
 		UIScrollView: *base,
 	}
+	l.AddUIControl(o)
+	return o
 }
 
 // NewScene ...
@@ -59,54 +61,44 @@ func NewScene(m interfaces.GameManager) *Scene {
 func (o *Scene) didLoad() func() {
 	return func() {
 		// メインフレーム
-		mainf := frame.NewFrame("main frame", g.NewPoint(300, 20), g.NewSize(g.Width-300, g.Height-220), &color.RGBA{200, 200, 200, 255}, true)
-		o.AddFrame(mainf)
+		mainf := frame.NewFrame(o, "main frame", g.NewPoint(300, 20), g.NewSize(g.Width-300, g.Height-220), &color.RGBA{200, 200, 200, 255}, true)
 
 		// マップレイヤ
-		maplayer = NewMapLayer()
-		mainf.AddLayer(maplayer)
+		maplayer = NewMapLayer(mainf)
 
 		// c := control.NewSimpleLabel("test", g.Images["btnBase"], g.NewPoint(100, 100), color.Black)
-		c := control.NewSimpleLabel("SIMPLE LABEL", g.NewPoint(100, 100), 48, &color.RGBA{0, 0, 255, 255}, enum.FontStyleGenShinGothicMedium)
+		c := control.NewSimpleLabel(maplayer, "SIMPLE LABEL", g.NewPoint(100, 100), 48, &color.RGBA{0, 0, 255, 255}, enum.FontStyleGenShinGothicMedium)
 		c.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 			log.Printf("callback::click")
 		})
-		maplayer.AddUIControl(c)
-		c = control.NewSimpleLabel("シンプルラベル", g.NewPoint(100, 150), 32, &color.RGBA{0, 255, 0, 255}, enum.FontStyleGenShinGothicNormal)
-		maplayer.AddUIControl(c)
-		c = control.NewSimpleLabel("文字列試験", g.NewPoint(100, 200), 24, &color.RGBA{255, 0, 0, 255}, enum.FontStyleGenShinGothicRegular)
-		maplayer.AddUIControl(c)
 
-		c = control.NewSimpleButton("SIMPLE BUTTON", utils.CopyImage(g.Images["btnBase"]), g.NewPoint(100, 350), 16, &color.RGBA{0, 0, 255, 255})
+		c = control.NewSimpleLabel(maplayer, "シンプルラベル", g.NewPoint(100, 150), 32, &color.RGBA{0, 255, 0, 255}, enum.FontStyleGenShinGothicNormal)
+		c = control.NewSimpleLabel(maplayer, "文字列試験", g.NewPoint(100, 200), 24, &color.RGBA{255, 0, 0, 255}, enum.FontStyleGenShinGothicRegular)
+
+		c = control.NewSimpleButton(maplayer, "SIMPLE BUTTON", utils.CopyImage(g.Images["btnBase"]), g.NewPoint(100, 350), 16, &color.RGBA{0, 0, 255, 255})
 		c.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
 			log.Printf("callback::click")
 			o.Manager().TransitionTo(enum.MenuEnum)
 		})
-		maplayer.AddUIControl(c)
 
 		// 情報表示レイヤ
-		il = newInfoLayer(mainf.Size().Get())
-		mainf.AddLayer(il)
+		w, h := mainf.Size().Get()
+		il = newInfoLayer(mainf, w, h)
 
 		// サブフレーム1（上）
-		topf := frame.NewFrame("top frame", g.NewPoint(0, 0), g.NewSize(g.Width, 20), &color.RGBA{0, 0, 0, 255}, false)
-		o.AddFrame(topf)
+		_ = frame.NewFrame(o, "top frame", g.NewPoint(0, 0), g.NewSize(g.Width, 20), &color.RGBA{0, 0, 0, 255}, false)
 
 		// サブフレーム2（横）
 		fs := g.NewSize(300, g.Height-220)
-		sidef := frame.NewFrame("side frame", g.NewPoint(0, 20), fs, &color.RGBA{127, 127, 200, 255}, false)
-		o.AddFrame(sidef)
+		sidef := frame.NewFrame(o, "side frame", g.NewPoint(0, 20), fs, &color.RGBA{127, 127, 200, 255}, false)
 
-		l := layer.NewLayerBase("Layer1", g.NewPoint(0, 0), fs, &color.RGBA{0, 0, 0, 128}, false)
-		sidef.AddLayer(l)
+		l := layer.NewLayerBase(sidef, "Layer1", g.NewPoint(0, 0), fs, &color.RGBA{0, 0, 0, 128}, false)
 
 		// スクロールビュー
-		scrollView1 = NewCustomScrollView("scrollView1", g.NewPoint(0, 10.0), g.NewSize(sidef.Size().W(), sidef.Size().H()/2))
-		l.AddUIControl(scrollView1)
+		scrollView1 = NewCustomScrollView(l, "scrollView1", g.NewPoint(0, 10.0), g.NewSize(sidef.Size().W(), sidef.Size().H()/2))
 
 		// サブフレーム3（下）
-		bottomf := frame.NewFrame("bottom frame", g.NewPoint(0, float64(g.Height-200)), g.NewSize(g.Width, 200), &color.RGBA{127, 200, 127, 255}, false)
-		o.AddFrame(bottomf)
+		_ = frame.NewFrame(o, "bottom frame", g.NewPoint(0, float64(g.Height-200)), g.NewSize(g.Width, 200), &color.RGBA{127, 200, 127, 255}, false)
 
 		log.Printf("MainMap.DidLoad")
 	}

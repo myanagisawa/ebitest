@@ -8,7 +8,6 @@ import (
 	"github.com/myanagisawa/ebitest/app/g"
 	"github.com/myanagisawa/ebitest/enum"
 	"github.com/myanagisawa/ebitest/interfaces"
-	"github.com/myanagisawa/ebitest/models/event"
 	"github.com/myanagisawa/ebitest/utils"
 )
 
@@ -20,7 +19,7 @@ type Dialog struct {
 }
 
 // NewDialog ...
-func NewDialog(label string, size *g.Size, visible bool) interfaces.UIDialog {
+func NewDialog(l interfaces.Layer, label string, size *g.Size, visible bool) interfaces.UIDialog {
 	f := make([]*ebiten.Image, 8)
 	// フレームイメージを作成
 	f[0] = ebiten.NewImageFromImage(utils.CreateRectImage(3, 3, &color.RGBA{220, 220, 220, 255}))
@@ -35,19 +34,14 @@ func NewDialog(label string, size *g.Size, visible bool) interfaces.UIDialog {
 
 	img := utils.CreateRectImage(1, 1, &color.RGBA{0, 0, 0, 127})
 
-	b := &Base{
-		label:        label,
-		image:        ebiten.NewImageFromImage(img),
-		position:     g.NewPoint(0, 0),
-		scale:        g.NewScale(float64(size.W()), float64(size.H())),
-		visible:      visible,
-		eventHandler: event.NewEventHandler(),
-	}
+	b := NewControlBase(l, label, ebiten.NewImageFromImage(img), g.DefPoint(), g.NewScale(float64(size.W()), float64(size.H())), visible).(*Base)
 	o := &Dialog{
 		Base:     *b,
 		items:    []interfaces.UIControl{},
 		frameImg: f,
 	}
+
+	l.AddUIControl(o)
 	return o
 }
 

@@ -73,6 +73,11 @@ func NewPoint(x, y float64) *Point {
 	return &Point{x, y}
 }
 
+// DefPoint ...
+func DefPoint() *Point {
+	return &Point{0.0, 0.0}
+}
+
 // X ...
 func (p *Point) X() float64 {
 	return p.x
@@ -114,6 +119,11 @@ type Scale struct {
 // NewScale ...
 func NewScale(x, y float64) *Scale {
 	return &Scale{x, y}
+}
+
+// DefScale ...
+func DefScale() *Scale {
+	return &Scale{1.0, 1.0}
 }
 
 // X ...

@@ -15,9 +15,9 @@ import (
 
 // Base ...
 type Base struct {
+	frame        interfaces.Frame
 	label        string
 	image        *ebiten.Image
-	frame        interfaces.Frame
 	position     *g.Point
 	scale        *g.Scale
 	moving       *g.Point
@@ -255,17 +255,18 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 }
 
 // NewLayerBase ...
-func NewLayerBase(label string, pos *g.Point, size *g.Size, c *color.RGBA, draggable bool) interfaces.Layer {
+func NewLayerBase(f interfaces.Frame, label string, pos *g.Point, size *g.Size, c *color.RGBA, draggable bool) interfaces.Layer {
 	img := utils.CreateRectImage(size.W(), size.H(), c)
 
-	return NewLayerBaseByImage(label, img, pos, draggable)
+	return NewLayerBaseByImage(f, label, img, pos, draggable)
 }
 
 // NewLayerBaseByImage ...
-func NewLayerBaseByImage(label string, img image.Image, pos *g.Point, draggable bool) interfaces.Layer {
+func NewLayerBaseByImage(f interfaces.Frame, label string, img image.Image, pos *g.Point, draggable bool) interfaces.Layer {
 	eimg := ebiten.NewImageFromImage(img)
 
 	l := &Base{
+		frame:        f,
 		label:        label,
 		image:        eimg,
 		position:     pos,
@@ -276,6 +277,8 @@ func NewLayerBaseByImage(label string, img image.Image, pos *g.Point, draggable 
 		l.eventHandler.AddEventListener(enum.EventTypeDragging, functions.CommonEventCallback)
 		l.eventHandler.AddEventListener(enum.EventTypeDragDrop, functions.CommonEventCallback)
 	}
+	f.AddLayer(l)
+
 	return l
 }
 

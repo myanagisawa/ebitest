@@ -82,8 +82,8 @@ type site struct {
 
 func createSite(obj *obj.Site, parent *MapLayer) *site {
 	pos := parent.getLocation(obj.Location)
-	base := control.NewControlBase(obj.Code, obj.Image, pos).(*control.Base)
-	base.SetLayer(parent)
+	scale := g.NewScale(1.0, 1.0)
+	base := control.NewControlBase(parent, obj.Code, obj.Image, pos, scale, true).(*control.Base)
 	o := &site{
 		Base:   *base,
 		parent: parent,
@@ -111,6 +111,7 @@ func createSite(obj *obj.Site, parent *MapLayer) *site {
 		}
 	})
 
+	parent.AddUIControl(o)
 	return o
 }
 
@@ -170,9 +171,8 @@ func createRoute(obj *obj.Route, parent *MapLayer) *route {
 	// 角度を算出
 	rad := math.Atan2(y2-y1, x2-x1)
 
-	base := control.NewControlBase(obj.Code, obj.Image, g.NewPoint(x1, y1)).(*control.Base)
-	base.SetLayer(parent)
-	base.SetScale(distance/float64(routeSize.W()), 1.0)
+	scale := g.NewScale(distance/float64(routeSize.W()), 1.0)
+	base := control.NewControlBase(parent, obj.Code, obj.Image, g.NewPoint(x1, y1), scale, true).(*control.Base)
 	base.SetAngle(rad)
 	o := &route{
 		Base:   *base,
@@ -201,7 +201,7 @@ func createRoute(obj *obj.Route, parent *MapLayer) *route {
 					ts := text.Bounds().Size()
 					ds := routeInfo.Size(enum.TypeScaled)
 					p := g.NewPoint(float64((ds.W()-ts.X)/2), float64((ds.H()-ts.Y)/2))
-					label := control.NewControlBase("", text, p)
+					label := control.NewUIControl(t.Layer(), "", text, p, g.DefScale(), false)
 					routeInfo.SetItems([]interfaces.UIControl{label})
 					routeInfo.SetVisible(true)
 				case enum.EventTypeBlur:
@@ -212,6 +212,7 @@ func createRoute(obj *obj.Route, parent *MapLayer) *route {
 			}
 		}
 	})
+	parent.AddUIControl(o)
 	return o
 }
 
@@ -336,10 +337,10 @@ type MapLayer struct {
 }
 
 // NewMapLayer ...
-func NewMapLayer() *MapLayer {
+func NewMapLayer(f interfaces.Frame) *MapLayer {
 	scrollProg = nil
 
-	l := layer.NewLayerBaseByImage("map", g.Images["world"], g.NewPoint(0, 0), false).(*layer.Base)
+	l := layer.NewLayerBaseByImage(f, "map", g.Images["world"], g.NewPoint(0, 0), false).(*layer.Base)
 	ml := &MapLayer{
 		Base:   *l,
 		sites:  []site{},
@@ -376,11 +377,12 @@ func NewMapLayer() *MapLayer {
 
 	newRouteInfo(ml)
 
+	f.AddLayer(ml)
 	return ml
 }
 
 func newRouteInfo(parent *MapLayer) {
-	routeInfo = control.NewDialog("route info", g.NewSize(70, 25), false)
+	routeInfo = control.NewDialog(parent, "route info", g.NewSize(70, 25), false)
 	routeInfo.SetLayer(parent)
 }
 

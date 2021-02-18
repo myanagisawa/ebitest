@@ -18,10 +18,9 @@ import (
 
 // Base ...
 type Base struct {
-	label string
-
-	image    *ebiten.Image
 	layer    interfaces.Layer
+	label    string
+	image    *ebiten.Image
 	position *g.Point
 	scale    *g.Scale
 	angle    float64
@@ -67,6 +66,7 @@ func (o *Base) In(x, y int) bool {
 	if !o.visible {
 		return false
 	}
+
 	return controlIn(x, y,
 		o.Position(enum.TypeGlobal),
 		g.NewSize(o.image.Size()),
@@ -217,36 +217,6 @@ func (o *Base) Update() error {
 	return nil
 }
 
-// // Draw draws the sprite.
-// func (o *Base) Draw(screen *ebiten.Image) *ebiten.DrawImageOptions {
-// 	op := &ebiten.DrawImageOptions{}
-
-// 	// 描画位置指定
-// 	op.GeoM.Reset()
-// 	op.GeoM.Scale(o.Scale(enum.TypeGlobal).Get())
-
-// 	bgSize := g.NewSize(o.image.Size())
-// 	// 対象画像の縦横半分だけマイナス位置に移動（原点に中心座標が来るように移動する）
-// 	op.GeoM.Translate(-float64(bgSize.W())/2, -float64(bgSize.H())/2)
-// 	// 中心を軸に回転
-// 	op.GeoM.Rotate(o.Theta())
-// 	// ユニットの座標に移動
-// 	op.GeoM.Translate(float64(bgSize.W())/2, float64(bgSize.H())/2)
-
-// 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
-
-// 	// log.Printf("%s: pos: %d, %d, fr: %d, %d, %d, %d", o.label, lx, ly, x0, y0, x1, y1)
-// 	// screen.DrawImage(o.image.SubImage(fr).(*ebiten.Image), op)
-// 	r, g, b, a := 1.0, 1.0, 1.0, 1.0
-// 	if o.hover {
-// 		r, g, b, a = 0.5, 0.5, 0.5, 1.0
-// 	}
-// 	op.ColorM.Scale(r, g, b, a)
-// 	screen.DrawImage(o.image, op)
-
-// 	return op
-// }
-
 // Draw draws the sprite.
 func (o *Base) Draw(screen *ebiten.Image) {
 	o.DrawWithOptions(screen, nil)
@@ -299,56 +269,52 @@ func (o *Base) EventHandler() interfaces.EventHandler {
 }
 
 // NewControlBase ...
-func NewControlBase(label string, eimg *ebiten.Image, pos *g.Point) interfaces.UIControl {
+func NewControlBase(l interfaces.Layer, label string, eimg *ebiten.Image, pos *g.Point, scale *g.Scale, visible bool) interfaces.UIControl {
 	o := &Base{
+		layer:        l,
 		label:        label,
 		image:        eimg,
 		position:     pos,
-		scale:        g.NewScale(1.0, 1.0),
-		visible:      true,
+		scale:        scale,
+		visible:      visible,
 		eventHandler: event.NewEventHandler(),
 	}
 
 	return o
 }
 
+// NewUIControl ...
+func NewUIControl(l interfaces.Layer, label string, eimg *ebiten.Image, pos *g.Point, scale *g.Scale, visible bool) interfaces.UIControl {
+	o := NewControlBase(l, label, eimg, pos, scale, true).(*Base)
+	l.AddUIControl(o)
+	return o
+}
+
 // NewSimpleLabel ...
-func NewSimpleLabel(label string, pos *g.Point, pt int, c *color.RGBA, family enum.FontStyleEnum) interfaces.UIControl {
+func NewSimpleLabel(l interfaces.Layer, label string, pos *g.Point, pt int, c *color.RGBA, family enum.FontStyleEnum) interfaces.UIControl {
 	fset := char.Res.Get(pt, family)
 	ti := fset.GetStringImage(label)
 	ti2 := utils.TextColorTo(ti.(draw.Image), c)
 	eimg := ebiten.NewImageFromImage(ti2)
 
-	o := &Base{
-		label:        label,
-		image:        eimg,
-		position:     pos,
-		scale:        g.NewScale(1.0, 1.0),
-		visible:      true,
-		eventHandler: event.NewEventHandler(),
-	}
+	o := NewControlBase(l, label, eimg, pos, g.DefScale(), true).(*Base)
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
 
+	l.AddUIControl(o)
 	return o
 }
 
 // NewSimpleButton ...
-func NewSimpleButton(label string, img image.Image, pos *g.Point, pt int, c *color.RGBA) interfaces.UIControl {
+func NewSimpleButton(l interfaces.Layer, label string, img image.Image, pos *g.Point, pt int, c *color.RGBA) interfaces.UIControl {
 	fset := char.Res.Get(pt, enum.FontStyleGenShinGothicBold)
 	ti := fset.GetStringImage(label)
 	ti = utils.TextColorTo(ti.(draw.Image), c)
 	ti = utils.ImageOnTextToCenter(img.(draw.Image), ti)
 	eimg := ebiten.NewImageFromImage(ti)
 
-	o := &Base{
-		label:        label,
-		image:        eimg,
-		position:     pos,
-		scale:        g.NewScale(1.0, 1.0),
-		visible:      true,
-		eventHandler: event.NewEventHandler(),
-	}
+	o := NewControlBase(l, label, eimg, pos, g.DefScale(), true).(*Base)
 	o.eventHandler.AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
 
+	l.AddUIControl(o)
 	return o
 }

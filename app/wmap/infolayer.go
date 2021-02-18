@@ -23,11 +23,11 @@ type infoLayer struct {
 }
 
 // newInfoLayer ...
-func newInfoLayer(w, h int) *infoLayer {
+func newInfoLayer(f interfaces.Frame, w, h int) *infoLayer {
 	log.Printf("newInfoLayer(%d, %d)", w, h)
 	scrollProg = nil
 
-	l := layer.NewLayerBase("info", g.NewPoint(0, 0), g.NewSize(w, h), &color.RGBA{0, 0, 0, 0}, false).(*layer.Base)
+	l := layer.NewLayerBase(f, "info", g.NewPoint(0, 0), g.NewSize(w, h), &color.RGBA{0, 0, 0, 0}, false).(*layer.Base)
 	il := &infoLayer{
 		Base: *l,
 	}
@@ -41,14 +41,13 @@ func newInfoLayer(w, h int) *infoLayer {
 
 	// siteInfo.SetVisible(true)
 
+	f.AddLayer(il)
 	return il
 }
 
 func newSiteInfo(parent *infoLayer) {
-	siteInfo = control.NewDialog("site info", g.NewSize(300, 500), false)
-	siteInfo.AddItem(control.NewHeaderBar("site info header", siteInfo, true, true))
-
-	siteInfo.SetLayer(parent)
+	siteInfo = control.NewDialog(parent, "site info", g.NewSize(300, 500), false)
+	siteInfo.AddItem(control.NewHeaderBar(parent, "site info header", siteInfo, true, true))
 }
 
 func (o *infoLayer) ShowSiteInfo(obj *obj.Site) {

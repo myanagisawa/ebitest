@@ -234,9 +234,9 @@ func (o *UIScrollView) SetRowClickFunc(headerfunc func(row interface{}, pos *g.P
 }
 
 // NewUIScrollView ...
-func NewUIScrollView(label string, pos *g.Point, size *g.Size) interfaces.UIScrollView {
+func NewUIScrollView(l interfaces.Layer, label string, pos *g.Point, size *g.Size) interfaces.UIScrollView {
 	eimg := ebiten.NewImage(size.Get())
-	cb := NewControlBase(label, eimg, pos).(*Base)
+	cb := NewControlBase(l, label, eimg, pos, g.DefScale(), true).(*Base)
 	o := &UIScrollView{
 		Base:    *cb,
 		fontSet: char.Res.Get(12, enum.FontStyleGenShinGothicNormal),
@@ -319,8 +319,7 @@ func newScrollViewParts(label string, parent *UIScrollView, eimg *ebiten.Image, 
 	if eimg == nil {
 		eimg = ebiten.NewImage(0, 0)
 	}
-	cb := NewControlBase(label, eimg, pos).(*Base)
-	cb.SetLayer(parent.Layer())
+	cb := NewControlBase(parent.layer, label, eimg, pos, g.DefScale(), true).(*Base)
 
 	o := &scrollViewParts{
 		Base:   *cb,
