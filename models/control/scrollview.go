@@ -286,12 +286,23 @@ func (o *scrollViewParts) Position(t enum.ValueTypeEnum) *g.Point {
 
 // In ...
 func (o *scrollViewParts) In(x, y int) bool {
-	return controlIn(x, y,
-		o.Position(enum.TypeGlobal),
-		g.NewSize(o.image.Size()),
-		o.Scale(enum.TypeGlobal),
-		o.Layer().Frame().Position(enum.TypeGlobal),
-		o.Layer().Frame().Size())
+	return PointInBound(
+		g.NewPoint(float64(x), float64(y)),
+		g.NewBoundByPosSize(
+			o.Position(enum.TypeGlobal),
+			o.Size(enum.TypeScaled),
+		),
+		g.NewBoundByPosSize(
+			o.Layer().Frame().Position(enum.TypeGlobal),
+			o.Layer().Frame().Size(),
+		),
+	)
+	// return controlIn(x, y,
+	// 	o.Position(enum.TypeGlobal),
+	// 	g.NewSize(o.image.Size()),
+	// 	o.Scale(enum.TypeGlobal),
+	// 	o.Layer().Frame().Position(enum.TypeGlobal),
+	// 	o.Layer().Frame().Size())
 }
 
 // Update ...
@@ -574,12 +585,23 @@ func (o *listRow) Position(t enum.ValueTypeEnum) *g.Point {
 
 // In ...
 func (o *listRow) In(x, y int) bool {
-	return controlIn(x, y,
-		o.Position(enum.TypeGlobal),
-		g.NewSize(o.image.Size()),
-		o.Scale(enum.TypeGlobal),
-		o.Layer().Frame().Position(enum.TypeGlobal),
-		o.Layer().Frame().Size())
+	return PointInBound(
+		g.NewPoint(float64(x), float64(y)),
+		g.NewBoundByPosSize(
+			o.Position(enum.TypeGlobal),
+			o.Size(enum.TypeScaled),
+		),
+		g.NewBoundByPosSize(
+			o.Layer().Frame().Position(enum.TypeGlobal),
+			o.Layer().Frame().Size(),
+		),
+	)
+	// return controlIn(x, y,
+	// 	o.Position(enum.TypeGlobal),
+	// 	g.NewSize(o.image.Size()),
+	// 	o.Scale(enum.TypeGlobal),
+	// 	o.Layer().Frame().Position(enum.TypeGlobal),
+	// 	o.Layer().Frame().Size())
 }
 
 // Update ...
@@ -725,12 +747,23 @@ func (o *scrollbarBar) Position(t enum.ValueTypeEnum) *g.Point {
 
 // In ...
 func (o *scrollbarBar) In(x, y int) bool {
-	return controlIn(x, y,
-		o.Position(enum.TypeGlobal),
-		g.NewSize(o.image.Size()),
-		o.Scale(enum.TypeGlobal),
-		o.Layer().Frame().Position(enum.TypeGlobal),
-		o.Layer().Frame().Size())
+	return PointInBound(
+		g.NewPoint(float64(x), float64(y)),
+		g.NewBoundByPosSize(
+			o.Position(enum.TypeGlobal),
+			o.Size(enum.TypeScaled),
+		),
+		g.NewBoundByPosSize(
+			o.Layer().Frame().Position(enum.TypeGlobal),
+			o.Layer().Frame().Size(),
+		),
+	)
+	// return controlIn(x, y,
+	// 	o.Position(enum.TypeGlobal),
+	// 	g.NewSize(o.image.Size()),
+	// 	o.Scale(enum.TypeGlobal),
+	// 	o.Layer().Frame().Position(enum.TypeGlobal),
+	// 	o.Layer().Frame().Size())
 }
 
 // Update ...

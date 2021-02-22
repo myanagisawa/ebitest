@@ -2,6 +2,7 @@ package control
 
 import (
 	"image/color"
+	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/app/g"
@@ -10,6 +11,52 @@ import (
 	"github.com/myanagisawa/ebitest/interfaces"
 	"github.com/myanagisawa/ebitest/utils"
 )
+
+// closeBtn ...
+type closeBtn struct {
+	Base
+	parent *HeaderBar
+}
+
+// newCloseBtn ...
+func newCloseBtn(l interfaces.Layer, parent *HeaderBar) *closeBtn {
+	b := NewSimpleLabel(l, "×", g.NewPoint(5.0, 0.0), 14, &color.RGBA{255, 255, 255, 255}, enum.FontStyleGenShinGothicBold).(*Base)
+	o := &closeBtn{
+		Base:   *b,
+		parent: parent,
+	}
+	o.EventHandler().AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
+	o.EventHandler().AddEventListener(enum.EventTypeClick, func(eo interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
+		// 閉じる
+		parent.parent.SetVisible(false)
+	})
+
+	o.SetPositionFunc(func(self interface{}, t enum.ValueTypeEnum) *g.Point {
+		o := self.(*closeBtn)
+		barPos := o.parent.Position(t)
+		return g.NewPoint(barPos.X()+o.position.X(), barPos.Y()+o.position.Y())
+	})
+	return o
+}
+
+// In ...
+func (o *closeBtn) In(x, y int) bool {
+	if !o.visible {
+		return false
+	}
+
+	return PointInBound(
+		g.NewPoint(float64(x), float64(y)),
+		g.NewBoundByPosSize(
+			o.Position(enum.TypeGlobal),
+			o.Size(enum.TypeScaled),
+		),
+		g.NewBoundByPosSize(
+			o.Layer().Frame().Position(enum.TypeGlobal),
+			o.Layer().Frame().Size(),
+		),
+	)
+}
 
 // HeaderBar ...
 type HeaderBar struct {
@@ -42,14 +89,14 @@ func NewHeaderBar(l interfaces.Layer, label string, parent interfaces.UIControl,
 	}
 
 	if hasCloseButton {
-		closeBtn := NewSimpleLabel(l, "×", g.NewPoint(0, 0), 14, &color.RGBA{255, 255, 255, 255}, enum.FontStyleGenShinGothicBold)
-		closeBtn.EventHandler().AddEventListener(enum.EventTypeFocus, functions.CommonEventCallback)
-		closeBtn.EventHandler().AddEventListener(enum.EventTypeClick, func(o interfaces.EventOwner, pos *g.Point, params map[string]interface{}) {
-			// 閉じる
-			parent.SetVisible(false)
-		})
-		o.closeBtn = closeBtn
+		o.closeBtn = newCloseBtn(l, o)
 	}
+
+	o.SetPositionFunc(func(self interface{}, t enum.ValueTypeEnum) *g.Point {
+		o := self.(*HeaderBar)
+		dlgPos := o.parent.Position(t)
+		return g.NewPoint(dlgPos.X()+o.position.X(), dlgPos.Y()+o.position.Y())
+	})
 
 	l.AddUIControl(o)
 	return o
@@ -59,6 +106,7 @@ func NewHeaderBar(l interfaces.Layer, label string, parent interfaces.UIControl,
 func (o *HeaderBar) GetObjects(x, y int) []interfaces.EbiObject {
 	objs := []interfaces.EbiObject{}
 	if o.closeBtn != nil && o.closeBtn.In(x, y) {
+		log.Printf("くろーずぼたん: %d, %d", x, y)
 		objs = append(objs, o.closeBtn)
 	}
 
@@ -71,40 +119,8 @@ func (o *HeaderBar) GetObjects(x, y int) []interfaces.EbiObject {
 // Draw draws the sprite.
 func (o *HeaderBar) Draw(screen *ebiten.Image) {
 	o.DrawWithOptions(screen, nil)
-}
-
-// DrawWithOptions draws the sprite.
-func (o *HeaderBar) DrawWithOptions(screen *ebiten.Image, in *ebiten.DrawImageOptions) *ebiten.DrawImageOptions {
-	op := &ebiten.DrawImageOptions{}
-	// 描画位置指定
-	// log.Printf("in: %#v", in.GeoM.String())
-	op.GeoM.Scale(o.Scale(enum.TypeGlobal).Get())
-	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
-	// log.Printf("op: %#v / %#v", op, op.GeoM)
-
-	if in != nil {
-		op.GeoM.Concat(in.GeoM)
-		op.ColorM.Concat(in.ColorM)
-	}
-	screen.DrawImage(o.image, op)
-
-	// // 閉じるボタン
-	if o.closeBtn != nil {
-		op2 := &ebiten.DrawImageOptions{}
-
-		op2.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
-		op2.GeoM.Translate(5, 0)
-
-		if in != nil {
-			op2.GeoM.Concat(in.GeoM)
-		}
-		o.closeBtn.DrawWithOptions(screen, op2)
-	}
-
 	// // 枠の描画
 	o.drawFrameSet(screen)
-
-	return op
 }
 
 func (o *HeaderBar) drawFrameSet(screen *ebiten.Image) {

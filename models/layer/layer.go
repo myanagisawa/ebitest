@@ -100,6 +100,19 @@ func (o *Base) AddUIControl(c interfaces.UIControl) {
 	o.controls = append(o.controls, c)
 }
 
+// RemoveUIControl レイヤに登録された部品を削除します
+func (o *Base) RemoveUIControl(c interfaces.UIControl) {
+	ret := make([]interfaces.UIControl, len(o.controls))
+	i := 0
+	for _, x := range o.controls {
+		if c != x {
+			ret[i] = x
+			i++
+		}
+	}
+	o.controls = ret[:i]
+}
+
 // UIControlAt (x, y)座標に存在する部品を返します
 func (o *Base) UIControlAt(x, y int) interfaces.UIControl {
 	for i := len(o.controls) - 1; i >= 0; i-- {

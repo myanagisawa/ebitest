@@ -116,6 +116,7 @@ type Layer interface {
 	Update() error
 	Draw(screen *ebiten.Image)
 	AddUIControl(c UIControl)
+	RemoveUIControl(c UIControl)
 	UIControlAt(x, y int) UIControl
 }
 
@@ -141,6 +142,7 @@ type UIControl interface {
 	Update() error
 	Draw(screen *ebiten.Image)
 	DrawWithOptions(screen *ebiten.Image, in *ebiten.DrawImageOptions) *ebiten.DrawImageOptions
+	SetPositionFunc(func(self interface{}, t enum.ValueTypeEnum) *g.Point)
 }
 
 // UIScrollView ...

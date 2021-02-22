@@ -88,6 +88,16 @@ func (p *Point) Y() float64 {
 	return p.y
 }
 
+// IntX ...
+func (p *Point) IntX() int {
+	return int(p.x)
+}
+
+// IntY ...
+func (p *Point) IntY() int {
+	return int(p.y)
+}
+
 // Get ...
 func (p *Point) Get() (float64, float64) {
 	return p.x, p.y
@@ -191,4 +201,20 @@ func (s *Size) Get() (int, int) {
 func (s *Size) Set(width, height int) {
 	s.width = width
 	s.height = height
+}
+
+// Bound ...
+type Bound struct {
+	Min *Point
+	Max *Point
+}
+
+// NewBound ...
+func NewBound(min, max *Point) *Bound {
+	return &Bound{Min: min, Max: max}
+}
+
+// NewBoundByPosSize ...
+func NewBoundByPosSize(pos *Point, size *Size) *Bound {
+	return &Bound{Min: pos, Max: NewPoint(pos.X()+float64(size.W()), pos.Y()+float64(size.H()))}
 }

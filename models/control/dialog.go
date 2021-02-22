@@ -2,7 +2,6 @@ package control
 
 import (
 	"image/color"
-	"log"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/myanagisawa/ebitest/app/g"
@@ -96,17 +95,6 @@ func (o *Dialog) DrawWithOptions(screen *ebiten.Image, in *ebiten.DrawImageOptio
 		op.ColorM.Concat(in.ColorM)
 	}
 	screen.DrawImage(o.image, op)
-
-	// items 描画
-	for i := range o.items {
-		item := o.items[i]
-
-		op2 := &ebiten.DrawImageOptions{}
-		op2.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
-		item.DrawWithOptions(screen, op2)
-
-		log.Printf("item: %s", item.Label())
-	}
 
 	// 枠の描画
 	o.drawFrameSet(screen)

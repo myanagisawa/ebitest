@@ -29,6 +29,8 @@ type Base struct {
 	visible  bool
 
 	eventHandler interfaces.EventHandler
+
+	positionFunc func(self interface{}, t enum.ValueTypeEnum) *g.Point
 }
 
 // Label ...
@@ -67,44 +69,74 @@ func (o *Base) In(x, y int) bool {
 		return false
 	}
 
-	return controlIn(x, y,
-		o.Position(enum.TypeGlobal),
-		g.NewSize(o.image.Size()),
-		o.Scale(enum.TypeGlobal),
-		o.Layer().Frame().Position(enum.TypeGlobal),
-		o.Layer().Frame().Size())
+	return PointInBound(
+		g.NewPoint(float64(x), float64(y)),
+		g.NewBoundByPosSize(
+			o.Position(enum.TypeGlobal),
+			o.Size(enum.TypeScaled),
+		),
+		g.NewBoundByPosSize(
+			o.Layer().Frame().Position(enum.TypeGlobal),
+			o.Layer().Frame().Size(),
+		),
+	)
 }
 
-// controlIn
-func controlIn(x, y int, pos *g.Point, size *g.Size, scale *g.Scale, framePos *g.Point, frameSize *g.Size) bool {
-	// パーツ位置（左上座標）
-	minX, minY := pos.GetInt()
+// PointInBound 点pが領域bound内かどうかを返します（親領域areaが指定された時、boundはarea内の範囲に切り詰められます）
+func PointInBound(p *g.Point, bound *g.Bound, area *g.Bound) bool {
+	minX, minY, maxX, maxY := bound.Min.IntX(), bound.Min.IntY(), bound.Max.IntX(), bound.Max.IntY()
+	if area != nil {
+		// 座標がフレーム外の場合はフレームのmax座標で置き換え
+		if maxX > area.Max.IntX() {
+			maxX = area.Max.IntX()
+		}
+		if maxY > area.Max.IntY() {
+			maxY = area.Max.IntY()
+		}
 
-	// 見かけ上の右下座標を取得
-	maxX := int(float64(size.W())*scale.X()) + minX
-	maxY := int(float64(size.H())*scale.Y()) + minY
-
-	// フレーム領域
-	fPosX, fPosY := framePos.GetInt()
-	fMaxX, fMaxY := fPosX+frameSize.W(), fPosY+frameSize.H()
-	// 座標がフレーム外の場合はフレームのmax座標で置き換え
-	if maxX > fMaxX {
-		maxX = fMaxX
-	}
-	if maxY > fMaxY {
-		maxY = fMaxY
+		// 座標がフレーム外の場合はフレームのmin座標で置き換え
+		if minX < area.Min.IntX() {
+			minX = area.Min.IntX()
+		}
+		if minY < area.Min.IntY() {
+			minY = area.Min.IntY()
+		}
 	}
 
-	// 座標がフレーム外の場合はフレームのmin座標で置き換え
-	if minX < fPosX {
-		minX = fPosX
-	}
-	if minY < fPosY {
-		minY = fPosY
-	}
-	// log.Printf("レイヤ座標: {(%d, %d), (%d, %d)}", minX, minY, maxX, maxY)
+	x, y := p.GetInt()
 	return (x >= minX && x <= maxX) && (y > minY && y <= maxY)
 }
+
+// // controlIn
+// func controlIn(x, y int, pos *g.Point, size *g.Size, scale *g.Scale, framePos *g.Point, frameSize *g.Size) bool {
+// 	// パーツ位置（左上座標）
+// 	minX, minY := pos.GetInt()
+
+// 	// 見かけ上の右下座標を取得
+// 	maxX := int(float64(size.W())*scale.X()) + minX
+// 	maxY := int(float64(size.H())*scale.Y()) + minY
+
+// 	// フレーム領域
+// 	fPosX, fPosY := framePos.GetInt()
+// 	fMaxX, fMaxY := fPosX+frameSize.W(), fPosY+frameSize.H()
+// 	// 座標がフレーム外の場合はフレームのmax座標で置き換え
+// 	if maxX > fMaxX {
+// 		maxX = fMaxX
+// 	}
+// 	if maxY > fMaxY {
+// 		maxY = fMaxY
+// 	}
+
+// 	// 座標がフレーム外の場合はフレームのmin座標で置き換え
+// 	if minX < fPosX {
+// 		minX = fPosX
+// 	}
+// 	if minY < fPosY {
+// 		minY = fPosY
+// 	}
+// 	// log.Printf("レイヤ座標: {(%d, %d), (%d, %d)}", minX, minY, maxX, maxY)
+// 	return (x >= minX && x <= maxX) && (y > minY && y <= maxY)
+// }
 
 // SetLayer ...
 func (o *Base) SetLayer(l interfaces.Layer) {
@@ -113,6 +145,9 @@ func (o *Base) SetLayer(l interfaces.Layer) {
 
 // Position ...
 func (o *Base) Position(t enum.ValueTypeEnum) *g.Point {
+	if o.positionFunc != nil {
+		return o.positionFunc(o, t)
+	}
 	// log.Printf("UIControlBase: Position: %s", o.label)
 	dx, dy := 0.0, 0.0
 	if o.moving != nil {
@@ -138,6 +173,11 @@ func (o *Base) Position(t enum.ValueTypeEnum) *g.Point {
 // SetPosition ...
 func (o *Base) SetPosition(x, y float64) {
 	o.position = g.NewPoint(x, y)
+}
+
+// SetPositionFunc ...
+func (o *Base) SetPositionFunc(f func(self interface{}, t enum.ValueTypeEnum) *g.Point) {
+	o.positionFunc = f
 }
 
 // Scale ...
