@@ -16,6 +16,34 @@ import (
 	"github.com/myanagisawa/ebitest/utils"
 )
 
+// CalcPosition ...
+func CalcPosition(o interfaces.IPositionable, t enum.ValueTypeEnum) *g.Point {
+	pos := o.Position()
+	if t == enum.TypeRaw {
+		return pos
+	}
+	// log.Printf("UIControlBase: Position: %s", o.label)
+	dx, dy := 0.0, 0.0
+	if o.Moving() != nil {
+		dx, dy = o.Moving().Get()
+	}
+	if t == enum.TypeLocal {
+		return g.NewPoint(pos.X()+dx, pos.Y()+dy)
+	}
+	gx, gy := 0.0, 0.0
+	if p := o.Parent(); p != nil {
+		gx, gy = CalcPosition(p, enum.TypeGlobal).Get()
+
+		sx, sy := p.Scale().Get()
+		gx += (pos.X() + dx) * sx
+		gy += (pos.Y() + dy) * sy
+	} else {
+		gx = pos.X() + dx
+		gy = pos.Y() + dy
+	}
+	return g.NewPoint(gx, gy)
+}
+
 // Base ...
 type Base struct {
 	layer    interfaces.Layer
@@ -29,8 +57,12 @@ type Base struct {
 	visible  bool
 
 	eventHandler interfaces.EventHandler
+}
 
-	positionFunc func(self interface{}, t enum.ValueTypeEnum) *g.Point
+// Children ...
+func (o *Base) Children() []interfaces.UIControl {
+	// log.Printf("*Base.Children: l=%s, o=%T", o.Label(), o)
+	return nil
 }
 
 // Label ...
@@ -107,37 +139,6 @@ func PointInBound(p *g.Point, bound *g.Bound, area *g.Bound) bool {
 	return (x >= minX && x <= maxX) && (y > minY && y <= maxY)
 }
 
-// // controlIn
-// func controlIn(x, y int, pos *g.Point, size *g.Size, scale *g.Scale, framePos *g.Point, frameSize *g.Size) bool {
-// 	// パーツ位置（左上座標）
-// 	minX, minY := pos.GetInt()
-
-// 	// 見かけ上の右下座標を取得
-// 	maxX := int(float64(size.W())*scale.X()) + minX
-// 	maxY := int(float64(size.H())*scale.Y()) + minY
-
-// 	// フレーム領域
-// 	fPosX, fPosY := framePos.GetInt()
-// 	fMaxX, fMaxY := fPosX+frameSize.W(), fPosY+frameSize.H()
-// 	// 座標がフレーム外の場合はフレームのmax座標で置き換え
-// 	if maxX > fMaxX {
-// 		maxX = fMaxX
-// 	}
-// 	if maxY > fMaxY {
-// 		maxY = fMaxY
-// 	}
-
-// 	// 座標がフレーム外の場合はフレームのmin座標で置き換え
-// 	if minX < fPosX {
-// 		minX = fPosX
-// 	}
-// 	if minY < fPosY {
-// 		minY = fPosY
-// 	}
-// 	// log.Printf("レイヤ座標: {(%d, %d), (%d, %d)}", minX, minY, maxX, maxY)
-// 	return (x >= minX && x <= maxX) && (y > minY && y <= maxY)
-// }
-
 // SetLayer ...
 func (o *Base) SetLayer(l interfaces.Layer) {
 	o.layer = l
@@ -145,9 +146,6 @@ func (o *Base) SetLayer(l interfaces.Layer) {
 
 // Position ...
 func (o *Base) Position(t enum.ValueTypeEnum) *g.Point {
-	if o.positionFunc != nil {
-		return o.positionFunc(o, t)
-	}
 	// log.Printf("UIControlBase: Position: %s", o.label)
 	dx, dy := 0.0, 0.0
 	if o.moving != nil {
@@ -173,11 +171,6 @@ func (o *Base) Position(t enum.ValueTypeEnum) *g.Point {
 // SetPosition ...
 func (o *Base) SetPosition(x, y float64) {
 	o.position = g.NewPoint(x, y)
-}
-
-// SetPositionFunc ...
-func (o *Base) SetPositionFunc(f func(self interface{}, t enum.ValueTypeEnum) *g.Point) {
-	o.positionFunc = f
 }
 
 // Scale ...
@@ -244,6 +237,24 @@ func (o *Base) Moving() *g.Point {
 	return o.moving
 }
 
+// Objects ...
+func (o *Base) Objects(lt enum.ListTypeEnum) []interfaces.IListable {
+	objs := []interfaces.IListable{}
+
+	switch lt {
+	case enum.ListTypeCursor:
+		x, y := ebiten.CursorPosition()
+		if o.In(x, y) {
+			objs = append(objs, o)
+		}
+	default:
+		objs = append(objs, o)
+	}
+
+	// log.Printf("SceneBase::GetObjects: %#v", objs)
+	return objs
+}
+
 // GetObjects ...
 func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 	if o.In(x, y) {
@@ -300,6 +311,7 @@ func (o *Base) DrawWithOptions(screen *ebiten.Image, in *ebiten.DrawImageOptions
 	}
 	screen.DrawImage(o.image, op)
 
+	// log.Printf("control.Draw: l=%s, o=%T", o.Label(), o)
 	return op
 }
 

@@ -72,6 +72,11 @@ func (o *Base) ActiveLayer() interfaces.Layer {
 	return o.activeLayer
 }
 
+// Layers ...
+func (o *Base) Layers() []interfaces.Layer {
+	return o.layers
+}
+
 // In returns true if (x, y) is in the sprite, and false otherwise.
 func (o *Base) In(x, y int) bool {
 	px, py := o.Position(enum.TypeLocal).GetInt()
@@ -135,6 +140,30 @@ func (o *Base) DoScroll(x, y int) {
 	}
 }
 
+// Objects ...
+func (o *Base) Objects(lt enum.ListTypeEnum) []interfaces.IListable {
+	objs := []interfaces.IListable{}
+
+	switch lt {
+	case enum.ListTypeCursor:
+		x, y := ebiten.CursorPosition()
+		if o.In(x, y) || o.GetEdgeType(x, y) != enum.EdgeTypeNotEdge {
+			objs = append(objs, o)
+		}
+	default:
+		objs = append(objs, o)
+	}
+
+	for _, layer := range o.layers {
+		if c, ok := layer.(interfaces.IListable); ok {
+			objs = append(objs, c.Objects(lt)...)
+		}
+	}
+
+	// log.Printf("SceneBase::GetObjects: %#v", objs)
+	return objs
+}
+
 // GetObjects ...
 func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 	objs := []interfaces.EbiObject{}
@@ -167,10 +196,6 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(o.position.Get())
 	screen.DrawImage(o.image, op)
 
-	for _, layer := range o.layers {
-		layer.Draw(screen)
-	}
-
 	if o.parent.ActiveFrame() != nil && o.parent.ActiveFrame() == o {
 		n := "-"
 		ac := "-"
@@ -185,7 +210,34 @@ func (o *Base) Draw(screen *ebiten.Image) {
 		}
 		g.DebugText += fmt.Sprintf("\n%s / %s / %s", o.label, n, ac)
 	}
+	// log.Printf("frame.Draw: l=%s, o=%T", o.Label(), o)
 }
+
+// // Draw ...
+// func (o *Base) Draw(screen *ebiten.Image) {
+// 	op := &ebiten.DrawImageOptions{}
+// 	op.GeoM.Translate(o.position.Get())
+// 	screen.DrawImage(o.image, op)
+
+// 	for _, layer := range o.layers {
+// 		layer.Draw(screen)
+// 	}
+
+// 	if o.parent.ActiveFrame() != nil && o.parent.ActiveFrame() == o {
+// 		n := "-"
+// 		ac := "-"
+// 		if o.activeLayer != nil {
+// 			x, y := o.activeLayer.Position(enum.TypeGlobal).GetInt()
+// 			n = fmt.Sprintf("%s(%d, %d)", o.activeLayer.Label(), x, y)
+// 			c := o.activeLayer.UIControlAt(ebiten.CursorPosition())
+// 			if c != nil {
+// 				x, y = c.Position(enum.TypeGlobal).GetInt()
+// 				ac = fmt.Sprintf("%s(%d, %d)", c.Label(), x, y)
+// 			}
+// 		}
+// 		g.DebugText += fmt.Sprintf("\n%s / %s / %s", o.label, n, ac)
+// 	}
+// }
 
 // Layout ...
 func (o *Base) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {

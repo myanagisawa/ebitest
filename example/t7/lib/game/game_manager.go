@@ -8,10 +8,10 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
-	"github.com/myanagisawa/ebitest/app/g"
-	"github.com/myanagisawa/ebitest/enum"
-	"github.com/myanagisawa/ebitest/interfaces"
-	"github.com/myanagisawa/ebitest/utils"
+	"github.com/myanagisawa/ebitest/example/t7/app/enum"
+	"github.com/myanagisawa/ebitest/example/t7/app/g"
+	"github.com/myanagisawa/ebitest/example/t7/lib/interfaces"
+	"github.com/myanagisawa/ebitest/example/t7/lib/utils"
 )
 
 /*
@@ -20,9 +20,10 @@ import (
 	- ゲームデータの画面上への描画
 */
 var (
-	ms runtime.MemStats
+	ms          runtime.MemStats
+	withoutDraw bool
 
-	eventManager *EventManager
+	dbg string
 )
 
 type (
@@ -31,7 +32,6 @@ type (
 		background   *ebiten.Image
 		currentScene interfaces.Scene
 		scenes       map[enum.SceneEnum]interfaces.Scene
-		data         map[enum.DataTypeEnum]interfaces.DataSet
 	}
 )
 
@@ -42,106 +42,59 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 	gm := &Manager{
 		background: ebiten.NewImageFromImage(utils.CreateRectImage(screenWidth, screenHeight, &color.RGBA{0, 0, 0, 255})),
 		scenes:     make(map[enum.SceneEnum]interfaces.Scene),
-		data:       make(map[enum.DataTypeEnum]interfaces.DataSet),
 	}
-
-	eventManager = &EventManager{
-		manager: gm,
-	}
+	withoutDraw = false
 
 	return gm
-}
-
-// AddDataSet ...
-func (o *Manager) AddDataSet(key enum.DataTypeEnum, set interfaces.DataSet) {
-	o.data[key] = set
-}
-
-// DataSet ...
-func (o *Manager) DataSet(key enum.DataTypeEnum) interfaces.DataSet {
-	return o.data[key]
 }
 
 // SetScene ...
 func (o *Manager) SetScene(key enum.SceneEnum, scene interfaces.Scene) {
 	o.scenes[key] = scene
-	scene.ExecDidLoad()
+	scene.DidLoad()
 }
 
 // TransitionTo ...
 func (o *Manager) TransitionTo(t enum.SceneEnum) {
 	s := o.scenes[t]
 	o.currentScene = s
-	s.ExecDidActive()
+	s.DidActive()
 	log.Printf("TransitionTo: %#v", o.currentScene)
 }
 
 // Update ...
 func (o *Manager) Update() error {
-	// log.Printf("game.Manager.Update")
-	// イベント処理
-	eventManager.Update()
 
 	if o.currentScene != nil {
-		return o.currentScene.Update()
+		// i := 0
+		for _, child := range o.currentScene.GetControls() {
+			child.Update()
+			// i++
+		}
+		// log.Printf("-- update: %d controls", i)
 	}
+
+	dbg = fmt.Sprintf("%s / TPS: %0.2f / FPS: %0.2f", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS())
+	// log.Printf("%s", dbg)
+
 	return nil
 }
 
 // Draw ...
 func (o *Manager) Draw(screen *ebiten.Image) {
-	g.DebugText = ""
-	var op *ebiten.DrawImageOptions
-
-	op = &ebiten.DrawImageOptions{}
-	screen.DrawImage(o.background, op)
+	if withoutDraw {
+		return
+	}
 
 	if o.currentScene != nil {
-		o.currentScene.Draw(screen)
-
-		// test
-		// log.Printf("---- test")
-		count := 0
-		scene := o.currentScene
-		for _, frame := range scene.Frames() {
-			// frame描画
-			count++
-			frame.Draw(screen)
-
-			for _, layer := range frame.Layers() {
-				// layer描画
-				count++
-				layer.Draw(screen)
-
-				for _, control := range layer.UIControls() {
-
-					// control描画
-					count++
-					control.Draw(screen)
-
-					// 子要素描画
-					for _, child := range control.Children() {
-						count++
-						child.Draw(screen)
-					}
-				}
-			}
+		// i := 0
+		for _, child := range o.currentScene.GetControls() {
+			child.Draw(screen)
+			// i++
 		}
-		// log.Printf("---- test: %d items", count)
-
-		// test
+		// log.Printf("-- draw: %d controls", i)
 	}
 
-	// x, y := ebiten.CursorPosition()
-	// dbg := fmt.Sprintf("%s\nTPS: %0.2f\nFPS: %0.2f\npos: (%d, %d)", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS(), x, y)
-	dbg := fmt.Sprintf("%s / TPS: %0.2f / FPS: %0.2f", printMemoryStats(), ebiten.CurrentTPS(), ebiten.CurrentFPS())
-	if g.DebugText != "" {
-		dbg += fmt.Sprintf("%s", g.DebugText)
-	}
-	focused := eventManager.GetObject(ebiten.CursorPosition())
-	if focused != nil {
-		dbg += fmt.Sprintf(" / cursor target: %s", focused.Label())
-	}
 	ebitenutil.DebugPrint(screen, dbg)
 }
 
@@ -177,7 +130,7 @@ func printMemoryStats() string {
 
 	// // NumGC は、実施されたGCの回数
 	// output.Stdoutl("NumGC", ms.NumGC)
-	return fmt.Sprintf("Alloc, Sys, GC: %dMB, %dMB, %d", toMb(ms.Alloc), toMb(ms.Sys), ms.NumGC)
+	return fmt.Sprintf("Alloc, Obj, Sys, GC: %dMB, %d, %dMB, %d", toMb(ms.Alloc), toKb(ms.HeapObjects), toMb(ms.Sys), ms.NumGC)
 }
 
 func toKb(bytes uint64) uint64 {

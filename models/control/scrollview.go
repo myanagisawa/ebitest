@@ -66,6 +66,18 @@ type UIScrollView struct {
 	onRowClick    func(index int, row interface{}, pos *g.Point, params map[string]interface{})
 }
 
+// Children ...
+func (o *UIScrollView) Children() []interfaces.UIControl {
+	ret := []interfaces.UIControl{}
+	ret = append(ret, o.header)
+	ret = append(ret, o.listView)
+	ret = append(ret, o.listView.Children()...)
+	ret = append(ret, o.scrollbarBase)
+	ret = append(ret, o.scrollbarBar)
+	// log.Printf("*UIScrollView.Children: l=%s, o=%T", o.Label(), o)
+	return ret
+}
+
 // SetDataSource ...
 func (o *UIScrollView) SetDataSource(colNames []interface{}, data [][]interface{}) {
 	// log.Printf("fontSet: %#v", o.fontSet)
@@ -196,6 +208,8 @@ func (o *UIScrollView) Draw(screen *ebiten.Image) {
 	op = &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
 	screen.DrawImage(o.header.image, op)
+
+	// log.Printf("UIScrollView.Draw: l=%s, o=%T", o.Label(), o)
 }
 
 // listViewSize スクロールビューの中のリスト領域のサイズを返す
@@ -324,6 +338,8 @@ func (o *scrollViewParts) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
 
 	screen.DrawImage(o.image, op)
+
+	// log.Printf("scrollViewParts.Draw: l=%s, o=%T", o.Label(), o)
 }
 
 func newScrollViewParts(label string, parent *UIScrollView, eimg *ebiten.Image, pos *g.Point) *scrollViewParts {
@@ -349,6 +365,16 @@ type listView struct {
 	size         *g.Size
 	displayFrom  int
 	displayTo    int
+}
+
+// Children ...
+func (o *listView) Children() []interfaces.UIControl {
+	ret := make([]interfaces.UIControl, len(o.rows))
+	for i, row := range o.rows {
+		ret[i] = row
+	}
+	// log.Printf("*listView.Children: l=%s, o=%T", o.Label(), o)
+	return ret
 }
 
 func (o *listView) calcScrollingPos(dy int) *g.Point {
@@ -503,6 +529,7 @@ func (o *listView) Draw(screen *ebiten.Image) {
 			screen.DrawImage(row.image, op)
 		}
 	}
+	// log.Printf("listView.Draw: l=%s, o=%T", o.Label(), o)
 
 }
 
@@ -787,6 +814,7 @@ func (o *scrollbarBar) Draw(screen *ebiten.Image) {
 	// x, y := o.Position(enum.TypeGlobal).Get()
 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
 	screen.DrawImage(o.image, op)
+	// log.Printf("scrollbarBar.Draw: l=%s, o=%T", o.Label(), o)
 }
 
 func newScrollbarBar(label string, parent *UIScrollView, pos *g.Point) *scrollbarBar {

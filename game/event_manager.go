@@ -169,6 +169,7 @@ func (o *EventManager) Update() error {
 
 			// eventCompleted := false
 			if target, ok := o.stroke.Target(); ok {
+				// log.Printf("stroke:target: %T", target)
 				switch o.stroke.CurrentEvent() {
 				case enum.EventTypeClick:
 					target.EventHandler().Firing(enum.EventTypeClick, target, cursorpos, evparams)

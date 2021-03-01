@@ -6,6 +6,20 @@ import (
 	"github.com/myanagisawa/ebitest/enum"
 )
 
+type IPositionable interface {
+	Parent() IPositionable
+	Position() *g.Point
+	Scale() *g.Scale
+	Moving() *g.Point
+}
+
+type IListable interface {
+	Label() string
+	In(x, y int) bool
+	Objects(lt enum.ListTypeEnum) []IListable
+	EventHandler() EventHandler
+}
+
 // EbiObject ...
 type EbiObject interface {
 	Label() string
@@ -79,6 +93,7 @@ type Scene interface {
 	SetCustomFunc(t enum.FuncTypeEnum, f interface{})
 	ExecDidLoad()
 	ExecDidActive()
+	Frames() []Frame
 }
 
 // Frame ...
@@ -96,6 +111,7 @@ type Frame interface {
 	GetObjects(x, y int) []EbiObject
 	Update() error
 	Draw(screen *ebiten.Image)
+	Layers() []Layer
 }
 
 // Layer ...
@@ -118,6 +134,7 @@ type Layer interface {
 	AddUIControl(c UIControl)
 	RemoveUIControl(c UIControl)
 	UIControlAt(x, y int) UIControl
+	UIControls() []UIControl
 }
 
 // UIControl ...
@@ -142,7 +159,7 @@ type UIControl interface {
 	Update() error
 	Draw(screen *ebiten.Image)
 	DrawWithOptions(screen *ebiten.Image, in *ebiten.DrawImageOptions) *ebiten.DrawImageOptions
-	SetPositionFunc(func(self interface{}, t enum.ValueTypeEnum) *g.Point)
+	Children() []UIControl
 }
 
 // UIScrollView ...

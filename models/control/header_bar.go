@@ -31,11 +31,11 @@ func newCloseBtn(l interfaces.Layer, parent *HeaderBar) *closeBtn {
 		parent.parent.SetVisible(false)
 	})
 
-	o.SetPositionFunc(func(self interface{}, t enum.ValueTypeEnum) *g.Point {
-		o := self.(*closeBtn)
-		barPos := o.parent.Position(t)
-		return g.NewPoint(barPos.X()+o.position.X(), barPos.Y()+o.position.Y())
-	})
+	// o.SetPositionFunc(func(self interface{}, t enum.ValueTypeEnum) *g.Point {
+	// 	o := self.(*closeBtn)
+	// 	barPos := o.parent.Position(t)
+	// 	return g.NewPoint(barPos.X()+o.position.X(), barPos.Y()+o.position.Y())
+	// })
 	return o
 }
 
@@ -92,11 +92,11 @@ func NewHeaderBar(l interfaces.Layer, label string, parent interfaces.UIControl,
 		o.closeBtn = newCloseBtn(l, o)
 	}
 
-	o.SetPositionFunc(func(self interface{}, t enum.ValueTypeEnum) *g.Point {
-		o := self.(*HeaderBar)
-		dlgPos := o.parent.Position(t)
-		return g.NewPoint(dlgPos.X()+o.position.X(), dlgPos.Y()+o.position.Y())
-	})
+	// o.SetPositionFunc(func(self interface{}, t enum.ValueTypeEnum) *g.Point {
+	// 	o := self.(*HeaderBar)
+	// 	dlgPos := o.parent.Position(t)
+	// 	return g.NewPoint(dlgPos.X()+o.position.X(), dlgPos.Y()+o.position.Y())
+	// })
 
 	l.AddUIControl(o)
 	return o

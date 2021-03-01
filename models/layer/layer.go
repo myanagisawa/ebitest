@@ -124,6 +124,11 @@ func (o *Base) UIControlAt(x, y int) interfaces.UIControl {
 	return nil
 }
 
+// UIControls レイヤに追加された部品を返します
+func (o *Base) UIControls() []interfaces.UIControl {
+	return o.controls
+}
+
 // In returns true if (x, y) is in the sprite, and false otherwise.
 func (o *Base) In(x, y int) bool {
 	px, py := o.Position(enum.TypeGlobal).GetInt()
@@ -178,6 +183,30 @@ func (o *Base) Scroll(et enum.EdgeTypeEnum) {
 	// log.Printf("%s: %d, %d", o.Label(), x, y)
 }
 
+// Objects ...
+func (o *Base) Objects(lt enum.ListTypeEnum) []interfaces.IListable {
+	objs := []interfaces.IListable{}
+
+	switch lt {
+	case enum.ListTypeCursor:
+		x, y := ebiten.CursorPosition()
+		if o.In(x, y) {
+			objs = append(objs, o)
+		}
+	default:
+		objs = append(objs, o)
+	}
+
+	for _, layer := range o.controls {
+		if c, ok := layer.(interfaces.IListable); ok {
+			objs = append(objs, c.Objects(lt)...)
+		}
+	}
+
+	// log.Printf("SceneBase::GetObjects: %#v", objs)
+	return objs
+}
+
 // GetObjects ...
 func (o *Base) GetObjects(x, y int) []interfaces.EbiObject {
 	objs := []interfaces.EbiObject{}
@@ -219,9 +248,6 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	op.GeoM.Reset()
 	op.GeoM.Scale(o.Scale(enum.TypeGlobal).Get())
 
-	// op.GeoM.Translate(o.Position(enum.TypeLocal).Get())
-	// screen.DrawImage(o.image, op)
-
 	// log.Printf("%s: translate(%0.2f, %0.2f)", o.label, o.Position(enum.TypeGlobal).X(), o.Position(enum.TypeGlobal).Y())
 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
 
@@ -256,11 +282,60 @@ func (o *Base) Draw(screen *ebiten.Image) {
 	fr := image.Rect(x0, y0, x1, y1)
 	// log.Printf("%s: pos: %d, %d, fr: %d, %d, %d, %d", o.label, lx, ly, x0, y0, x1, y1)
 	screen.DrawImage(o.image.SubImage(fr).(*ebiten.Image), op)
-
-	for _, c := range o.controls {
-		c.Draw(screen)
-	}
+	// log.Printf("layer.Draw: l=%s, o=%T", o.Label(), o)
 }
+
+// // Draw ...
+// func (o *Base) Draw(screen *ebiten.Image) {
+// 	// log.Printf("LayerBase.Draw")
+// 	op := &ebiten.DrawImageOptions{}
+
+// 	// 描画位置指定
+// 	op.GeoM.Reset()
+// 	op.GeoM.Scale(o.Scale(enum.TypeGlobal).Get())
+
+// 	// op.GeoM.Translate(o.Position(enum.TypeLocal).Get())
+// 	// screen.DrawImage(o.image, op)
+
+// 	// log.Printf("%s: translate(%0.2f, %0.2f)", o.label, o.Position(enum.TypeGlobal).X(), o.Position(enum.TypeGlobal).Y())
+// 	op.GeoM.Translate(o.Position(enum.TypeGlobal).Get())
+
+// 	lx, ly := o.Position(enum.TypeLocal).GetInt()
+// 	lw, lh := o.image.Size()
+// 	fs := o.frame.Size()
+
+// 	x0, y0, x1, y1 := 0, 0, lw, lh
+// 	// frame外れ判定
+// 	if lx < 0 {
+// 		// 左にはみ出し
+// 		op.GeoM.Translate(float64(-lx), 0)
+// 		x0 = -lx
+// 		x1 += x0
+// 	}
+// 	if ly < 0 {
+// 		// 上にはみ出し
+// 		op.GeoM.Translate(0, float64(-ly))
+// 		y0 = -ly
+// 		y1 += y0
+// 	}
+// 	if lx+lw > fs.W() {
+// 		// 右にはみ出し
+// 		x1 = x0 + fs.W()
+// 	}
+
+// 	if ly+lh > fs.H() {
+// 		// 下にはみ出し
+// 		y1 = y0 + fs.H()
+// 	}
+
+// 	fr := image.Rect(x0, y0, x1, y1)
+// 	// log.Printf("%s: pos: %d, %d, fr: %d, %d, %d, %d", o.label, lx, ly, x0, y0, x1, y1)
+// 	screen.DrawImage(o.image.SubImage(fr).(*ebiten.Image), op)
+
+// 	for _, c := range o.controls {
+// 		c.Draw(screen)
+// 	}
+// }
 
 // EventHandler ...
 func (o *Base) EventHandler() interfaces.EventHandler {
