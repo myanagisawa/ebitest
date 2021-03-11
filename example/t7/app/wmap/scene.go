@@ -1,10 +1,9 @@
-package menu
+package wmap
 
 import (
 	"log"
 
 	"github.com/myanagisawa/ebitest/example/t7/app/enum"
-	"github.com/myanagisawa/ebitest/example/t7/app/g"
 	"github.com/myanagisawa/ebitest/example/t7/lib/game"
 	"github.com/myanagisawa/ebitest/example/t7/lib/interfaces"
 )
@@ -20,18 +19,8 @@ type (
 // NewScene ...
 func NewScene(manager *game.Manager) *Scene {
 	s := &Scene{
-		manager: manager,
-	}
-
-	pos := g.NewPoint(0, 0)
-	size := g.NewSize(300, 1200)
-
-	s.children = []interfaces.UIControl{
-		NewFrame(s, "frame-1", g.NewBoundByPosSize(pos.SetDelta(0, 0), size)),
-		NewFrame(s, "frame-2", g.NewBoundByPosSize(pos.SetDelta(300, 0), size)),
-		NewFrame(s, "frame-3", g.NewBoundByPosSize(pos.SetDelta(300, 0), size)),
-		NewFrame(s, "frame-4", g.NewBoundByPosSize(pos.SetDelta(300, 0), size)),
-		NewButtonControl(s, "シーン切り替え", g.NewBoundByPosSize(g.NewPoint(10, 10), g.NewSize(199, 40))),
+		children: []interfaces.UIControl{},
+		manager:  manager,
 	}
 
 	return s
@@ -58,10 +47,15 @@ func (o *Scene) GetControls() []interfaces.UIControl {
 
 // DidLoad ...
 func (o *Scene) DidLoad() {
-	log.Printf("menu.DidLoad")
+	log.Printf("map.DidLoad")
+	f := NewWorldMap(o)
+	o.children = append(o.children, f)
+
+	l := NewInfoLayer(o, f)
+	f.children = append(f.children, l)
 }
 
 // DidActive ...
 func (o *Scene) DidActive() {
-	log.Printf("menu.DidActive")
+	log.Printf("map.DidActive")
 }

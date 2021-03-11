@@ -1,14 +1,12 @@
-package menu
+package wmap
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	"log"
 	"math"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -95,14 +93,14 @@ func init() {
 
 }
 
-// NewFrame ...
-func NewFrame(s interfaces.Scene, label string, bound *g.Bound) *UIControl {
-	img := utils.CreateRectImage(1, 1, &color.RGBA{uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 255})
+// NewWorldMap ...
+func NewWorldMap(s interfaces.Scene) *UIControl {
+	img := utils.CreateRectImage(1, 1, &color.RGBA{255, 255, 255, 255})
 
 	f := &UIControl{
 		t:            enum.ControlTypeFrame,
-		label:        label,
-		bound:        *bound,
+		label:        "worldmap-frame",
+		bound:        *g.NewBoundByPosSize(g.NewPoint(0, 0), g.NewSize(1200, 1200)),
 		scale:        *g.DefScale(),
 		colorScale:   *g.DefCS(),
 		scene:        s,
@@ -110,133 +108,95 @@ func NewFrame(s interfaces.Scene, label string, bound *g.Bound) *UIControl {
 		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
 	}
 
-	pos := g.NewPoint(0, 0)
-	size := g.NewSize(100, 1200)
-
-	f.children = []interfaces.UIControl{
-		NewLayer(s, f, fmt.Sprintf("%s.layer-1", label), g.NewBoundByPosSize(pos.SetDelta(0, 0), size)),
-		NewLayer(s, f, fmt.Sprintf("%s.layer-2", label), g.NewBoundByPosSize(pos.SetDelta(100, 0), size)),
-		NewLayer(s, f, fmt.Sprintf("%s.layer-3", label), g.NewBoundByPosSize(pos.SetDelta(100, 0), size)),
-		NewLayer(s, f, fmt.Sprintf("%s.layer-4", label), g.NewBoundByPosSize(pos.SetDelta(100, 0), size)),
+	l := &UIControl{
+		t:            enum.ControlTypeLayer,
+		label:        "worldmap-layer",
+		bound:        *g.NewBoundByPosSize(g.NewPoint(0, 0), g.NewSize(3120, 2340)),
+		scale:        *g.DefScale(),
+		colorScale:   *g.DefCS(),
+		scene:        s,
+		parent:       f,
+		eventHandler: event.NewEventHandler(),
+		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(g.Images["world"])),
 	}
+	l.eventHandler.AddEventListener(enum.EventTypeScroll, func(ev interfaces.UIControl, params map[string]interface{}) {
+		ev.Scroll(ev.Parent().GetEdgeType())
+		// log.Printf("callback::scroll:: %d", ev.Parent().GetEdgeType())
+	})
+
+	f.children = []interfaces.UIControl{l}
 
 	return f
 }
 
-// NewLayer ...
-func NewLayer(s interfaces.Scene, parent interfaces.UIControl, label string, bound *g.Bound) *UIControl {
-	img := utils.CreateRectImage(1, 1, &color.RGBA{uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 192})
+// NewInfoLayer ...
+func NewInfoLayer(s interfaces.Scene, f interfaces.UIControl) *UIControl {
+	img := utils.CreateRectImage(1, 1, &color.RGBA{32, 32, 32, 127})
 
+	// ウィンドウ本体
 	l := &UIControl{
 		t:            enum.ControlTypeLayer,
-		label:        label,
-		bound:        *bound,
+		label:        "info-layer",
+		bound:        *g.NewBoundByPosSize(g.NewPoint(10, 50), g.NewSize(500, 900)),
 		scale:        *g.DefScale(),
 		colorScale:   *g.DefCS(),
 		scene:        s,
-		parent:       parent,
+		parent:       f,
 		eventHandler: event.NewEventHandler(),
 		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
 	}
 
-	pos := g.NewPoint(0, 0)
-	size := g.NewSize(100, 100)
-
-	l.children = []interfaces.UIControl{
-		NewUIControl(s, l, fmt.Sprintf("%s.control-1", label), g.NewBoundByPosSize(pos.SetDelta(0, 0), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-2", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-3", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-4", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-5", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-6", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-7", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-8", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-9", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-10", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-11", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-		NewUIControl(s, l, fmt.Sprintf("%s.control-12", label), g.NewBoundByPosSize(pos.SetDelta(0, 100), size)),
-	}
-
-	return l
-}
-
-// NewUIControl ...
-func NewUIControl(s interfaces.Scene, parent interfaces.UIControl, label string, bound *g.Bound) *UIControl {
-	img := utils.CreateRectImage(1, 1, &color.RGBA{uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 160})
-
-	c := &UIControl{
+	// ヘッダバー
+	h := &UIControl{
 		t:            enum.ControlTypeDefault,
-		label:        label,
-		bound:        *bound,
+		label:        "header-bar",
+		bound:        *g.NewBoundByPosSize(g.NewPoint(0, 0), g.NewSize(500, 20)),
 		scale:        *g.DefScale(),
 		colorScale:   *g.DefCS(),
 		scene:        s,
-		parent:       parent,
+		parent:       l,
 		eventHandler: event.NewEventHandler(),
 		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
 	}
-	c.vector = *g.NewVector(float64(rand.Intn(3)+2), g.NewAngleByDeg(rand.Intn(360)))
+	h.EventHandler().AddEventListener(enum.EventTypeFocus, func(ev interfaces.UIControl, params map[string]interface{}) {
+		et := params["event_type"].(enum.EventTypeEnum)
+		switch et {
+		case enum.EventTypeFocus:
+			ev.ColorScale().Set(0.75, 0.75, 0.75, 1.0)
+		case enum.EventTypeBlur:
+			ev.ColorScale().Set(1.0, 1.0, 1.0, 1.0)
+		}
+	})
+	h.eventHandler.AddEventListener(enum.EventTypeDragging, func(ev interfaces.UIControl, params map[string]interface{}) {
+		dp := g.NewPoint(params["dx"].(float64), params["dy"].(float64))
+		ev.Parent().SetMoving(dp)
+	})
+	h.eventHandler.AddEventListener(enum.EventTypeDragDrop, func(ev interfaces.UIControl, params map[string]interface{}) {
+		dp := g.NewPoint(params["dx"].(float64), params["dy"].(float64))
+		ev.Parent().Bound().SetDelta(dp, nil)
+		ev.Parent().SetMoving(nil)
+	})
 
-	size := g.NewSize(50, 50)
+	l.children = append(l.children, h)
 
-	c.children = []interfaces.UIControl{
-		NewChildControl(s, c, fmt.Sprintf("%s.child-control-1", label), g.NewBoundByPosSize(g.NewPoint(0, 0), size)),
-		NewChildControl(s, c, fmt.Sprintf("%s.child-control-2", label), g.NewBoundByPosSize(g.NewPoint(50, 0), size)),
-		NewChildControl(s, c, fmt.Sprintf("%s.child-control-3", label), g.NewBoundByPosSize(g.NewPoint(0, 50), size)),
-		NewChildControl(s, c, fmt.Sprintf("%s.child-control-4", label), g.NewBoundByPosSize(g.NewPoint(50, 50), size)),
-	}
+	// 閉じるボタン
+	fset := char.Res.Get(14, enum.FontStyleGenShinGothicBold)
+	ti := fset.GetStringImage("×")
+	ti = utils.TextColorTo(ti.(draw.Image), &color.RGBA{192, 192, 192, 255})
 
-	return c
-}
-
-// NewChildControl ...
-func NewChildControl(s interfaces.Scene, parent interfaces.UIControl, label string, bound *g.Bound) *UIControl {
-	img := utils.CreateRectImage(1, 1, &color.RGBA{uint8(rand.Intn(255)), uint8(rand.Intn(255)), uint8(rand.Intn(255)), 127})
-
-	c := &UIControl{
+	size := ti.Bounds().Size()
+	btn := &UIControl{
 		t:            enum.ControlTypeDefault,
-		label:        label,
-		bound:        *bound,
-		angle:        *g.NewAngleByDeg(rand.Intn(360)),
+		label:        "close-btn",
+		bound:        *g.NewBoundByPosSize(g.NewPoint(5, 0), g.NewSize(size.X, size.Y)),
 		scale:        *g.DefScale(),
 		colorScale:   *g.DefCS(),
 		scene:        s,
-		parent:       parent,
+		parent:       h,
 		eventHandler: event.NewEventHandler(),
-		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
+		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(ti)),
 	}
-	c.updateProc = func(self *UIControl) {
-		l := self.label
-		deg, _ := strconv.Atoi(l[len(l)-1:])
-		deg += rand.Intn(2) - 3
-		// log.Printf("updateProc: %s: %d: %T", self.label, deg, self)
-
-		self.angle.SetDelta(deg)
-	}
-
-	return c
-}
-
-// NewButtonControl ...
-func NewButtonControl(s interfaces.Scene, label string, bound *g.Bound) *UIControl {
-	img := utils.CopyImage(g.Images["btnBase"])
-	fset := char.Res.Get(16, enum.FontStyleGenShinGothicBold)
-	ti := fset.GetStringImage(label)
-	ti = utils.TextColorTo(ti.(draw.Image), &color.RGBA{0, 0, 0, 255})
-	ti = utils.ImageOnTextToCenter(img.(draw.Image), ti)
-	eimg := ebiten.NewImageFromImage(ti)
-
-	c := &UIControl{
-		t:            enum.ControlTypeDefault,
-		label:        label,
-		bound:        *bound,
-		scale:        *g.DefScale(),
-		colorScale:   *g.DefCS(),
-		scene:        s,
-		eventHandler: event.NewEventHandler(),
-		drawer:       NewDefaultDrawer(eimg),
-	}
-	c.EventHandler().AddEventListener(enum.EventTypeFocus, func(ev interfaces.UIControl, params map[string]interface{}) {
+	btn.EventHandler().AddEventListener(enum.EventTypeFocus, func(ev interfaces.UIControl, params map[string]interface{}) {
 		et := params["event_type"].(enum.EventTypeEnum)
 		switch et {
 		case enum.EventTypeFocus:
@@ -245,12 +205,15 @@ func NewButtonControl(s interfaces.Scene, label string, bound *g.Bound) *UIContr
 			ev.ColorScale().Set(1.0, 1.0, 1.0, 1.0)
 		}
 	})
-	c.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.UIControl, params map[string]interface{}) {
+	btn.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.UIControl, params map[string]interface{}) {
+		window := ev.Parent().Parent()
+		window.Parent().RemoveChild(window)
 		log.Printf("callback::click")
-		ev.Scene().TransitionTo(enum.MapEnum)
 	})
 
-	return c
+	h.children = append(h.children, btn)
+
+	return l
 }
 
 // Type ...
@@ -287,7 +250,9 @@ func (o *UIControl) GetControls() []interfaces.UIControl {
 }
 func (o *UIControl) removeChildrenCache() {
 	o._childrenCache = nil
-	o.parent.(*UIControl).removeChildrenCache()
+	if o.parent != nil {
+		o.parent.(*UIControl).removeChildrenCache()
+	}
 }
 
 // RemoveChild ...
@@ -303,6 +268,7 @@ func (o *UIControl) RemoveChild(child interfaces.UIControl) {
 			i++
 		}
 	}
+	newChildren = newChildren[:i]
 	o.children = newChildren
 	o.removeChildrenCache()
 }

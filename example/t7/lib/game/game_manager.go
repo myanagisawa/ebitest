@@ -23,6 +23,8 @@ var (
 	ms          runtime.MemStats
 	withoutDraw bool
 
+	_controls []interfaces.UIControl
+
 	dbg string
 )
 
@@ -66,10 +68,17 @@ func (o *Manager) TransitionTo(t enum.SceneEnum) {
 func (o *Manager) Update() error {
 
 	if o.currentScene != nil {
+		_controls = o.currentScene.GetControls()
+
+		// イベント処理
+		ExecEvent(_controls)
+
+		// 各コントロールの更新処理
 		// i := 0
 		for _, child := range o.currentScene.GetControls() {
 			child.Update()
 			// i++
+			// log.Printf("-- update: %s", child.Label())
 		}
 		// log.Printf("-- update: %d controls", i)
 	}
@@ -83,14 +92,16 @@ func (o *Manager) Update() error {
 // Draw ...
 func (o *Manager) Draw(screen *ebiten.Image) {
 	if withoutDraw {
+		// log.Printf("-- draw: without draw")
 		return
 	}
 
-	if o.currentScene != nil {
+	if _controls != nil {
 		// i := 0
-		for _, child := range o.currentScene.GetControls() {
+		for _, child := range _controls {
 			child.Draw(screen)
 			// i++
+			// log.Printf("-- draw: %s", child.Label())
 		}
 		// log.Printf("-- draw: %d controls", i)
 	}

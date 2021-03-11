@@ -177,7 +177,8 @@ func printMemoryStats() string {
 
 	// // NumGC は、実施されたGCの回数
 	// output.Stdoutl("NumGC", ms.NumGC)
-	return fmt.Sprintf("Alloc, Sys, GC: %dMB, %dMB, %d", toMb(ms.Alloc), toMb(ms.Sys), ms.NumGC)
+	return fmt.Sprintf("Alloc, Obj, Sys, GC: %dMB, %d, %dMB, %d", toMb(ms.Alloc), toKb(ms.HeapObjects), toMb(ms.Sys), ms.NumGC)
+	// return fmt.Sprintf("Alloc, Sys, GC: %dMB, %dMB, %d", toMb(ms.Alloc), toMb(ms.Sys), ms.NumGC)
 }
 
 func toKb(bytes uint64) uint64 {

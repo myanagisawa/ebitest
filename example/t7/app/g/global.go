@@ -3,6 +3,11 @@ package g
 import (
 	"fmt"
 	"image"
+	"log"
+	"math"
+	"path/filepath"
+
+	"github.com/myanagisawa/ebitest/example/t7/lib/utils"
 )
 
 var (
@@ -10,10 +15,22 @@ var (
 	Width int
 	// Height ...
 	Height int
+
+	// Images ...
+	Images map[string]image.Image
 )
 
 func init() {
 
+	Images = make(map[string]image.Image)
+	exe, err := filepath.Abs(".")
+	if err != nil {
+		panic(err.Error())
+	}
+	log.Printf("global.AppRoot: exe=%s", exe)
+
+	Images["btnBase"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/button.png"))
+	Images["world"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/world.jpg"))
 }
 
 // Point ...
@@ -163,6 +180,58 @@ func (s *Size) Set(width, height int) {
 	s.height = height
 }
 
+// Angle ...
+type Angle struct {
+	rad float64
+}
+
+// NewAngle ...
+func NewAngle(rad float64) *Angle {
+	return &Angle{rad: rad}
+}
+
+// NewAngleByDeg ...
+func NewAngleByDeg(degree int) *Angle {
+	rad := float64(degree) * (math.Pi / 180)
+	return &Angle{rad: rad}
+}
+
+// DefAngle ...
+func DefAngle() *Angle {
+	return &Angle{rad: 0}
+}
+
+// Get ...
+func (a *Angle) Get() float64 {
+	return a.rad
+}
+
+// GetDeg ...
+func (a *Angle) GetDeg() float64 {
+	return math.Pi * a.rad / 180.0
+}
+
+// Set ...
+func (a *Angle) Set(rad float64) {
+	a.rad = rad
+	if a.rad > 2*math.Pi {
+		a.rad -= 2 * math.Pi
+	} else if a.rad < 0 {
+		a.rad += 2 * math.Pi
+	}
+}
+
+// SetDelta ...
+func (a *Angle) SetDelta(degree int) {
+	rad := float64(degree) * (math.Pi / 180)
+	a.rad += rad
+	if a.rad > 2*math.Pi {
+		a.rad -= 2 * math.Pi
+	} else if a.rad < 0 {
+		a.rad += 2 * math.Pi
+	}
+}
+
 // Bound ...
 type Bound struct {
 	Min Point
@@ -177,6 +246,17 @@ func NewBound(min, max *Point) *Bound {
 // NewBoundByPosSize ...
 func NewBoundByPosSize(pos *Point, size *Size) *Bound {
 	return &Bound{Min: *pos, Max: *NewPoint(pos.X()+float64(size.W()), pos.Y()+float64(size.H()))}
+}
+
+// SetDelta ...
+func (b *Bound) SetDelta(min *Point, max *Point) {
+	if min != nil {
+		b.Min.SetDelta(min.X(), min.Y())
+		b.Max.SetDelta(min.X(), min.Y())
+	}
+	if max != nil {
+		b.Max.SetDelta(max.X(), max.Y())
+	}
 }
 
 // ToPosSize ...
@@ -208,4 +288,45 @@ func NewCS(r, g, b, a float64) *ColorScale {
 // Get ...
 func (s *ColorScale) Get() (float64, float64, float64, float64) {
 	return s.r, s.g, s.b, s.a
+}
+
+// Set ...
+func (s *ColorScale) Set(r, g, b, a float64) {
+	s.r = r
+	s.g = g
+	s.b = b
+	s.a = a
+}
+
+// DefCS ...
+func DefCS() *ColorScale {
+	return &ColorScale{1.0, 1.0, 1.0, 1.0}
+}
+
+// Vector ...
+type Vector struct {
+	amount float64
+	angle  Angle
+}
+
+// NewVector ...
+func NewVector(am float64, an *Angle) *Vector {
+	return &Vector{amount: am, angle: *an}
+}
+
+// GetAmount ...
+func (v *Vector) GetAmount() float64 {
+	return v.amount
+}
+
+// GetDelta ...
+func (v *Vector) GetDelta() *Point {
+	vx := math.Cos(v.angle.rad) * v.amount
+	vy := math.Sin(v.angle.rad) * v.amount
+	return NewPoint(vx, vy)
+}
+
+// Angle ...
+func (v *Vector) Angle() *Angle {
+	return &v.angle
 }
