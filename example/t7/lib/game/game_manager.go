@@ -75,7 +75,7 @@ func (o *Manager) Update() error {
 
 		// 各コントロールの更新処理
 		// i := 0
-		for _, child := range o.currentScene.GetControls() {
+		for _, child := range _controls {
 			child.Update()
 			// i++
 			// log.Printf("-- update: %s", child.Label())

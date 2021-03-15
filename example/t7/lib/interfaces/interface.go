@@ -23,8 +23,12 @@ type UIControl interface {
 	Draw(screen *ebiten.Image)
 	Scene() Scene
 	Parent() UIControl
+	SetParent(parent UIControl)
+	GetChildren() []UIControl
 	GetControls() []UIControl
-	RemoveChild(UIControl)
+	AppendChild(child UIControl)
+	Remove()
+	RemoveChild(child UIControl)
 	Position(enum.ValueTypeEnum) *g.Point
 	Bound() *g.Bound
 	SetMoving(*g.Point)

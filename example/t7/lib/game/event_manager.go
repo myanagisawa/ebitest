@@ -72,9 +72,9 @@ func ExecEvent(controls []interfaces.UIControl) error {
 	{
 		// ホバーイベント
 		if current, ok := GetEventTarget(controls, enum.EventTypeFocus); ok {
-			log.Printf("0: current=%p, prev=%p", current, prevHoverd)
+			// log.Printf("0: current=%p, prev=%p", current, prevHoverd)
 			if current == prevHoverd {
-				log.Printf("same target")
+				// log.Printf("same target")
 			} else {
 				// フォーカス対象が変わった
 
@@ -88,7 +88,7 @@ func ExecEvent(controls []interfaces.UIControl) error {
 				evparams["event_type"] = enum.EventTypeFocus
 				current.EventHandler().Firing(enum.EventTypeFocus, current, evparams)
 				prevHoverd = current
-				log.Printf("1: prevHoverd=%p", prevHoverd)
+				// log.Printf("1: prevHoverd=%p", prevHoverd)
 			}
 		} else {
 			// フォーカス対象なし
@@ -157,11 +157,10 @@ func ExecEvent(controls []interfaces.UIControl) error {
 		xoff, yoff := ebiten.Wheel()
 		if xoff != 0 || yoff != 0 {
 			if target, ok := GetEventTarget(controls, enum.EventTypeWheel); ok {
+				// log.Printf("EventType(Wheel): target: %T", target)
+
 				evparams["xoff"], evparams["yoff"] = xoff, yoff
 				target.EventHandler().Firing(enum.EventTypeWheel, target, evparams)
-
-				// tname := fmt.Sprintf("%s", reflect.TypeOf(target))
-				// log.Printf("EventType(Wheel): target: %s", tname)
 			}
 		}
 	}

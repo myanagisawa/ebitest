@@ -1,6 +1,7 @@
 package wmap
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -23,6 +24,8 @@ var (
 	edgeSize = 30
 	// edgeSizeOuter Window外の何ピクセルまでを端判定に含めるか
 	edgeSizeOuter = 100
+
+	lineSpacing = 2.0
 )
 
 type (
@@ -58,6 +61,14 @@ type (
 		subImageRect *image.Rectangle
 	}
 )
+
+func _getControls(o interfaces.UIControl) []interfaces.UIControl {
+	ret := []interfaces.UIControl{o}
+	for _, child := range o.GetChildren() {
+		ret = append(ret, child.GetControls()...)
+	}
+	return ret
+}
 
 // NewDefaultDrawer ...
 func NewDefaultDrawer(img *ebiten.Image) *DrawProps {
@@ -115,7 +126,6 @@ func NewWorldMap(s interfaces.Scene) *UIControl {
 		scale:        *g.DefScale(),
 		colorScale:   *g.DefCS(),
 		scene:        s,
-		parent:       f,
 		eventHandler: event.NewEventHandler(),
 		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(g.Images["world"])),
 	}
@@ -123,14 +133,13 @@ func NewWorldMap(s interfaces.Scene) *UIControl {
 		ev.Scroll(ev.Parent().GetEdgeType())
 		// log.Printf("callback::scroll:: %d", ev.Parent().GetEdgeType())
 	})
-
-	f.children = []interfaces.UIControl{l}
+	f.AppendChild(l)
 
 	return f
 }
 
 // NewInfoLayer ...
-func NewInfoLayer(s interfaces.Scene, f interfaces.UIControl) *UIControl {
+func NewInfoLayer(s interfaces.Scene) *UIControl {
 	img := utils.CreateRectImage(1, 1, &color.RGBA{32, 32, 32, 127})
 
 	// ウィンドウ本体
@@ -141,7 +150,6 @@ func NewInfoLayer(s interfaces.Scene, f interfaces.UIControl) *UIControl {
 		scale:        *g.DefScale(),
 		colorScale:   *g.DefCS(),
 		scene:        s,
-		parent:       f,
 		eventHandler: event.NewEventHandler(),
 		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
 	}
@@ -154,7 +162,6 @@ func NewInfoLayer(s interfaces.Scene, f interfaces.UIControl) *UIControl {
 		scale:        *g.DefScale(),
 		colorScale:   *g.DefCS(),
 		scene:        s,
-		parent:       l,
 		eventHandler: event.NewEventHandler(),
 		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
 	}
@@ -177,7 +184,7 @@ func NewInfoLayer(s interfaces.Scene, f interfaces.UIControl) *UIControl {
 		ev.Parent().SetMoving(nil)
 	})
 
-	l.children = append(l.children, h)
+	l.AppendChild(h)
 
 	// 閉じるボタン
 	fset := char.Res.Get(14, enum.FontStyleGenShinGothicBold)
@@ -192,7 +199,6 @@ func NewInfoLayer(s interfaces.Scene, f interfaces.UIControl) *UIControl {
 		scale:        *g.DefScale(),
 		colorScale:   *g.DefCS(),
 		scene:        s,
-		parent:       h,
 		eventHandler: event.NewEventHandler(),
 		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(ti)),
 	}
@@ -207,13 +213,368 @@ func NewInfoLayer(s interfaces.Scene, f interfaces.UIControl) *UIControl {
 	})
 	btn.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.UIControl, params map[string]interface{}) {
 		window := ev.Parent().Parent()
-		window.Parent().RemoveChild(window)
+		window.Remove()
 		log.Printf("callback::click")
 	})
 
-	h.children = append(h.children, btn)
+	h.AppendChild(btn)
 
 	return l
+}
+
+// CreateImageByDataSource 対象データの画像を返します
+func CreateImageByDataSource(ds interface{}, fontSet *char.Resource) image.Image {
+	switch val := ds.(type) {
+	case image.Image:
+		return val
+	case int:
+		return fontSet.GetStringImage(fmt.Sprintf("%d", val))
+	case string:
+		return fontSet.GetStringImage(val)
+	default:
+		panic("invalid type")
+	}
+}
+
+// UIScrollView ...
+type UIScrollView struct {
+	*UIControl
+	header *ScrollViewHeader
+	list   *ScrollViewList
+	bar    *ScrollViewScrollBar
+}
+
+// SetHeader ...
+func (o *UIScrollView) SetHeader(dataSet []interface{}) {
+	o.header.fontSet = char.Res.Get(12, enum.FontStyleGenShinGothicBold)
+	o.header.ds = dataSet
+
+	o.header.dsImages = make([]image.Image, len(dataSet))
+	for i, ds := range dataSet {
+		o.header.dsImages[i] = CreateImageByDataSource(ds, o.header.fontSet)
+	}
+	// 行画像のUPDATE
+	o.UpdateImages()
+}
+
+// AppendRows ...
+func (o *UIScrollView) AppendRows(dataSet [][]interface{}) {
+	for _, dataRow := range dataSet {
+		row := NewScrollViewRow(o.scene, dataRow)
+
+		index := len(o.list.children)
+		if index > 0 {
+			prevRow := o.list.children[index-1]
+			row.index = index
+			row.Bound().SetDelta(g.NewPoint(row.Bound().Min.X(), prevRow.Bound().Max.Y()+lineSpacing), nil)
+		}
+
+		o.list.AppendChild(row)
+	}
+
+	// 行画像のUPDATE
+	o.UpdateImages()
+}
+
+// GetColumnWidthRatios カラムごとの幅の比率を取得します
+func (o *UIScrollView) GetColumnWidthRatios() []float64 {
+
+	maxWidths := make([]int, len(o.header.dsImages))
+	// ヘッダ
+	for i, col := range o.header.dsImages {
+		size := col.Bounds().Size()
+		if size.X > maxWidths[i] {
+			maxWidths[i] = size.X
+		}
+	}
+	// リスト
+	for _, row := range o.list.children {
+		if r, ok := row.(*ScrollViewRow); ok {
+			for i, col := range r.dsImages {
+				size := col.Bounds().Size()
+				if size.X > maxWidths[i] {
+					maxWidths[i] = size.X
+				}
+			}
+		}
+	}
+
+	// 最大幅での各列のサイズ比を計算
+	totalWidth := 0.0
+	ratio := make([]float64, len(maxWidths))
+	for i := range maxWidths {
+		totalWidth += float64(maxWidths[i])
+	}
+	for i := range maxWidths {
+		ratio[i] = float64(maxWidths[i]) / totalWidth
+	}
+
+	return ratio
+}
+
+// UpdateImages ...
+func (o *UIScrollView) UpdateImages() {
+	ratios := o.GetColumnWidthRatios()
+	if o.header != nil {
+		_, size := o.header.bound.ToPosSize()
+		// ベースの行画像を作成
+		img := utils.CreateRectImage(size.W(), size.H(), &color.RGBA{0, 0, 0, 0}).(draw.Image)
+
+		rowW := float64(size.W())
+		cx := 0
+		for i, ds := range o.header.dsImages {
+			colW := int(rowW * ratios[i])
+			columnImageBase := utils.CreateRectImage(colW-2, size.H(), o.header.baseColor).(draw.Image)
+			// データ画像を重ねる
+			columnImageBase = utils.StackImage(columnImageBase, ds, image.Point{3, 3})
+
+			// カラム画像を行画像上に描画
+			img = utils.StackImage(img, columnImageBase, image.Point{cx, 0})
+			cx += colW
+		}
+		o.header.drawer = NewDefaultDrawer(ebiten.NewImageFromImage(img))
+	}
+
+	if o.list != nil {
+		for idx, row := range o.list.children {
+			if r, ok := row.(*ScrollViewRow); ok {
+				_, size := r.bound.ToPosSize()
+				// ベースの行画像を作成
+				img := utils.CreateRectImage(size.W(), size.H(), &color.RGBA{0, 0, 0, 0}).(draw.Image)
+
+				rowW := float64(size.W())
+				cx := 0
+				for i, ds := range r.dsImages {
+					colW := int(rowW * ratios[i])
+					columnImageBase := utils.CreateRectImage(colW-2, size.H(), r.baseColor).(draw.Image)
+					// データ画像を重ねる
+					columnImageBase = utils.StackImage(columnImageBase, ds, image.Point{3, 3})
+
+					// カラム画像を行画像上に描画
+					img = utils.StackImage(img, columnImageBase, image.Point{cx, 0})
+					cx += colW
+				}
+				o.list.children[idx].(*ScrollViewRow).drawer = NewDefaultDrawer(ebiten.NewImageFromImage(img))
+			}
+		}
+	}
+}
+
+// ScrollViewHeader ...
+type ScrollViewHeader struct {
+	*UIControl
+	baseColor *color.RGBA
+	fontSet   *char.Resource
+	ds        []interface{}
+	dsImages  []image.Image
+}
+
+// GetControls ...
+func (o *ScrollViewHeader) GetControls() []interfaces.UIControl {
+	if o._childrenCache != nil {
+		return o._childrenCache
+	}
+	ret := _getControls(o)
+	o._childrenCache = ret
+	return ret
+}
+
+// ScrollViewList ...
+type ScrollViewList struct {
+	*UIControl
+}
+
+// GetControls ...
+func (o *ScrollViewList) GetControls() []interfaces.UIControl {
+	if o._childrenCache != nil {
+		return o._childrenCache
+	}
+	ret := _getControls(o)
+	o._childrenCache = ret
+	return ret
+}
+
+// ScrollBound ...
+func (o *ScrollViewList) ScrollBound() *g.Bound {
+	if children := o.GetChildren(); children != nil {
+		fc := children[0]
+		lc := children[len(children)-1]
+		return g.NewBound(&fc.Bound().Min, &lc.Bound().Max)
+	}
+	return nil
+}
+
+// ScrollViewScrollBar ...
+type ScrollViewScrollBar struct {
+	*UIControl
+}
+
+// GetControls ...
+func (o *ScrollViewScrollBar) GetControls() []interfaces.UIControl {
+	if o._childrenCache != nil {
+		return o._childrenCache
+	}
+	ret := _getControls(o)
+	o._childrenCache = ret
+	return ret
+}
+
+// NewScrollView ...
+func NewScrollView(s interfaces.Scene) *UIScrollView {
+
+	// スクロールビューのベース
+	img := utils.CreateRectImage(1, 1, &color.RGBA{32, 32, 32, 32})
+	b := &UIControl{
+		t:            enum.ControlTypeDefault,
+		label:        "scroll-view",
+		bound:        *g.NewBoundByPosSize(g.NewPoint(0, 20), g.NewSize(500, 880)),
+		scale:        *g.DefScale(),
+		colorScale:   *g.DefCS(),
+		scene:        s,
+		eventHandler: event.NewEventHandler(),
+		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
+	}
+
+	// ヘッダ部分のベース
+	img = utils.CreateRectImage(1, 1, &color.RGBA{0, 255, 0, 192})
+	base := &UIControl{
+		t:            enum.ControlTypeDefault,
+		label:        "header-base",
+		bound:        *g.NewBoundByPosSize(g.NewPoint(0, 0), g.NewSize(490, 25)),
+		scale:        *g.DefScale(),
+		colorScale:   *g.DefCS(),
+		scene:        s,
+		eventHandler: event.NewEventHandler(),
+		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
+	}
+	header := &ScrollViewHeader{
+		UIControl: base,
+		baseColor: &color.RGBA{0, 255, 0, 192},
+	}
+
+	b.AppendChild(header)
+
+	// スクロール部分のベース
+	img = utils.CreateRectImage(1, 1, &color.RGBA{255, 0, 0, 192})
+	base = &UIControl{
+		t:            enum.ControlTypeDefault,
+		label:        "scroll-base",
+		bound:        *g.NewBoundByPosSize(g.NewPoint(0, header.bound.Max.Y()+lineSpacing), g.NewSize(490, 860)),
+		scale:        *g.DefScale(),
+		colorScale:   *g.DefCS(),
+		scene:        s,
+		eventHandler: event.NewEventHandler(),
+		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
+	}
+	list := &ScrollViewList{
+		UIControl: base,
+	}
+	list.eventHandler.AddEventListener(enum.EventTypeWheel, func(ev interfaces.UIControl, params map[string]interface{}) {
+		if children := ev.GetChildren(); children != nil {
+			dy := params["yoff"].(float64)
+			if lv, ok := ev.(*ScrollViewList); ok {
+
+				// スクロール結果がlistのbound外になる場合はスクロールしない
+				lb := lv.ScrollBound()
+				b := ev.Bound()
+				if lb.Min.Y()+dy > 0 {
+					// 上に余白ができる
+					// log.Printf("上に余白ができる")
+					return
+				} else if lb.Max.Y()+dy < b.Max.Y()-b.Min.Y() {
+					// 下に余白ができる
+					// log.Printf("下に余白ができる")
+					return
+				}
+
+				for _, row := range ev.GetChildren() {
+					row.Bound().SetDelta(g.NewPoint(0, dy), nil)
+				}
+			}
+
+		} else {
+			log.Printf("wheel: ev=%T", ev)
+		}
+	})
+
+	b.AppendChild(list)
+
+	// スクロールバーのベース
+	img = utils.CreateRectImage(1, 1, &color.RGBA{0, 0, 255, 192})
+	base = &UIControl{
+		t:            enum.ControlTypeDefault,
+		label:        "scroll-bar",
+		bound:        *g.NewBoundByPosSize(g.NewPoint(base.bound.Max.X(), header.bound.Max.Y()+lineSpacing), g.NewSize(10, 860)),
+		scale:        *g.DefScale(),
+		colorScale:   *g.DefCS(),
+		scene:        s,
+		eventHandler: event.NewEventHandler(),
+		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
+	}
+	bar := &ScrollViewScrollBar{
+		UIControl: base,
+	}
+
+	b.AppendChild(bar)
+
+	sv := &UIScrollView{
+		UIControl: b,
+		header:    header,
+		list:      list,
+		bar:       bar,
+	}
+
+	return sv
+}
+
+// ScrollViewRow ...
+type ScrollViewRow struct {
+	*UIControl
+	index     int
+	baseColor *color.RGBA
+	fontSet   *char.Resource
+	ds        []interface{}
+	dsImages  []image.Image
+}
+
+// GetControls ...
+func (o *ScrollViewRow) GetControls() []interfaces.UIControl {
+	if o._childrenCache != nil {
+		return o._childrenCache
+	}
+	ret := _getControls(o)
+	o._childrenCache = ret
+	return ret
+}
+
+// NewScrollViewRow ...
+func NewScrollViewRow(s interfaces.Scene, dataSet []interface{}) *ScrollViewRow {
+	// スクロールバーのベース
+	img := utils.CreateRectImage(1, 1, &color.RGBA{0, 255, 255, 192})
+	b := &UIControl{
+		t:            enum.ControlTypeDefault,
+		label:        "scrollview-row",
+		bound:        *g.NewBoundByPosSize(g.NewPoint(0, 0), g.NewSize(490, 25)),
+		scale:        *g.DefScale(),
+		colorScale:   *g.DefCS(),
+		scene:        s,
+		eventHandler: event.NewEventHandler(),
+		drawer:       NewDefaultDrawer(ebiten.NewImageFromImage(img)),
+	}
+	o := &ScrollViewRow{
+		UIControl: b,
+		baseColor: &color.RGBA{0, 255, 255, 192},
+	}
+
+	o.fontSet = char.Res.Get(12, enum.FontStyleGenShinGothicBold)
+	o.ds = dataSet
+
+	o.dsImages = make([]image.Image, len(dataSet))
+	for i, ds := range dataSet {
+		o.dsImages[i] = CreateImageByDataSource(ds, o.fontSet)
+	}
+
+	return o
 }
 
 // Type ...
@@ -236,23 +597,47 @@ func (o *UIControl) Parent() interfaces.UIControl {
 	return o.parent
 }
 
+// SetParent ...
+func (o *UIControl) SetParent(parent interfaces.UIControl) {
+	o.parent = parent
+}
+
+// GetChildren ...
+func (o *UIControl) GetChildren() []interfaces.UIControl {
+	return o.children
+}
+
 // GetControls ...
 func (o *UIControl) GetControls() []interfaces.UIControl {
 	if o._childrenCache != nil {
 		return o._childrenCache
 	}
-	ret := []interfaces.UIControl{o}
-	for _, child := range o.children {
-		ret = append(ret, child.GetControls()...)
-	}
+	ret := _getControls(o)
 	o._childrenCache = ret
 	return ret
 }
+
+// AppendChild ...
+func (o *UIControl) AppendChild(child interfaces.UIControl) {
+	child.SetParent(o)
+	o.children = append(o.children, child)
+
+	o.removeChildrenCache()
+}
+
 func (o *UIControl) removeChildrenCache() {
 	o._childrenCache = nil
 	if o.parent != nil {
 		o.parent.(*UIControl).removeChildrenCache()
 	}
+}
+
+// Remove ...
+func (o *UIControl) Remove() {
+	if o.parent == nil {
+		return
+	}
+	o.parent.RemoveChild(o)
 }
 
 // RemoveChild ...
@@ -484,6 +869,7 @@ func (o *UIControl) Update() error {
 	}
 
 	// drawer設定
+	o.drawer.withoutDraw = false
 	iw, ih := o.drawer.imageSize.Get()
 	_, size := o.bound.ToPosSize()
 	o.drawer.drawSize = g.NewSize(int(float64(size.W())*o.scale.X()), int(float64(size.H())*o.scale.Y()))
@@ -492,6 +878,43 @@ func (o *UIControl) Update() error {
 	o.drawer.angle = &o.angle
 	o.drawer.position = o.Position(enum.TypeGlobal)
 	o.drawer.colorScale = &o.colorScale
+
+	o.drawer.subImageRect = nil
+	return nil
+}
+
+// Update ...
+func (o *ScrollViewRow) Update() error {
+	_ = o.UIControl.Update()
+
+	// 親（ScrollViewList）範囲外を描画対象から外す
+	bound := o.bound
+	regionBound := o.parent.Bound()
+
+	if bound.Max.Y() < 0 {
+		// 行全体が上に出てる
+		o.drawer.withoutDraw = true
+	} else if bound.Min.Y() > regionBound.Max.Y()-regionBound.Min.Y() {
+		// 行全体が下に出てる
+		o.drawer.withoutDraw = true
+	} else if bound.Min.Y() < 0 {
+		// 行の一部が上に出てる
+		_, size := bound.ToPosSize()
+
+		subRect := g.NewBound(g.NewPoint(bound.Min.X(), -bound.Min.Y()), g.NewPoint(float64(size.W()), float64(size.H())))
+		o.drawer.subImageRect = subRect.ToImageRect()
+		o.drawer.position.SetDelta(0, lineSpacing-bound.Min.Y())
+		// log.Printf("行の一部が上に出てる: %#v", subRect)
+	} else if bound.Max.Y() > regionBound.Max.Y()-regionBound.Min.Y() {
+		// 行の一部が下に出てる
+		_, size := bound.ToPosSize()
+
+		maxY := bound.Max.Y() - (regionBound.Max.Y() - regionBound.Min.Y())
+		subRect := g.NewBound(g.DefPoint(), g.NewPoint(bound.Max.X(), float64(size.H())-maxY))
+		o.drawer.subImageRect = subRect.ToImageRect()
+		// log.Printf("行の一部が下に出てる: maxY=%0.2f, bound.max.Y=%0.2f, regionBound.Max.Y()=%0.2f, regionBound.Min.Y()=%0.2f, subRect=%#v", maxY, bound.Max.Y(), regionBound.Max.Y(), regionBound.Min.Y(), subRect)
+	}
+
 	return nil
 }
 
@@ -518,6 +941,11 @@ func (o *UIControl) Draw(screen *ebiten.Image) {
 	op.ColorM.Scale(o.drawer.colorScale.Get())
 
 	// log.Printf("draw: %#v", o.drawer)
-	screen.DrawImage(o.drawer.image, op)
+	if o.drawer.subImageRect != nil {
+		screen.DrawImage(o.drawer.image.SubImage(*o.drawer.subImageRect).(*ebiten.Image), op)
+		// log.Printf("SubImage描画: %#v", o.drawer.subImageRect)
+	} else {
+		screen.DrawImage(o.drawer.image, op)
+	}
 	return
 }

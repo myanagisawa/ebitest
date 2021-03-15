@@ -273,6 +273,16 @@ func (o *UIControl) Parent() interfaces.UIControl {
 	return o.parent
 }
 
+// SetParent ...
+func (o *UIControl) SetParent(parent interfaces.UIControl) {
+	o.parent = parent
+}
+
+// GetChildren ...
+func (o *UIControl) GetChildren() []interfaces.UIControl {
+	return o.children
+}
+
 // GetControls ...
 func (o *UIControl) GetControls() []interfaces.UIControl {
 	if o._childrenCache != nil {
@@ -285,9 +295,26 @@ func (o *UIControl) GetControls() []interfaces.UIControl {
 	o._childrenCache = ret
 	return ret
 }
+
+// AppendChild ...
+func (o *UIControl) AppendChild(child interfaces.UIControl) {
+	child.SetParent(o)
+	o.children = append(o.children, child)
+
+	o.removeChildrenCache()
+}
+
 func (o *UIControl) removeChildrenCache() {
 	o._childrenCache = nil
 	o.parent.(*UIControl).removeChildrenCache()
+}
+
+// Remove ...
+func (o *UIControl) Remove() {
+	if o.parent == nil {
+		return
+	}
+	o.parent.RemoveChild(o)
 }
 
 // RemoveChild ...
