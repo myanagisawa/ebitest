@@ -6,6 +6,7 @@ import (
 	"github.com/myanagisawa/ebitest/example/t7/app/enum"
 	"github.com/myanagisawa/ebitest/example/t7/lib/game"
 	"github.com/myanagisawa/ebitest/example/t7/lib/interfaces"
+	"github.com/myanagisawa/ebitest/example/t7/lib/models/control"
 )
 
 type (
@@ -17,7 +18,7 @@ type (
 )
 
 var (
-	testList *UIScrollView
+	testList *control.UIScrollView
 )
 
 // NewScene ...
@@ -58,7 +59,7 @@ func (o *Scene) DidLoad() {
 	l := NewInfoLayer(o)
 	f.AppendChild(l)
 
-	testList = NewScrollView(o)
+	testList = NewScrollView(o).(*control.UIScrollView)
 	l.AppendChild(testList)
 }
 
@@ -113,7 +114,7 @@ func (o *Scene) DidActive() {
 	}
 
 	// ヘッダを設定
-	testList.SetHeader(cols)
+	testList.SetHeaderRow(cols)
 
 	// 行を設定
 	testList.AppendRows(data)

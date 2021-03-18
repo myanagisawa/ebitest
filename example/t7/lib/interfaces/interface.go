@@ -24,21 +24,34 @@ type UIControl interface {
 	Scene() Scene
 	Parent() UIControl
 	SetParent(parent UIControl)
+	Rel(key string) interface{}
+	AddRel(key string, value interface{})
 	GetChildren() []UIControl
 	GetControls() []UIControl
 	AppendChild(child UIControl)
+	SetChildren(children []UIControl)
 	Remove()
 	RemoveChild(child UIControl)
 	Position(enum.ValueTypeEnum) *g.Point
 	Bound() *g.Bound
+	Moving() *g.Point
 	SetMoving(*g.Point)
 	Scale(enum.ValueTypeEnum) *g.Scale
 	Angle(enum.ValueTypeEnum) *g.Angle
+	SetAngle(a *g.Angle)
+	Vector() *g.Vector
+	SetVector(v *g.Vector)
 	ColorScale() *g.ColorScale
+	SetUpdateProc(f func(self UIControl))
 	In() bool
 	GetEdgeType() enum.EdgeTypeEnum
 	Scroll(et enum.EdgeTypeEnum)
 	EventHandler() EventHandler
+}
+
+// UIScrollView ...
+type UIScrollView interface {
+	UIControl
 }
 
 // UIDialog ...

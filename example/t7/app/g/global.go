@@ -248,6 +248,20 @@ func NewBoundByPosSize(pos *Point, size *Size) *Bound {
 	return &Bound{Min: *pos, Max: *NewPoint(pos.X()+float64(size.W()), pos.Y()+float64(size.H()))}
 }
 
+// Set ...
+func (b *Bound) Set(min *Point, max *Point) {
+	_b := NewBound(min, max)
+	b.Min = _b.Min
+	b.Max = _b.Max
+}
+
+// SetPosSize ...
+func (b *Bound) SetPosSize(pos *Point, size *Size) {
+	_b := NewBoundByPosSize(pos, size)
+	b.Min = _b.Min
+	b.Max = _b.Max
+}
+
 // SetDelta ...
 func (b *Bound) SetDelta(min *Point, max *Point) {
 	if min != nil {
