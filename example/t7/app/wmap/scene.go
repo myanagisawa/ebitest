@@ -18,6 +18,7 @@ type (
 )
 
 var (
+	window   interfaces.UIControl
 	testList *control.UIScrollView
 )
 
@@ -56,11 +57,11 @@ func (o *Scene) DidLoad() {
 	f := NewWorldMap(o)
 	o.children = append(o.children, f)
 
-	l := NewInfoLayer(o)
-	f.AppendChild(l)
+	window = NewInfoLayer(o)
+	f.AppendChild(window)
 
 	testList = NewScrollView(o).(*control.UIScrollView)
-	l.AppendChild(testList)
+	window.AppendChild(testList)
 }
 
 // DidActive ...

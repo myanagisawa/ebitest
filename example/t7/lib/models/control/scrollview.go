@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -20,6 +21,172 @@ const (
 	// LineSpacing 行間の標準サイズ
 	LineSpacing = 2.0
 )
+
+var (
+	// ScrollViewEventWheelCallback ...
+	ScrollViewEventWheelCallback = func(ev interfaces.UIControl, params map[string]interface{}) {
+		if children := ev.GetChildren(); children != nil {
+			dy := params["yoff"].(float64)
+			if lv, ok := ev.(*ScrollViewList); ok {
+
+				// スクロール結果がlistのbound外になる場合はスクロールしない
+				lb := lv.ScrollBound(true)
+				b := lv.Bound()
+
+				if lb.Min.Y()+dy > 0 {
+					// 上に余白ができる
+					// log.Printf("上に余白ができる")
+					return
+				} else if lb.Max.Y()+dy < b.Max.Y()-b.Min.Y() {
+					// 下に余白ができる
+					// log.Printf("下に余白ができる")
+					return
+				}
+
+				for _, row := range lv.GetChildren() {
+					row.Bound().SetDelta(g.NewPoint(0, dy), nil)
+				}
+				lv.SetScrollBarPosition()
+			}
+
+		} else {
+			log.Printf("wheel: ev=%T", ev)
+		}
+	}
+
+	// ScrollViewEventDraggingCallback ...
+	ScrollViewEventDraggingCallback = func(ev interfaces.UIControl, params map[string]interface{}) {
+		if base, ok := ev.Rel("base").(interfaces.UIControl); ok {
+			dy := params["dy"].(float64)
+			dp := g.NewPoint(0, dy*-1)
+			if lv, ok := base.Rel("list").(*ScrollViewList); ok {
+
+				// スクロール結果がlistのbound外になる場合はスクロールしない
+				lb := lv.ScrollBound(true)
+				// log.Printf("ScrollBound: %#v / dp: %#v", lb, dp)
+				b := lv.Bound()
+				if lb.Min.Y()+dp.Y() > 0 {
+					// 上に余白ができる
+					// log.Printf("上に余白ができる")
+					return
+				} else if lb.Max.Y()+dp.Y() < b.Max.Y()-b.Min.Y() {
+					// 下に余白ができる
+					// log.Printf("下に余白ができる / %0.2f < %0.2f", lb.Max.Y()+dp.Y(), b.Max.Y()-b.Min.Y())
+					return
+				}
+
+				for _, row := range lv.GetChildren() {
+					row.SetMoving(dp)
+				}
+				lv.SetScrollBarPosition()
+
+			}
+		}
+	}
+
+	// ScrollViewEventDragDropCallback ...
+	ScrollViewEventDragDropCallback = func(ev interfaces.UIControl, params map[string]interface{}) {
+		if base, ok := ev.Rel("base").(interfaces.UIControl); ok {
+			if lv, ok := base.Rel("list").(*ScrollViewList); ok {
+
+				for _, row := range lv.GetChildren() {
+					_, dy := row.Moving().Get()
+					row.Bound().SetDelta(g.NewPoint(0, dy), nil)
+					row.SetMoving(nil)
+				}
+				lv.SetScrollBarPosition()
+			}
+		}
+	}
+)
+
+// NewDefaultScrollView ...
+func NewDefaultScrollView(s interfaces.Scene, bound *g.Bound) interfaces.UIScrollView {
+	return NewScrollView(s, bound, ScrollViewEventWheelCallback, ScrollViewEventDraggingCallback, ScrollViewEventDragDropCallback)
+}
+
+// NewScrollView ...
+func NewScrollView(s interfaces.Scene, bound *g.Bound,
+	eventWheelCallback func(ev interfaces.UIControl, params map[string]interface{}),
+	eventDraggingCallback func(ev interfaces.UIControl, params map[string]interface{}),
+	eventDragDropCallback func(ev interfaces.UIControl, params map[string]interface{}),
+) interfaces.UIScrollView {
+	headerHeight := 25
+	scrollWidth := 8
+	// スクロールビューのベース
+	img := utils.CreateRectImage(1, 1, &color.RGBA{64, 64, 64, 127})
+	_b := NewUIControl(s, nil, enum.ControlTypeDefault, "scroll-view", bound, g.DefScale(), g.DefCS(), img)
+	sv := NewUIScrollView(_b.(*UIControl), nil, nil, nil).(*UIScrollView)
+
+	_, baseSize := bound.ToPosSize()
+
+	// ヘッダ部分のベース
+	img = utils.CreateRectImage(1, 1, &color.RGBA{64, 64, 64, 255})
+	_bound := g.NewBoundByPosSize(g.NewPoint(0, 0), g.NewSize(baseSize.W()-scrollWidth, headerHeight))
+	hb := NewUIControl(s, nil, enum.ControlTypeDefault, "header-base", _bound, g.DefScale(), g.DefCS(), img)
+	header := NewScrollViewHeader(hb.(*UIControl), &color.RGBA{64, 64, 64, 255}).(*ScrollViewHeader)
+
+	// 親子関係を設定
+	sv.AppendChild(header)
+	sv.SetHeader(header)
+
+	// スクロール部分のベース
+	posY := float64(headerHeight) + LineSpacing
+	img = utils.CreateRectImage(1, 1, &color.RGBA{0, 0, 0, 0})
+	_bound = g.NewBoundByPosSize(g.NewPoint(0, posY), g.NewSize(baseSize.W()-scrollWidth, baseSize.H()-int(posY)))
+	lb := NewUIControl(s, nil, enum.ControlTypeDefault, "list-base", _bound, g.DefScale(), g.DefCS(), img).(*UIControl)
+	listView := NewScrollViewList(lb).(*ScrollViewList)
+	if eventWheelCallback != nil {
+		listView.EventHandler().AddEventListener(enum.EventTypeWheel, eventWheelCallback)
+	}
+
+	// 親子関係を設定
+	sv.AppendChild(listView)
+	sv.SetList(listView)
+
+	// スクロールバーのベース
+	img = utils.CreateRectImage(1, 1, &color.RGBA{127, 127, 127, 255})
+	_bound = g.NewBoundByPosSize(g.NewPoint(listView.Bound().Max.X(), posY), g.NewSize(scrollWidth, baseSize.H()-int(posY)))
+	sb := NewUIControl(s, nil, enum.ControlTypeDefault, "scroll-bar", _bound, g.DefScale(), g.DefCS(), img).(*UIControl)
+
+	// 親子関係を設定
+	sv.AppendChild(sb)
+	sv.SetScrollBar(sb)
+
+	// 関連漬け
+	sb.AddRel("list", listView)
+	listView.AddRel("bar", sb)
+
+	// スクロールバーのスライダ
+	sliderPad := 2
+	img = utils.CreateRectImage(1, 1, &color.RGBA{192, 192, 192, 255})
+	_bound = g.NewBoundByPosSize(g.NewPoint(float64(sliderPad), LineSpacing), g.NewSize(scrollWidth-(sliderPad*2), 10))
+	sbb := NewUIControl(s, nil, enum.ControlTypeDefault, "scroll-bar-slider", _bound, g.DefScale(), g.DefCS(), img)
+	sbb.EventHandler().AddEventListener(enum.EventTypeFocus, func(ev interfaces.UIControl, params map[string]interface{}) {
+		et := params["event_type"].(enum.EventTypeEnum)
+		switch et {
+		case enum.EventTypeFocus:
+			ev.ColorScale().Set(0.75, 0.75, 0.75, 1.0)
+		case enum.EventTypeBlur:
+			ev.ColorScale().Set(1.0, 1.0, 1.0, 1.0)
+		}
+	})
+	if eventDraggingCallback != nil {
+		sbb.EventHandler().AddEventListener(enum.EventTypeDragging, eventDraggingCallback)
+	}
+	if eventDragDropCallback != nil {
+		sbb.EventHandler().AddEventListener(enum.EventTypeDragDrop, eventDragDropCallback)
+	}
+
+	// 親子関係を設定
+	sb.AppendChild(sbb)
+
+	// 関連漬け
+	sb.AddRel("slider", sbb)
+	sbb.AddRel("base", sb)
+
+	return sv
+}
 
 // CreateImageByDataSource 対象データの画像を返します
 func CreateImageByDataSource(ds interface{}, fontSet *char.Resource) image.Image {
@@ -151,10 +318,10 @@ func (o *UIScrollView) UpdateImages() {
 		img := utils.CreateRectImage(size.W(), size.H(), &color.RGBA{0, 0, 0, 0}).(draw.Image)
 
 		rowW := float64(size.W())
-		cx := 0
+		cx := int(LineSpacing)
 		for i, ds := range o.header.dsImages {
 			colW := int(rowW * ratios[i])
-			columnImageBase := utils.CreateRectImage(colW-2, size.H(), o.header.baseColor).(draw.Image)
+			columnImageBase := utils.CreateRectImage(colW-LineSpacing, size.H(), o.header.baseColor).(draw.Image)
 			// データ画像を重ねる
 			columnImageBase = utils.StackImage(columnImageBase, ds, image.Point{3, 3})
 
@@ -174,10 +341,10 @@ func (o *UIScrollView) UpdateImages() {
 				img := utils.CreateRectImage(size.W(), size.H(), &color.RGBA{0, 0, 0, 0}).(draw.Image)
 
 				rowW := float64(size.W())
-				cx := 0
+				cx := int(LineSpacing)
 				for i, ds := range r.dsImages {
 					colW := int(rowW * ratios[i])
-					columnImageBase := utils.CreateRectImage(colW-2, size.H(), r.baseColor).(draw.Image)
+					columnImageBase := utils.CreateRectImage(colW-LineSpacing, size.H(), r.baseColor).(draw.Image)
 					// データ画像を重ねる
 					columnImageBase = utils.StackImage(columnImageBase, ds, image.Point{3, 3})
 
@@ -332,15 +499,25 @@ func NewScrollViewRow(s interfaces.Scene, dataSet []interface{}) *ScrollViewRow 
 	}
 	o := &ScrollViewRow{
 		UIControl: *b,
-		baseColor: &color.RGBA{192, 192, 192, 127},
+		baseColor: &color.RGBA{127, 127, 127, 127},
 	}
+	o.EventHandler().AddEventListener(enum.EventTypeFocus, func(ev interfaces.UIControl, params map[string]interface{}) {
+		et := params["event_type"].(enum.EventTypeEnum)
+		switch et {
+		case enum.EventTypeFocus:
+			ev.ColorScale().Set(0.75, 0.75, 0.75, 1.0)
+		case enum.EventTypeBlur:
+			ev.ColorScale().Set(1.0, 1.0, 1.0, 1.0)
+		}
+	})
 
-	o.fontSet = char.Res.Get(12, enum.FontStyleGenShinGothicBold)
+	o.fontSet = char.Res.Get(12, enum.FontStyleGenShinGothicRegular)
 	o.ds = dataSet
 
 	o.dsImages = make([]image.Image, len(dataSet))
 	for i, ds := range dataSet {
-		o.dsImages[i] = CreateImageByDataSource(ds, o.fontSet)
+		image := CreateImageByDataSource(ds, o.fontSet)
+		o.dsImages[i] = utils.TextColorTo(image.(draw.Image), &color.RGBA{64, 64, 255, 255})
 	}
 
 	return o
