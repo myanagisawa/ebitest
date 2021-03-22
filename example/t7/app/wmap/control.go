@@ -131,9 +131,12 @@ func NewScrollView(s interfaces.Scene) interfaces.UIScrollView {
 			dy := params["yoff"].(float64)
 			if lv, ok := ev.(*control.ScrollViewList); ok {
 
+				// TODO: D&DからのWheelではみ出し発生
+
 				// スクロール結果がlistのbound外になる場合はスクロールしない
-				lb := lv.ScrollBound()
+				lb := lv.ScrollBound(true)
 				b := lv.Bound()
+
 				if lb.Min.Y()+dy > 0 {
 					// 上に余白ができる
 					// log.Printf("上に余白ができる")
@@ -192,7 +195,8 @@ func NewScrollView(s interfaces.Scene) interfaces.UIScrollView {
 			if lv, ok := base.Rel("list").(*control.ScrollViewList); ok {
 
 				// スクロール結果がlistのbound外になる場合はスクロールしない
-				lb := lv.ScrollBound()
+				lb := lv.ScrollBound(true)
+				// log.Printf("ScrollBound: %#v / dp: %#v", lb, dp)
 				b := lv.Bound()
 				if lb.Min.Y()+dp.Y() > 0 {
 					// 上に余白ができる
@@ -200,7 +204,7 @@ func NewScrollView(s interfaces.Scene) interfaces.UIScrollView {
 					return
 				} else if lb.Max.Y()+dp.Y() < b.Max.Y()-b.Min.Y() {
 					// 下に余白ができる
-					// log.Printf("下に余白ができる")
+					// log.Printf("下に余白ができる / %0.2f < %0.2f", lb.Max.Y()+dp.Y(), b.Max.Y()-b.Min.Y())
 					return
 				}
 

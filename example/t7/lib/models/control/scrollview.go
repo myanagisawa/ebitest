@@ -190,14 +190,14 @@ func (o *UIScrollView) UpdateImages() {
 		}
 	}
 	// スクロールバー更新
-	if sb := o.list.ScrollBound(); sb != nil {
+	if sb := o.list.ScrollBound(true); sb != nil {
 		_, ls := o.list.bound.ToPosSize()
 		// リスト全体の高さ
 		_, ps := sb.ToPosSize()
 
 		//高さを再計算(リスト表示領域の高さ * リスト表示領域の高さ / リスト全体の高さ)
-		barheight := int(float64(ls.H()*ls.H()) / float64(ps.H()))
-		barheight -= 3
+		barheight := int(float64(ls.H()*(ls.H()-(LineSpacing*2))) / float64(ps.H()))
+		// barheight -= 3
 
 		// サイズ情報をアップデート
 		slider := o.bar.children[0]
@@ -257,18 +257,22 @@ func (o *ScrollViewList) GetControls() []interfaces.UIControl {
 }
 
 // ScrollBound ...
-func (o *ScrollViewList) ScrollBound() *g.Bound {
+func (o *ScrollViewList) ScrollBound(withoutMoving bool) *g.Bound {
 	if children := o.GetChildren(); children != nil {
 		fc := children[0].(*ScrollViewRow)
 		lc := children[len(children)-1].(*ScrollViewRow)
 
 		min := fc.Bound().Min
-		if fc.moving != nil {
-			min.SetDelta(0, fc.moving.Y())
+		if !withoutMoving {
+			if fc.moving != nil {
+				min.SetDelta(0, fc.moving.Y())
+			}
 		}
 		max := lc.Bound().Max
-		if lc.moving != nil {
-			max.SetDelta(0, lc.moving.Y())
+		if !withoutMoving {
+			if lc.moving != nil {
+				max.SetDelta(0, lc.moving.Y())
+			}
 		}
 		return g.NewBound(&min, &max)
 	}
@@ -278,7 +282,7 @@ func (o *ScrollViewList) ScrollBound() *g.Bound {
 // SetScrollBarPosition ...
 func (o *ScrollViewList) SetScrollBarPosition() {
 	// 最新のリストBoundを取得
-	lb := o.ScrollBound()
+	lb := o.ScrollBound(false)
 	lp, ls := lb.ToPosSize()
 	_, ss := o.Bound().ToPosSize()
 	sh := ss.H() - (int(LineSpacing) * 2)
@@ -288,7 +292,7 @@ func (o *ScrollViewList) SetScrollBarPosition() {
 	bar := o.Rel("bar").(interfaces.UIControl)
 	slider := bar.Rel("slider").(interfaces.UIControl)
 	pos, size := slider.Bound().ToPosSize()
-	slider.Bound().SetPosSize(g.NewPoint(pos.X(), by), size)
+	slider.Bound().SetPosSize(g.NewPoint(pos.X(), by+LineSpacing), size)
 }
 
 // ScrollViewRow ...
@@ -347,7 +351,8 @@ func (o *ScrollViewRow) Update() error {
 	_ = o.UIControl.Update()
 
 	// 親（ScrollViewList）範囲外を描画対象から外す
-	bound := o.bound
+	bound := g.NewBound(&o.bound.Min, &o.bound.Max)
+	bound.SetDelta(o.moving, nil)
 	regionBound := o.parent.Bound()
 
 	if bound.Max.Y() < 0 {
