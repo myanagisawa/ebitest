@@ -249,10 +249,10 @@ func (o *UIScrollView) SetHeaderRow(dataSet []interface{}) {
 }
 
 // AppendRows ...
-func (o *UIScrollView) AppendRows(dataSet [][]interface{}) {
+func (o *UIScrollView) AppendRows(dataSet [][]interface{}, rowClickFunc func(row *ScrollViewRow)) {
 	_, listSize := o.list.Bound().ToPosSize()
 	for _, dataRow := range dataSet {
-		row := NewScrollViewRow(o.scene, dataRow)
+		row := NewScrollViewRow(o.scene, dataRow, rowClickFunc)
 
 		index := len(o.list.children)
 		if index > 0 {
@@ -483,7 +483,7 @@ func (o *ScrollViewRow) GetControls() []interfaces.UIControl {
 }
 
 // NewScrollViewRow ...
-func NewScrollViewRow(s interfaces.Scene, dataSet []interface{}) *ScrollViewRow {
+func NewScrollViewRow(s interfaces.Scene, dataSet []interface{}, rowClickFunc func(row *ScrollViewRow)) *ScrollViewRow {
 	// 行
 	img := utils.CreateRectImage(1, 1, &color.RGBA{64, 64, 64, 127})
 	b := &UIControl{
@@ -510,6 +510,13 @@ func NewScrollViewRow(s interfaces.Scene, dataSet []interface{}) *ScrollViewRow 
 			ev.ColorScale().Set(1.0, 1.0, 1.0, 1.0)
 		}
 	})
+	if rowClickFunc != nil {
+		o.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.UIControl, params map[string]interface{}) {
+			if row, ok := ev.(*ScrollViewRow); ok {
+				rowClickFunc(row)
+			}
+		})
+	}
 
 	o.fontSet = char.Res.Get(12, enum.FontStyleGenShinGothicRegular)
 	o.ds = dataSet
