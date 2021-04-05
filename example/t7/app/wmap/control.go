@@ -1,6 +1,7 @@
 package wmap
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 	"math/rand"
@@ -94,8 +95,14 @@ func createSite(s interfaces.Scene, source *m.Site) *site {
 		switch et {
 		case enum.EventTypeFocus:
 			ev.ColorScale().Set(0.75, 0.75, 0.75, 1.0)
+			for _, c := range ev.GetChildren() {
+				c.ColorScale().Set(0.75, 0.75, 0.75, 1.0)
+			}
 		case enum.EventTypeBlur:
 			ev.ColorScale().Set(1.0, 1.0, 1.0, 1.0)
+			for _, c := range ev.GetChildren() {
+				c.ColorScale().Set(1.0, 1.0, 1.0, 1.0)
+			}
 		}
 	})
 	o.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.UIControl, params map[string]interface{}) {
@@ -105,6 +112,14 @@ func createSite(s interfaces.Scene, source *m.Site) *site {
 			// il.ShowSiteInfo(t.obj)
 		}
 	})
+
+	// 名前ラベルオブジェクト作成
+	label := fmt.Sprintf("%s.name", source.Code)
+	textSize := g.NewSize(source.Text.Bounds().Size().X, source.Text.Bounds().Size().Y)
+	textBound := g.NewBoundByPosSize(g.NewPoint(-float64(textSize.W()-size.X)/2, float64(size.Y)), textSize)
+	name := control.NewUIControl(s, nil, enum.ControlTypeDefault, label, textBound, g.DefScale(), g.DefCS(), source.Text).(*control.UIControl)
+	o.AppendChild(name)
+
 	return o
 }
 
