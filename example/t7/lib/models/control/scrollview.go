@@ -472,6 +472,11 @@ type ScrollViewRow struct {
 	dsImages  []image.Image
 }
 
+// GetDS ...
+func (o *ScrollViewRow) GetDS() []interface{} {
+	return o.ds
+}
+
 // GetControls ...
 func (o *ScrollViewRow) GetControls() []interfaces.UIControl {
 	if o._childrenCache != nil {

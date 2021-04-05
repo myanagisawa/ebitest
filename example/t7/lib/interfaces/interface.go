@@ -13,6 +13,7 @@ type Scene interface {
 	TransitionTo(t enum.SceneEnum)
 	DidLoad()
 	DidActive()
+	Update() error
 }
 
 // UIControl ...

@@ -56,6 +56,11 @@ func (o *Scene) GetControls() []interfaces.UIControl {
 	return ret
 }
 
+// Update ...
+func (o *Scene) Update() error {
+	return nil
+}
+
 // DidLoad ...
 func (o *Scene) DidLoad() {
 	log.Printf("menu.DidLoad")

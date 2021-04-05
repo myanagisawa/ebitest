@@ -34,6 +34,7 @@ type (
 		background   *ebiten.Image
 		currentScene interfaces.Scene
 		scenes       map[enum.SceneEnum]interfaces.Scene
+		gameData     map[enum.DataTypeEnum]interface{}
 	}
 )
 
@@ -44,10 +45,22 @@ func NewManager(screenWidth, screenHeight int) *Manager {
 	gm := &Manager{
 		background: ebiten.NewImageFromImage(utils.CreateRectImage(screenWidth, screenHeight, &color.RGBA{0, 0, 0, 255})),
 		scenes:     make(map[enum.SceneEnum]interfaces.Scene),
+		gameData:   map[enum.DataTypeEnum]interface{}{},
 	}
 	withoutDraw = false
 
 	return gm
+}
+
+// GameData ...
+func (o *Manager) GameData(key enum.DataTypeEnum) (interface{}, bool) {
+	v, ok := o.gameData[key]
+	return v, ok
+}
+
+// SetGameData ...
+func (o *Manager) SetGameData(key enum.DataTypeEnum, data interface{}) {
+	o.gameData[key] = data
 }
 
 // SetScene ...
@@ -74,6 +87,7 @@ func (o *Manager) Update() error {
 		ExecEvent(_controls)
 
 		// 各コントロールの更新処理
+		o.currentScene.Update()
 		// i := 0
 		for _, child := range _controls {
 			child.Update()

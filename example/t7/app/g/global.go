@@ -3,6 +3,8 @@ package g
 import (
 	"fmt"
 	"image"
+	"image/color"
+	"image/draw"
 	"log"
 	"math"
 	"path/filepath"
@@ -29,8 +31,27 @@ func init() {
 	}
 	log.Printf("global.AppRoot: exe=%s", exe)
 
-	Images["btnBase"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/button.png"))
-	Images["world"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/world.jpg"))
+	// 画像リソース読み込み
+	{
+		log.Printf("Resource読み込み...")
+		Images = make(map[string]image.Image)
+		Images["btnBase"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/button.png"))
+		Images["world"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/world.jpg"))
+
+		Images["site_1"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/site_1.png"))
+		Images["site_2"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/site_2.png"))
+		Images["site_3"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/site_3.png"))
+		Images["site_4"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/site_4.png"))
+		Images["site_5"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/site_5.png"))
+
+		Images["route_1"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/route_1.png"))
+		Images["route_2"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/route_2.png"))
+		Images["route_3"], _ = utils.GetImageByPath(fmt.Sprintf("%s/%s", exe, "../../resources/system_images/route_3.png"))
+
+		img := utils.CreateRectImage(1, 1, &color.RGBA{200, 200, 200, 255})
+		Images["routeLine"] = img.(draw.Image)
+		log.Printf("Resource読み込み...done")
+	}
 }
 
 // Point ...
@@ -257,6 +278,12 @@ func (b *Bound) Set(min *Point, max *Point) {
 
 // SetPosSize ...
 func (b *Bound) SetPosSize(pos *Point, size *Size) {
+	if pos == nil {
+		pos, _ = b.ToPosSize()
+	}
+	if size == nil {
+		_, size = b.ToPosSize()
+	}
 	_b := NewBoundByPosSize(pos, size)
 	b.Min = _b.Min
 	b.Max = _b.Max
