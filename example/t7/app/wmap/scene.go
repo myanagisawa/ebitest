@@ -28,7 +28,8 @@ var (
 	window   interfaces.UIControl
 	testList *control.UIScrollView
 
-	sites []*site
+	sites  []*site
+	routes []*route
 
 	scrollProg *scroller
 )
@@ -100,14 +101,42 @@ func (o *Scene) DidLoad() {
 			for i := range objsites {
 				r := objsites[i]
 				site := createSite(o, &r)
+				site.updatePosition(layer)
 				_sites[i] = site
-				layer.AppendChild(site)
-				site.updatePosition()
+				// layer.AppendChild(site)
 
 				// p, _ := site.Bound().ToPosSize()
 				// log.Printf("%s: %0.2f, %0.2f", site.Label(), p.X(), p.Y())
 			}
 			sites = _sites
+		}
+	}
+
+	// 経路情報作成
+	if gamedata, ok := o.manager.GameData(enum.DataTypeRoute); ok {
+		if ifroutes, ok := gamedata.(*m.Routes); ok {
+
+			objroutes := *ifroutes
+			_routes := make([]*route, len(objroutes))
+			for i := range objroutes {
+				r := objroutes[i]
+				route := createRoute(o, &r)
+				_routes[i] = route
+				// layer.AppendChild(route)
+			}
+			routes = _routes
+		}
+	}
+
+	// 重なり順でlayerに追加
+	if routes != nil {
+		for _, row := range routes {
+			layer.AppendChild(row)
+		}
+	}
+	if sites != nil {
+		for _, row := range sites {
+			layer.AppendChild(row)
 		}
 	}
 

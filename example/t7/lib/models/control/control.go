@@ -2,6 +2,7 @@ package control
 
 import (
 	"image"
+	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -424,13 +425,17 @@ func (o *UIControl) Draw(screen *ebiten.Image) {
 	if o.drawer.withoutDraw {
 		return
 	}
+	if o.label == "route-1" {
+		log.Printf("%s", o.label)
+	}
 
 	op := &ebiten.DrawImageOptions{}
 	// 拡大・縮小
 	op.GeoM.Scale(o.drawer.scale.Get())
 
 	// 回転
-	imgSize := o.drawer.drawSize
+	// imgSize := o.drawer.drawSize
+	imgSize := g.NewSize(o.drawer.image.Size())
 	op.GeoM.Translate(-float64(imgSize.W())/2, -float64(imgSize.H())/2)
 	op.GeoM.Rotate(o.drawer.angle.Get())
 	op.GeoM.Translate(float64(imgSize.W())/2, float64(imgSize.H())/2)
