@@ -68,11 +68,12 @@ func (o *Scene) Update() error {
 
 	if scrollProg != nil {
 		if scrollProg.Update() {
-			log.Printf("%s", scrollProg.debug)
-			layer.Bound().SetPosSize(scrollProg.GetCurrentPoint(), nil)
+			// log.Printf("%s", scrollProg.debug)
+			layer.SetMoving(scrollProg.GetCurrentPoint())
 		}
 		if scrollProg.Completed() {
-			log.Printf("%s", scrollProg.debug)
+			log.Printf("scroll.completed: \n%s", scrollProg.debug)
+			layer.FinishMoving()
 			scrollProg = nil
 		}
 	}
@@ -103,10 +104,6 @@ func (o *Scene) DidLoad() {
 				site := createSite(o, &r)
 				site.updatePosition(layer)
 				_sites[i] = site
-				// layer.AppendChild(site)
-
-				// p, _ := site.Bound().ToPosSize()
-				// log.Printf("%s: %0.2f, %0.2f", site.Label(), p.X(), p.Y())
 			}
 			sites = _sites
 		}
@@ -262,7 +259,7 @@ func moveTo(code string) {
 	}
 
 	// 表示位置変更
-	// o.SetPosition(-ax, -ay)
+	// layer.Bound().SetPosSize(g.NewPoint(-ax, -ay), nil)
 
 	// 現在の表示位置
 	before := layer.Position(enum.TypeLocal)

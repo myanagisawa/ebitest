@@ -2,7 +2,6 @@ package control
 
 import (
 	"image"
-	"log"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -240,6 +239,15 @@ func (o *UIControl) SetMoving(dp *g.Point) {
 	}
 }
 
+// FinishMoving ...
+func (o *UIControl) FinishMoving() {
+	if o.moving == nil {
+		return
+	}
+	o.bound.SetDelta(o.moving, nil)
+	o.moving = nil
+}
+
 // Scale ...
 func (o *UIControl) Scale(t enum.ValueTypeEnum) *g.Scale {
 	return &o.scale
@@ -425,8 +433,11 @@ func (o *UIControl) Draw(screen *ebiten.Image) {
 	if o.drawer.withoutDraw {
 		return
 	}
-	if o.label == "route-1" {
-		log.Printf("%s", o.label)
+
+	if o.label == "worldmap-layer" {
+		if o.In() {
+			// dummy
+		}
 	}
 
 	op := &ebiten.DrawImageOptions{}

@@ -37,6 +37,7 @@ type UIControl interface {
 	Bound() *g.Bound
 	Moving() *g.Point
 	SetMoving(*g.Point)
+	FinishMoving()
 	Scale(enum.ValueTypeEnum) *g.Scale
 	Angle(enum.ValueTypeEnum) *g.Angle
 	SetAngle(a *g.Angle)

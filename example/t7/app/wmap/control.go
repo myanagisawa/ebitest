@@ -27,33 +27,21 @@ func init() {
 }
 
 type scroller struct {
-	from       *g.Point
-	to         *g.Point
-	current    *g.Point
-	startedAt  *time.Time
-	finishedAt *time.Time
-	dest       int
-	count      int
-	debug      string
+	dx    float64
+	dy    float64
+	count int
+	dest  int
+	debug string
 }
 
 func (o *scroller) Update() bool {
-	// log.Printf("o.count: %d / %d", o.count, o.dest)
-	if o.dest == 0 {
-		return false
-	}
 	o.count++
-	dx := (o.to.X() - o.from.X()) / float64(o.dest)
-	dy := (o.to.Y() - o.from.Y()) / float64(o.dest)
-
-	o.current = g.NewPoint(dx*float64(o.count)+o.from.X(), dy*float64(o.count)+o.from.Y())
-	// o.debug += fmt.Sprintf("scroller.Update: %d/%d: (%0.2f, %0.2f)\n", o.count, o.dest, o.current.X(), o.current.Y())
 	return true
 }
 
 // GetCurrentPoint ...
 func (o *scroller) GetCurrentPoint() *g.Point {
-	return o.current
+	return g.NewPoint(o.dx*float64(o.count), o.dy*float64(o.count))
 }
 
 // Completed ...
@@ -63,18 +51,20 @@ func (o *scroller) Completed() bool {
 
 // newScroller ...
 func newScroller(from, to *g.Point, d time.Duration) *scroller {
-	st := time.Now()
-	fn := st.Add(d)
 	tps := ebiten.CurrentTPS()
-	o := &scroller{
-		from:       from,
-		to:         to,
-		startedAt:  &st,
-		finishedAt: &fn,
-		dest:       int(d.Seconds() * tps),
-		count:      0,
+	dest := int(d.Seconds() * tps)
+	if dest == 0 {
+		dest = 1 // 0のままだと動かないので、最低1
 	}
-	log.Printf("scroller: from=%#v, to=%#v, startedAt=%v, finishedAt=%v, tps=%v, dest=%v", o.from, o.to, o.startedAt, o.finishedAt, tps, o.dest)
+	// 移動量を計算
+	moveX, moveY := to.X()-from.X(), to.Y()-from.Y()
+
+	o := &scroller{
+		dx:    moveX / float64(dest),
+		dy:    moveY / float64(dest),
+		dest:  dest,
+		count: 0,
+	}
 	return o
 }
 
