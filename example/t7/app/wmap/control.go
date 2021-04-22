@@ -141,6 +141,8 @@ func (o *site) updatePosition(layer interfaces.UIControl) {
 type route struct {
 	control.UIControl
 	source *m.Route
+	site1  *site
+	site2  *site
 }
 
 func createRoute(s interfaces.Scene, source *m.Route) *route {
@@ -182,6 +184,8 @@ func createRoute(s interfaces.Scene, source *m.Route) *route {
 	o := &route{
 		UIControl: *con,
 		source:    source,
+		site1:     site1,
+		site2:     site2,
 	}
 	o.EventHandler().AddEventListener(enum.EventTypeFocus, func(ev interfaces.UIControl, params map[string]interface{}) {
 		et := params["event_type"].(enum.EventTypeEnum)
@@ -191,16 +195,28 @@ func createRoute(s interfaces.Scene, source *m.Route) *route {
 			for _, c := range ev.GetChildren() {
 				c.ColorScale().Set(0.75, 0.75, 0.75, 1.0)
 			}
+			// Infoウィンドウ表示
+			if t, ok := ev.(*route); ok {
+				log.Printf("focus: %v", t)
+				// il.ShowSiteInfo(t.obj)
+				routeWindow = NewRouteInfoView(s, t)
+				layer.AppendChild(routeWindow)
+			}
 		case enum.EventTypeBlur:
 			ev.ColorScale().Set(1.0, 1.0, 1.0, 1.0)
 			for _, c := range ev.GetChildren() {
 				c.ColorScale().Set(1.0, 1.0, 1.0, 1.0)
 			}
+			if routeWindow != nil {
+				// 表示中のInfoウィンドウを削除
+				layer.RemoveChild(routeWindow)
+				routeWindow = nil
+			}
 		}
 	})
 	o.EventHandler().AddEventListener(enum.EventTypeClick, func(ev interfaces.UIControl, params map[string]interface{}) {
 		log.Printf("callback::click!! %T", ev)
-		if t, ok := ev.(*site); ok {
+		if t, ok := ev.(*route); ok {
 			log.Printf("hoge: %v", t)
 			// il.ShowSiteInfo(t.obj)
 		}
@@ -291,4 +307,34 @@ func NewScrollView(s interfaces.Scene) interfaces.UIScrollView {
 	sv := control.NewDefaultScrollView(s, bound)
 
 	return sv
+}
+
+// NewScrollView ...
+func NewRouteInfoView(s interfaces.Scene, target *route) interfaces.UIControl {
+	// 名前ラベルオブジェクト作成
+	// source := target.source
+	// label := fmt.Sprintf("%s.name", source.Name)
+	// textSize := g.NewSize(source.Text.Bounds().Size().X, source.Text.Bounds().Size().Y)
+	// textBound := g.NewBoundByPosSize(g.NewPoint(-float64(textSize.W()-size.X)/2, float64(size.Y)), textSize)
+	// name := control.NewUIControl(s, nil, enum.ControlTypeDefault, label, textBound, g.DefScale(), g.DefCS(), source.Text).(*control.UIControl)
+
+	// 仮のwindowサイズ
+	size := g.NewSize(50, 30)
+
+	// 経路の中心座標を取得
+	pos1, size1 := target.site1.Bound().ToPosSize()
+	pos2, size2 := target.site2.Bound().ToPosSize()
+
+	x1, y1 := pos1.X()+float64(size1.W())/2, pos1.Y()+float64(size1.H())/2
+	x2, y2 := pos2.X()+float64(size2.W())/2, pos2.Y()+float64(size2.H())/2
+
+	centerPos := g.NewPoint(
+		math.Max(x1, x2)-((math.Max(x1, x2)-math.Min(x1, x2))/2),
+		math.Max(y1, y2)-((math.Max(y1, y2)-math.Min(y1, y2))/2),
+	)
+
+	bound := g.NewBoundByPosSize(g.NewPoint(centerPos.X()-float64(size.W()/2), centerPos.Y()-float64(size.H()/2)), size)
+	// 情報ウィンドウ生成
+	iw := control.NewImmutableWindow(s, bound)
+	return iw
 }

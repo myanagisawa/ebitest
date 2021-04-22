@@ -94,3 +94,12 @@ func NewClosableWindow(s interfaces.Scene, bound *g.Bound,
 
 	return l
 }
+
+// NewImmutableWindow ...
+func NewImmutableWindow(s interfaces.Scene, bound *g.Bound) interfaces.UIControl {
+	// ウィンドウ本体
+	img := utils.CreateRectImage(1, 1, &color.RGBA{32, 32, 32, 127})
+	l := NewUIControl(s, nil, enum.ControlTypeLayer, "immutable-window", bound, g.DefScale(), g.DefCS(), img)
+
+	return l
+}

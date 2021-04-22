@@ -32,6 +32,8 @@ var (
 	routes []*route
 
 	scrollProg *scroller
+
+	routeWindow interfaces.UIControl
 )
 
 // NewScene ...
